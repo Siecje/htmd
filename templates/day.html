@@ -1,0 +1,31 @@
+{% extends "_layout.html" %}
+
+{% block page_content %}
+  <article>
+  <h1>Posts from {{month_string}}, {{day}} {{year}}</h1>
+  <hr class="small">
+  {% for posts in posts %}
+  <div class="post-preview">
+      <a href="{{ url_for("post", year=posts.meta['date'].year, month=posts.meta['date'].month, day=posts.meta['date'].day, path=posts.path) }}">
+          <h2 class="post-title">
+              {{ posts.title }}
+          </h2>
+          <h3 class="post-subtitle">
+              {{ posts.subtitle }}
+          </h3>
+      </a>
+      {% if SHOW_AUTHOR %}
+        <p class="post-meta">Posted by <a href="#">{{ posts.author }}</a> on {{ posts.date }}</p>
+      {% endif%}
+      {% if posts.meta.tags|length %}                
+          <p>
+              {% for page_tag in posts.meta.tags %}
+                  <a href="{{ url_for("tag", tag=page_tag) }}">{{ page_tag }}</a>
+              {% endfor %}
+          </p>
+      {% endif %}
+  </div>
+  <hr>
+  {% endfor %}
+  </article>
+{% endblock page_content %}

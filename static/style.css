@@ -1,0 +1,73 @@
+*, *:before, *:after {
+    box-sizing: border-box;
+}
+
+/* header, article, aside, footer { border: 1px solid #111; } */
+#fullpage { max-width: 63em; margin: auto; } /* Not using body in case something like background image is needed to cover the entire screen  */
+
+article { padding: 10px 1em; margin: 0 5% 10px; }
+
+img { max-width: 100%; }
+
+body {
+  font-size: 100%;
+  font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+}
+
+h1 { font-size: 2em; }
+h2 { font-size: 1.5em; }
+h1, h2 { font-weight: bold; margin: 5px 0; }
+p { font-size: 1em; margin: 5px 0; line-height: 1.2;}
+@media screen and (min-width: 25em) {
+    article { font-size: 1.1em }
+}
+@media screen and (min-width: 25em) {
+    article { font-size: 1.2em }
+}
+body {
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    -ms-hyphens: auto;
+    -o-hyphens: auto;
+    hyphens: auto;
+}
+code {
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    -o-hyphens: none;
+    hyphens: none;
+}
+body { word-wrap: break-word; overflow-wrap: breakword; }
+
+h1, h2, h3, h4, h5, h6, p { margin: 1em 0; }
+
+nav ul { list-style-type: none; padding: 0; }
+nav li { border: 1px solid #666; background-color: #eee;  text-align: center; }
+nav li a { display:block;text-decoration: none; font-size: 1.2em; padding: 10px 1em;}
+nav:after { content: ""; display: table; clear: both; }
+
+nav ul{
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media only screen and (min-width: 44em) {
+  nav li { display: block; float: left; width: 20%; }
+}
+/* 30 - 44  Two column menu*/
+@media only screen and (min-width: 30em) and (max-width: 44em) {
+  nav li { display: inline; float: left; width: 50%; }
+}
+
+/* Footer */
+footer {
+  padding-top: 2em;
+}
+footer ul { list-style-type: none; padding: 0; margin: 25px 0 0; }
+footer li { border-top: 1px solid #666; padding: 10px 1em; margin: 3px 0 0; text-align: center; }
+footer li a { text-decoration: none; }
+@media only screen and (min-width: 50em) {
+  footer li { display: inline-block; width: 33%; border-top: none; padding: 0em; margin: 0em;}
+  footer ul { margin: 0em;}
+}

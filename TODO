@@ -1,0 +1,40 @@
+how to use another theme, basically replace templates
+use rst, ascidoc, etc, (extension for flask-pages?)
+commands to serve etc
+docs
+feeds atom etc (is there JSON feed?)
+analytics
+config file
+pages are in the same place as templates
+
+rstblog nice
+
+tags are really nice, that they automatically size
+date layout in build
+view by month included
+atom feed is also nice
+
+rstblog
+
+meta tags? description author etc
+why do I need all of the files in the _templates folder? Why can't I just override by having one or using default by not
+should serve the non build version or run build right before
+if you change layout.html you have to delete build inorder to see changes, just running build will not ovverright since those files didn't change.
+no .yml and how to access those variables? use in templates
+should be able to have a directory of all posts
+next shouldn't be a link on last page of archive
+translations? (automatically select the correct language based on request headers)
+
+
+Docs
+commands
+in layout.html where does links come from?
+ads
+why have a htmlhead in layout.html?
+
+I'm thinking it will make a nginx.conf more than anything
+
+pelican
+it creates all of these files WHY
+it doesn't make it easier to use template and static obviously you are going to change those
+soo many settings
