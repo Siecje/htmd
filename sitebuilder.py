@@ -21,6 +21,7 @@ app.jinja_env.globals['SHOW_AUTHOR'] = True
 
 MONTHS = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 
+
 @app.route('/')
 def index():
     return render_template('index.html', pages=pages)
@@ -29,13 +30,6 @@ def index():
 @app.route('/about')
 def about():
     return render_template('about.html', pages=pages)
-
-
-#@app.route('/<path:path>')
-#def page(path):
-#    page = pages.get_or_404(path)
-#    return render_template('page.html', page=page)
-
 
 @app.route('/tags/<string:tag>')
 def tag(tag):
@@ -48,7 +42,7 @@ def all_pages():
     return render_template('all_pages.html', pages=pages)
 
 
-@app.route('/tags')
+@app.route('/tags/')
 def all_tags():
     tags = []
     for page in pages:
@@ -57,6 +51,22 @@ def all_tags():
                 tags.append(tag)
     return render_template('all_tags.html', tags=tags)
 
+@app.route('/<int:year>/')
+def year(year):
+    posts = [p for p in pages if year == p.meta.get('date', []).year]
+    return render_template('year.html', year=year, posts=posts)
+
+@app.route('/<int:year>/<int:month>/')
+def month(year, month):
+    posts = [p for p in pages if year == p.meta.get('date').year and month == p.meta.get('date').month == month]
+    month_string = MONTHS[month]
+    return render_template('month.html', year=year, month_string=month_string, posts=posts)
+
+@app.route('/<int:year>/<int:month>/<int:day>/')
+def day(year, month, day):
+    posts = [p for p in pages if year == p.meta.get('date').year and month == p.meta.get('date').month == month]
+    month_string = MONTHS[month]
+    return render_template('day.html', year=year, month_string=month_string, day=day, posts=posts)
 
 @app.route('/<int:year>/<int:month>/<int:day>/<path:path>')
 def post(year, month, day, path):
@@ -65,23 +75,6 @@ def post(year, month, day, path):
     if str(post.meta.get('date')) != date:
         abort(404)
     return render_template('page.html', page=post)
-
-@app.route('/<int:year>')
-def year(year):
-    posts = [p for p in pages if year == p.meta.get('date', []).year]
-    return render_template('year.html', year=year, posts=posts)
-
-@app.route('/<int:year>/<int:month>')
-def month(year, month):
-    posts = [p for p in pages if year == p.meta.get('date').year and month == p.meta.get('date').month == month]
-    month_string = MONTHS[month]
-    return render_template('month.html', year=year, month_string=month_string, posts=posts)
-
-@app.route('/<int:year>/<int:month>/<int:day>')
-def day(year, month, day):
-    posts = [p for p in pages if year == p.meta.get('date').year and month == p.meta.get('date').month == month]
-    month_string = MONTHS[month]
-    return render_template('day.html', year=year, month_string=month_string, day=day, posts=posts)
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == "build":
