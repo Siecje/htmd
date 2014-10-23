@@ -26,17 +26,18 @@ def index():
     return render_template('index.html', pages=pages)
 
 
-@app.route('/about')
+@app.route('/about/')
 def about():
     return render_template('about.html', pages=pages)
 
-@app.route('/tags/<string:tag>')
+
+@app.route('/tags/<string:tag>/')
 def tag(tag):
     tagged = [p for p in pages if tag in p.meta.get('tags', [])]
     return render_template('tag.html', pages=tagged, tag=tag)
 
 
-@app.route('/all')
+@app.route('/all/')
 def all_pages():
     return render_template('all_pages.html', pages=pages)
 
@@ -50,10 +51,12 @@ def all_tags():
                 tags.append(tag)
     return render_template('all_tags.html', tags=tags)
 
+
 @app.route('/<int:year>/')
 def year(year):
     posts = [p for p in pages if year == p.meta.get('date', []).year]
     return render_template('year.html', year=year, posts=posts)
+
 
 @app.route('/<int:year>/<int:month>/')
 def month(year, month):
@@ -61,19 +64,44 @@ def month(year, month):
     month_string = MONTHS[month]
     return render_template('month.html', year=year, month_string=month_string, posts=posts)
 
+
 @app.route('/<int:year>/<int:month>/<int:day>/')
 def day(year, month, day):
     posts = [p for p in pages if year == p.meta.get('date').year and month == p.meta.get('date').month == month]
     month_string = MONTHS[month]
     return render_template('day.html', year=year, month_string=month_string, day=day, posts=posts)
 
-@app.route('/<int:year>/<int:month>/<int:day>/<path:path>')
+
+@app.route('/<int:year>/<int:month>/<int:day>/<path:path>/')
 def post(year, month, day, path):
     post = pages.get_or_404(path)
     date = '%04d-%02d-%02d' % (year, month, day)
     if str(post.meta.get('date')) != date:
         abort(404)
     return render_template('page.html', page=post)
+
+
+# Telling Frozen-Flask about routes that are not linked to
+@freezer.register_generator
+def year():
+    for post in pages:
+        yield {'year': post.meta.get('date').year}
+
+
+@freezer.register_generator
+def month():
+    for post in pages:
+        yield {'year': post.meta.get('date').year,
+              'month': post.meta.get('date').month}
+
+
+@freezer.register_generator
+def day():
+    for post in pages:
+        yield {'year': post.meta.get('date').year,
+              'month': post.meta.get('date').month,
+              'day': post.meta.get('date').day}
+
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == "build":

@@ -6,15 +6,19 @@ feeds atom etc (is there JSON feed?)
 analytics
 config file
 pages are in the same place as templates
+If you don't have a trailing slash it tries to download a binary file
+404 page
 
 rstblog nice
 
-tags are really nice, that they automatically size
+tags are really nice, that they automatically size depending on the number of times they havev been used
 date layout in build
 view by month included
 atom feed is also nice
 
 rstblog
+
+I didn't like that you had to create the year month day folders yourself
 
 meta tags? description author etc
 why do I need all of the files in the _templates folder? Why can't I just override by having one or using default by not
