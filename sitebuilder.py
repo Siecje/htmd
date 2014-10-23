@@ -13,7 +13,6 @@ FLATPAGES_EXTENSION = '.md'
 app = Flask(__name__)
 app.config.from_object(__name__)
 pages = FlatPages(app)
-posts = FlatPages(app)
 freezer = Freezer(app)
 
 app.jinja_env.globals['SITE_NAME'] = 'Cody Scott'
