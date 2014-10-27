@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>{% block title %}{{SITE_NAME}}{% endblock title %}</title>
+  <title>{% block title %}{% endblock title %} | {{SITE_NAME}}</title>
   <link href="http://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
   <link href="{{ url_for('static', filename='reset.css') }}" rel="stylesheet" type="text/css">
   <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" type="text/css">
@@ -11,29 +11,29 @@
 
 <body>
   <div id="fullpage">
-  <header>
-    <nav role="navigation">
+    <header>
+      <nav role="navigation">
+        <ul>
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('all_posts') }}">Posts</a></li>
+          <li><a href="{{ url_for('all_tags') }}">Tags</a></li>
+          <li><a href="{{ url_for('pages.page', path='about') }}">About</a></li>
+          <li><a href="projects.html">Projects</a></li>
+        </ul>
+        <!-- <a href="#menu" id="pull">&#9776; Menu</a> -->
+      </nav>
+    </header>
+
+    {% block page_content %}
+    {% endblock page_content %}
+
+    <footer>
       <ul>
-        <li><a href="{{ url_for('index') }}">Home</a></li>
-        <li><a href="{{ url_for('all_pages') }}">Posts</a></li>
-        <li><a href="{{ url_for('all_tags') }}">Tags</a></li>
-        <li><a href="{{ url_for('about') }}">About</a></li>
-        <li><a href="projects.html">Projects</a></li>
+        <li><a href="mailto:email@example.com">cody.j.b.scott@gmail.com</a></li>
+        <li><a href="https://github.com/" target="_blank">GitHub Profile</a></li>
+        <li><a href="https://bitbucket.org/" target="_blank">BitBucket Profile</a></li>
       </ul>
-      <!-- <a href="#menu" id="pull">&#9776; Menu</a> -->
-    </nav>
-  </header>
-
-  {% block page_content %}
-  {% endblock page_content %}
-
-  <footer>
-    <ul>
-      <li><a href="mailto:email@example.com">cody.j.b.scott@gmail.com</a></li>
-      <li><a href="https://github.com/" target="_blank">GitHub Profile</a></li>
-      <li><a href="https://bitbucket.org/" target="_blank">BitBucket Profile</a></li>
-    </ul>
-  </footer>
+    </footer>
   </div>
   <!--<script>
     var hidden = true;
@@ -50,4 +50,3 @@
   </script>-->
 </body>
 </html>
-

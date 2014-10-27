@@ -1,11 +1,13 @@
 {% extends "_layout.html" %}
 
+{% block title %}Tags{% endblock title %}
+
 {% block page_content %}
   <article>
   <h1>All Tags</h1>
   {% for tag in tags %}
   <div class="post-preview">
-      <a href="{{ url_for("tag", tag=tag) }}"
+      <a href="{{ url_for('tag', tag=tag) }}"
           <h2 class="post-title">
               {{ tag }}
           </h2>

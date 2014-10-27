@@ -1,35 +1,17 @@
 {% extends "_layout.html" %}
 
+{% block title %}Home{% endblock title %}
+
 {% block page_content %}
   <article>
-  {# TODO: only first 4 pages #}
-  {% for page in pages %}
-  <div class="post-preview">
-      <a href="{{ url_for("post", year=page.meta['date'].year, month=page.meta['date'].month, day=page.meta['date'].day, path=page.path) }}">
-          <h2 class="post-title">
-              {{ page.title }}
-          </h2>
-          <h3 class="post-subtitle">
-              {{ page.subtitle }}
-          </h3>
-      </a>
-      {# TODO: add if show_author #}
-      <p class="post-meta">Posted by <a href="#">{{ page.author }}</a> on {{ page.date }}</p>
-      {% if page.meta.tags|length %}                
-          <p>
-              {% for page_tag in page.meta.tags %}
-                  <a href="{{ url_for("tag", tag=page_tag) }}">{{ page_tag }}</a>
-              {% endfor %}
-          </p>
-      {% endif %}
-  </div>
-  <hr>
+  {% for post in posts %}
+    {% include "_list.html" %}
   {% endfor %}
   <!-- Pager -->
   <ul class="pager">
-      <li class="next">
-          <a href="#">Older Posts &rarr;</a>
-      </li>
+    <li class="next">
+      <a href="#">Older Posts &rarr;</a>
+    </li>
   </ul>
   </article>
 {% endblock page_content %}

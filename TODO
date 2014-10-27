@@ -1,7 +1,8 @@
+pagination
 how to use another theme, basically replace templates
 use rst, ascidoc, etc, (extension for flask-pages?)
 commands to serve etc
-docs
+docs (what is the difference between pages and posts)
 feeds atom etc (is there JSON feed?)
 analytics
 config file

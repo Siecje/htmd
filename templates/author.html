@@ -1,10 +1,10 @@
 {% extends "_layout.html" %}
 
-{% block title %}{{month_string}} {{year}}{% endblock title %}
+{% block title %}{{author}}{% endblock title %}
 
 {% block page_content %}
   <article>
-  <h1>Posts from {{month_string}} {{year}}</h1>
+  <h1>Posts from {{author}}</h1>
   <hr class="small">
   {% for post in posts %}
     {% include "_list.html" %}
