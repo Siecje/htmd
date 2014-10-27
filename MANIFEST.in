@@ -1,2 +1,2 @@
-recursive-include templates *.*
-recursive-include static *.*
+recursive-include tohtml/templates *.*
+recursive-include tohtml/static *.*

@@ -1,7 +1,7 @@
 import os
 import sys
 from flask import Flask, render_template, Blueprint, abort
-from jinja2 import TemplateNotFound
+from jinja2 import TemplateNotFound, FileSystemLoader
 from werkzeug.exceptions import abort
 from flask.ext.flatpages import FlatPages
 from flask_frozen import Freezer
@@ -13,6 +13,9 @@ freezer = Freezer(app)
 
 app.jinja_env.globals['SITE_NAME'] = app.config['SITE_NAME']
 app.jinja_env.globals['SHOW_AUTHOR'] = app.config['SHOW_AUTHOR']
+
+#print FileSystemLoader.list_templates()
+print app.root_path#jinja_env.loader.searchpath#.append(os.path.join(os.getcwd(), 'templates'))
 
 MONTHS = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 

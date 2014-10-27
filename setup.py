@@ -4,6 +4,7 @@ setup(
     name='tohtml',
     version='1.0',
     packages=['tohtml'],
+    include_package_data=True,
     install_requires=[
         'flask',
         'Flask-FlatPages',
