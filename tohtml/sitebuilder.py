@@ -1,3 +1,4 @@
+import os
 import sys
 from flask import Flask, render_template, Blueprint, abort
 from jinja2 import TemplateNotFound
@@ -6,7 +7,7 @@ from flask.ext.flatpages import FlatPages
 from flask_frozen import Freezer
 
 app = Flask(__name__)
-app.config.from_object('config')
+app.config.from_pyfile(os.path.join(os.getcwd(), 'config.py'))
 posts = FlatPages(app)
 freezer = Freezer(app)
 
@@ -108,12 +109,3 @@ def day():
         yield {'year': post.meta.get('date').year,
               'month': post.meta.get('date').month,
               'day': post.meta.get('date').day}
-
-def main():
-    if len(sys.argv) > 1 and sys.argv[1] == "build":
-        freezer.freeze()
-    else:
-        app.run(port=5000)
-
-if __name__ == '__main__':
-    main()

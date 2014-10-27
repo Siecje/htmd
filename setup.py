@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(
-    name='to_html',
+    name='tohtml',
     version='1.0',
-    py_modules=['to_html'],
+    packages=['tohtml'],
     install_requires=[
         'flask',
         'Flask-FlatPages',
@@ -11,6 +11,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        to_html=to_html:main
+        tohtml=tohtml.cli:main
     ''',
 )
