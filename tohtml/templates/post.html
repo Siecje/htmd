@@ -2,7 +2,7 @@
 
 {% block title %}{{post.title}}{% endblock title %}
 
-{% block page_content %}
+{% block content %}
   <article>
     <h1>{{ post.title }}</h1>
     <h2 class="subheading">{{ post.subtitle }}</h2>
@@ -10,5 +10,11 @@
         <span class="meta">Posted by <a href="{{ url_for('author', author = post.author)}}">{{ post.author}} </a> on {{ post.date }}</span>
     {% endif %}
     {{ post.html |safe }}
+
+    <hr class="small">
+    <p><strong>Tags</strong></p>
+    {% for tag in post.meta.get('tags') %}
+      <a href="{{ url_for('tag', tag=tag) }}">{{tag}}</a>
+    {% endfor %}
   </article>
-{% endblock page_content %}
+{% endblock content %}

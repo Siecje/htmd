@@ -2,12 +2,12 @@
 
 {% block title %}{{author}}{% endblock title %}
 
-{% block page_content %}
+{% block content %}
   <article>
-  <h1>Posts from {{author}}</h1>
+  <h1>Posts by {{author}}</h1>
   <hr class="small">
   {% for post in posts %}
     {% include "_list.html" %}
   {% endfor %}
   </article>
-{% endblock page_content %}
+{% endblock content %}

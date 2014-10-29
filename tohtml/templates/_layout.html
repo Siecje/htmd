@@ -14,39 +14,28 @@
     <header>
       <nav role="navigation">
         <ul>
+          {% block menu %}
           <li><a href="{{ url_for('index') }}">Home</a></li>
           <li><a href="{{ url_for('all_posts') }}">Posts</a></li>
           <li><a href="{{ url_for('all_tags') }}">Tags</a></li>
           <li><a href="{{ url_for('pages.page', path='about') }}">About</a></li>
-          <li><a href="projects.html">Projects</a></li>
+          {% endblock menu %}
         </ul>
-        <!-- <a href="#menu" id="pull">&#9776; Menu</a> -->
       </nav>
     </header>
 
-    {% block page_content %}
-    {% endblock page_content %}
+    {% block content %}
+    {% endblock content %}
 
     <footer>
+      {% block footer %}
       <ul>
-        <li><a href="mailto:email@example.com">cody.j.b.scott@gmail.com</a></li>
+        <li><a href="mailto:email@example.com">email@example.com</a></li>
         <li><a href="https://github.com/" target="_blank">GitHub Profile</a></li>
         <li><a href="https://bitbucket.org/" target="_blank">BitBucket Profile</a></li>
       </ul>
+      {% endblock footer %}
     </footer>
   </div>
-  <!--<script>
-    var hidden = true;
-    var menu = document.querySelectorAll('nav ul')[0];
-    document.getElementById('pull').onclick = function(){
-      if (hidden){
-        menu.className = 'show';
-      }
-      else{
-        menu.className = 'hide';
-      }
-      hidden = !hidden;
-    }
-  </script>-->
 </body>
 </html>

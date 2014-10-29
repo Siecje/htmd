@@ -2,11 +2,11 @@
 
 {% block title %}{{tag}}{% endblock title %}
 
-{% block page_content %}
+{% block content %}
   <article>
     <span class="subheading">{% block site_description %}{% endblock site_description %}</span>
     {% for post in posts %}
       {% include "_list.html" %}
     {% endfor %}
   </article>
-{% endblock page_content %}
+{% endblock content %}

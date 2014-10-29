@@ -2,7 +2,7 @@
 
 {% block title %}{{month_string}} {{year}}{% endblock title %}
 
-{% block page_content %}
+{% block content %}
   <article>
   <h1>Posts from {{month_string}} {{year}}</h1>
   <hr class="small">
@@ -10,4 +10,4 @@
     {% include "_list.html" %}
   {% endfor %}
   </article>
-{% endblock page_content %}
+{% endblock content %}

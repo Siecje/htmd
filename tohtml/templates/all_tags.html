@@ -2,18 +2,19 @@
 
 {% block title %}Tags{% endblock title %}
 
-{% block page_content %}
+{% block content %}
   <article>
   <h1>All Tags</h1>
+
   {% for tag in tags %}
   <div class="post-preview">
-      <a href="{{ url_for('tag', tag=tag) }}"
-          <h2 class="post-title">
-              {{ tag }}
+      <a href="{{ url_for('tag', tag=tag.tag) }}"
+          <h2 class="post-title" style="font-size: {{1+0.1*tag.count}}em">
+              {{ tag.tag }}
           </h2>
       </a>
   </div>
   <hr>
   {% endfor %}
   </article>
-{% endblock page_content %}
+{% endblock content %}

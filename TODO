@@ -1,48 +1,52 @@
-pagination
-error messages
-add example page and post
-override templates? use super()?
-how to use another theme, basically replace templates
-use rst, ascidoc, etc, (extension for flask-pages?)
+fix so that year in dates does not need to be two digits or add to docs and check for it
+default font (**is** hard to see the dot)
+serve build
+verify that all posts have the required fields, like date
+add _layout.html to templates
+add example page and post on start
+better error messages for cli
 commands to serve etc
-docs (what is the difference between pages and posts)
 feeds atom etc (is there JSON feed?)
-analytics
-config file
-pages are in the same place as templates
-If you don't have a trailing slash it tries to download a binary file
 404 page
+register all routes with frozen flask in case links in templates are changed?
+highlight menu items?
+pagination?
+size tags on post page?
+use rst, ascidoc, etc, (extension for flask-pages?)
+analytics
+If you don't have a trailing slash it tries to download a binary file
+make an nginx.conf?
+translations? (automatically select the correct language based on request headers)
 
-rstblog nice
-
-tags are really nice, that they automatically size depending on the number of times they have been used
-date layout in build
-view by month included
-atom feed is also nice
+###Docs
+- how to use another theme, basically replace templates
+- what is the difference between pages and posts
 
 rstblog
 
 I didn't like that you had to create the year month day folders yourself
-
+should be able to have a directory of all posts
 meta tags? description author etc
 why do I need all of the files in the _templates folder? Why can't I just override by having one or using default by not
-should serve the non build version or run build right before
-if you change layout.html you have to delete build inorder to see changes, just running build will not overright since those files didn't change.
+should serve the non build version or run build right before serving
+if you change layout.html you have to delete build in order to see changes, just running build will not over right since those files didn't change.
 no .yml and how to access those variables? use in templates
-should be able to have a directory of all posts
 next shouldn't be a link on last page of archive
-translations? (automatically select the correct language based on request headers)
-
-
-Docs
-commands
-in layout.html where does links come from?
-ads
-why have a htmlhead in layout.html?
-
-I'm thinking it will make a nginx.conf more than anything
+No Docs
+- commands
+- in layout.html where does links come from?
+- ads
+- why have a htmlhead in layout.html? Do I need it?
+- not maintained
 
 pelican
 it creates all of these files WHY
 it doesn't make it easier to use template and static obviously you are going to change those
 soo many settings
+
+###Change log
+- posts are sorted
+- Tags are sized based on number of times used
+- Can add custom meta tags and use in templates
+- Can override templates
+- Separate folders for posts (think blog) and pages (about, etc)

@@ -2,16 +2,10 @@
 
 {% block title %}Home{% endblock title %}
 
-{% block page_content %}
+{% block content %}
   <article>
   {% for post in posts %}
     {% include "_list.html" %}
   {% endfor %}
-  <!-- Pager -->
-  <ul class="pager">
-    <li class="next">
-      <a href="#">Older Posts &rarr;</a>
-    </li>
-  </ul>
   </article>
-{% endblock page_content %}
+{% endblock content %}
