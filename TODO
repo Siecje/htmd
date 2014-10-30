@@ -10,6 +10,7 @@ feeds atom etc (is there JSON feed?)
 404 page
 register all routes with frozen flask in case links in templates are changed?
 highlight menu items?
+Instead of copy file, so you can use an egg
 pagination?
 size tags on post page?
 use rst, ascidoc, etc, (extension for flask-pages?)

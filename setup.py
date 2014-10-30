@@ -14,4 +14,5 @@ setup(
         [console_scripts]
         tohtml=tohtml.cli:main
     ''',
+    zip_safe=False, # Required to have template files
 )
