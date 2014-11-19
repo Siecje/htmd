@@ -9,10 +9,11 @@ setup(
         'flask',
         'Flask-FlatPages',
         'Frozen-Flask',
+        'click',
     ],
     entry_points='''
         [console_scripts]
-        tohtml=tohtml.cli:main
+        tohtml=tohtml.cli:cli
     ''',
     zip_safe=False, # Required to have template files
 )

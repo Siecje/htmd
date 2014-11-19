@@ -1,16 +1,12 @@
-fix so that year in dates does not need to be two digits or add to docs and check for it
 default font (**is** hard to see the dot)
-serve build
-verify that all posts have the required fields, like date
-add _layout.html to templates
-add example page and post on start
 better error messages for cli
-commands to serve etc
+minimize HTML
 feeds atom etc (is there JSON feed?)
-404 page
+404 page (nginx.conf?)
 register all routes with frozen flask in case links in templates are changed?
-highlight menu items?
-Instead of copy file, so you can use an egg
+highlight menu items when you are on that page?
+In order to use an egg do not copy files for 'start'
+specify versions in install_requires?
 pagination?
 size tags on post page?
 use rst, ascidoc, etc, (extension for flask-pages?)
