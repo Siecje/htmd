@@ -55,6 +55,7 @@ p {
 
 body {
   -webkit-hyphens: auto;
+  -epub-hyphens: auto;
   -moz-hyphens: auto;
   -ms-hyphens: auto;
   -o-hyphens: auto;
@@ -63,6 +64,7 @@ body {
 
 code {
   -webkit-hyphens: none;
+  -epub-hyphens: auto;
   -moz-hyphens: none;
   -ms-hyphens: none;
   -o-hyphens: none;
@@ -71,7 +73,7 @@ code {
 
 body {
   word-wrap: break-word;
-  overflow-wrap: breakword;
+  overflow-wrap: break-word;
 }
 
 h1, h2, h3, h4, h5, h6, p {

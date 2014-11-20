@@ -1,4 +1,4 @@
-default font (**is** hard to see the dot)
+default font (**is** is hard to see the dot)
 better error messages for cli
 minimize HTML
 feeds atom etc (is there JSON feed?)
@@ -13,7 +13,11 @@ use rst, ascidoc, etc, (extension for flask-pages?)
 analytics
 If you don't have a trailing slash it tries to download a binary file
 make an nginx.conf?
+serve command has output twice.
+preprocess calculate width of nav li elements?
 translations? (automatically select the correct language based on request headers)
+order commands in help?
+If preview is running and you update a post you will not see changes until you build again (preview flask app? instead of static folder?)
 
 ###Docs
 - how to use another theme, basically replace templates

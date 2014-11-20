@@ -15,5 +15,5 @@ setup(
         [console_scripts]
         tohtml=tohtml.cli:cli
     ''',
-    zip_safe=False, # Required to have template files
+    zip_safe=False,  # Required to have template files
 )

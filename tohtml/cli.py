@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 import click
 from flask import Flask
 
@@ -35,15 +34,16 @@ def start():
     copy_file(os.path.join(os.path.dirname(__file__), 'config.py'),
               os.path.join('config.py'))
     copy_file(os.path.join(os.path.dirname(__file__), 'templates', '_layout.html'),
-                os.path.join('templates/', '_layout.html'))
+              os.path.join('templates/', '_layout.html'))
     copy_file(os.path.join(os.path.dirname(__file__), 'static', 'reset.css'),
-                os.path.join('static/', 'reset.css'))
+              os.path.join('static/', 'reset.css'))
     copy_file(os.path.join(os.path.dirname(__file__), 'static', 'style.css'),
-                os.path.join('static/', 'style.css'))
+              os.path.join('static/', 'style.css'))
     copy_file(os.path.join(os.path.dirname(__file__), 'about.html'),
-                os.path.join('pages/', 'about.html'))
+              os.path.join('pages/', 'about.html'))
     copy_file(os.path.join(os.path.dirname(__file__), 'example.md'),
-                os.path.join('posts/', 'example.md'))
+              os.path.join('posts/', 'example.md'))
+    click.echo('Add the site name and edit settings in config.py')
 
 
 @cli.command('verify', short_help='Verify posts formatting is correct.')
@@ -59,7 +59,7 @@ def verify():
                 click.echo(click.style('%s does not have %s', post.path, item, fg='red'))
         if 'date' in post.meta:
             try:
-                year = post.meta.get('date').year
+                post.meta.get('date').year
             except AttributeError:
                 correct = False
                 click.echo(click.style('Date %s for %s is not in the format YYYY-MM-DD' % (post.meta.get('date'), post.path), fg='red'))
@@ -75,22 +75,23 @@ def verify():
 def build(ctx):
     valid = ctx.invoke(verify)
     if valid:
-        from sitebuilder import freezer
+        from sitebuilder import freezer, app
         freezer.freeze()
-        click.echo(click.style('Static site was created in build/', fg='green'))
+        click.echo(click.style('Static site was created in %s' % app.config.get('FREEZER_DESTINATION'), fg='green'))
     return valid
 
 
-@cli.command('serve', short_help='Serve files to preview site.')
+@cli.command('preview', short_help='Serve files to preview site.')
 @click.pass_context
 @click.option('--host', '-h', default='127.0.0.1', help='Location to access the files.')
 @click.option('--port', '-p', default=9090, help='Port on which to serve the files.')
-def serve(ctx, host, port):
-    # verify posts
+def preview(ctx, host, port):
+    # build static site
     valid = ctx.invoke(build)
     if valid is True:
         # Serve the build folder
-        app = Flask(__name__, static_folder=os.path.join(os.getcwd(), 'build'))
+        from sitebuilder import app as build_app
+        app = Flask(__name__, static_folder=os.path.join(os.getcwd(), build_app.config.get('BUILD_FOLDER')))
 
         @app.route('/')
         def index():

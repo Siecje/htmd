@@ -1,10 +1,8 @@
-import os
+POSTS_EXTENSION = '.md'
 
-DEBUG = True
-FLATPAGES_AUTO_RELOAD = DEBUG
-FLATPAGES_EXTENSION = '.md'
-FLATPAGES_ROOT = os.path.join(os.getcwd(), 'posts')
-FREEZER_DESTINATION = os.path.join(os.getcwd(), 'build')
+POSTS_FOLDER = 'posts'
+PAGES_FOLDER = 'pages'
+BUILD_FOLDER = 'build'
 
 SITE_NAME = ''
 SHOW_AUTHOR = True

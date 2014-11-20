@@ -2,12 +2,21 @@ import os
 import sys
 from flask import Flask, render_template, Blueprint, abort
 from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
-from werkzeug.exceptions import abort
 from flask.ext.flatpages import FlatPages
 from flask_frozen import Freezer
 
 app = Flask(__name__)
-app.config.from_pyfile(os.path.join(os.getcwd(), 'config.py'))
+try:
+    app.config.from_pyfile(os.path.join(os.getcwd(), 'config.py'))
+except IOError:
+    print 'Can not find config.py'
+    sys.exit()
+
+# To avoid full paths in config.py
+app.config['FLATPAGES_ROOT'] = os.path.join(os.getcwd(), app.config.get('POSTS_FOLDER'))
+app.config['FREEZER_DESTINATION'] = os.path.join(os.getcwd(), app.config.get('BUILD_FOLDER'))
+app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
+
 posts = FlatPages(app)
 freezer = Freezer(app)
 
@@ -21,7 +30,8 @@ app.jinja_loader = ChoiceLoader([
 
 MONTHS = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 
-pages = Blueprint('pages', __name__, template_folder=os.path.join(os.getcwd(), 'pages/'))
+pages = Blueprint('pages', __name__, template_folder=os.path.join(os.getcwd(), app.config.get('PAGES_FOLDER')))
+
 
 @pages.route('/<path:path>/')
 def page(path):
@@ -29,6 +39,7 @@ def page(path):
         return render_template(path + '.html')
     except TemplateNotFound:
         abort(404)
+
 
 app.register_blueprint(pages)
 
@@ -53,17 +64,20 @@ def post(year, month, day, path):
         abort(404)
     return render_template('post.html', post=post)
 
+
 def tag_in_list(list_of_tags, tag):
     for i in list_of_tags:
         if i['tag'] == tag:
             return True
     return False
 
+
 def increment_tag_count(list_of_tags, tag):
     for i in list_of_tags:
         if i['tag'] == tag:
             i['count'] += 1
     return list_of_tags
+
 
 @app.route('/tags/')
 def all_tags():
@@ -81,7 +95,7 @@ def all_tags():
 def tag(tag):
     tagged = [p for p in posts if tag in p.meta.get('tags', [])]
     sorted_posts = sorted(tagged, reverse=True,
-        key=lambda p: p.meta.get('date'))
+                          key=lambda p: p.meta.get('date'))
     return render_template('tag.html', posts=sorted_posts, tag=tag)
 
 
@@ -89,7 +103,7 @@ def tag(tag):
 def author(author):
     author_posts = [p for p in posts if author == p.meta.get('author', '')]
     sorted_posts = sorted(author_posts, reverse=True,
-        key=lambda p: p.meta.get('date'))
+                          key=lambda p: p.meta.get('date'))
     return render_template('author.html', author=author, posts=sorted_posts)
 
 
@@ -97,7 +111,7 @@ def author(author):
 def year(year):
     year_posts = [p for p in posts if year == p.meta.get('date', []).year]
     sorted_posts = sorted(year_posts, reverse=False,
-        key=lambda p: p.meta.get('date'))
+                          key=lambda p: p.meta.get('date'))
     return render_template('year.html', year=year, posts=sorted_posts)
 
 
@@ -105,7 +119,7 @@ def year(year):
 def month(year, month):
     month_posts = [p for p in posts if year == p.meta.get('date').year and month == p.meta.get('date').month == month]
     sorted_posts = sorted(month_posts, reverse=False,
-        key=lambda p: p.meta.get('date'))
+                          key=lambda p: p.meta.get('date'))
     month_string = MONTHS[month]
     return render_template('month.html', year=year, month_string=month_string, posts=sorted_posts)
 
@@ -128,12 +142,12 @@ def year():
 def month():
     for post in posts:
         yield {'year': post.meta.get('date').year,
-              'month': post.meta.get('date').month}
+               'month': post.meta.get('date').month}
 
 
 @freezer.register_generator
 def day():
     for post in posts:
         yield {'year': post.meta.get('date').year,
-              'month': post.meta.get('date').month,
-              'day': post.meta.get('date').day}
+               'month': post.meta.get('date').month,
+               'day': post.meta.get('date').day}
