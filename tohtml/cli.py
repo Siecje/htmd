@@ -86,21 +86,23 @@ def build(ctx):
 @click.option('--host', '-h', default='127.0.0.1', help='Location to access the files.')
 @click.option('--port', '-p', default=9090, help='Port on which to serve the files.')
 def preview(ctx, host, port):
+    from sitebuilder import app as build_app
+    build_app.run(debug=True, host=host, port=port)
     # build static site
-    valid = ctx.invoke(build)
-    if valid is True:
-        # Serve the build folder
-        from sitebuilder import app as build_app
-        app = Flask(__name__, static_folder=os.path.join(os.getcwd(), build_app.config.get('BUILD_FOLDER')))
-
-        @app.route('/')
-        def index():
-            return app.send_static_file('index.html')
-
-        @app.route('/<path:path>')
-        def serve_index_files(path):
-            if path.endswith('/'):
-                return app.send_static_file(os.path.join(path, 'index.html'))
-            return app.send_static_file(path)
-
-        app.run(debug=True, host=host, port=port)
+    # valid = ctx.invoke(build)
+    # if valid is True:
+    #     # Serve the build folder
+    #     from sitebuilder import app as build_app
+    #     app = Flask(__name__, static_folder=os.path.join(os.getcwd(), build_app.config.get('BUILD_FOLDER')))
+    #
+    #     @app.route('/')
+    #     def index():
+    #         return app.send_static_file('index.html')
+    #
+    #     @app.route('/<path:path>')
+    #     def serve_index_files(path):
+    #         if path.endswith('/'):
+    #             return app.send_static_file(os.path.join(path, 'index.html'))
+    #         return app.send_static_file(path)
+    #
+    #     app.run(debug=True, host=host, port=port)

@@ -5,4 +5,6 @@ PAGES_FOLDER = 'pages'
 BUILD_FOLDER = 'build'
 
 SITE_NAME = ''
+SITE_URL = ''
+FEED_SUBTITLE = ''
 SHOW_AUTHOR = True

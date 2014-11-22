@@ -1,7 +1,5 @@
 default font (**is** is hard to see the dot)
-better error messages for cli
-minimize HTML
-feeds atom etc (is there JSON feed?)
+minimize CSS
 404 page (nginx.conf?)
 register all routes with frozen flask in case links in templates are changed?
 highlight menu items when you are on that page?
@@ -18,6 +16,13 @@ preprocess calculate width of nav li elements?
 translations? (automatically select the correct language based on request headers)
 order commands in help?
 If preview is running and you update a post you will not see changes until you build again (preview flask app? instead of static folder?)
+document how to maintain
+be able to sort posts directory?
+tell you which files have changed in build?
+keep track of updates for 'updated' in feed?
+Atom feed per tag
+global author setting?
+specify version in requirements in setup.py
 
 ###Docs
 - how to use another theme, basically replace templates
