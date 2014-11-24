@@ -1,5 +1,17 @@
 {% extends '_layout.html' %}
 
+{% block title %}Home{% endblock title %}
+
+{% block meta_tags %}
+  {{ super() }}
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="{{ url_for('page', path='about.html' }}">
+  <meta property="og:title" content="About">
+  <meta property="og:description" content="This is the about page.">
+  {# static/about.png is an example and does not exist #}
+  <meta property="og:image" content="{{ url_for('static', filename='about.png', _external=True )}}">
+{% endblock meta_tags %}
+
 {% block content %}
   <article>
     <h1>About</h1>

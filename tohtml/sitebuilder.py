@@ -6,11 +6,13 @@ from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
 from flask.ext.flatpages import FlatPages
 from flask_frozen import Freezer
 from htmlmin import minify
-from csscompressor import compress
-from flask.helpers import send_from_directory
 
 
 app = Flask(__name__, static_folder=None)
+# Load default config
+app.config.from_pyfile('config.py')
+
+# Override defaults
 try:
     app.config.from_pyfile(os.path.join(os.getcwd(), 'config.py'))
 except IOError:
@@ -25,8 +27,7 @@ app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
 posts = FlatPages(app)
 freezer = Freezer(app)
 
-app.jinja_env.globals['SITE_NAME'] = app.config['SITE_NAME']
-app.jinja_env.globals['SHOW_AUTHOR'] = app.config['SHOW_AUTHOR']
+app.jinja_env.globals = app.config
 
 app.jinja_loader = ChoiceLoader([
     FileSystemLoader(os.path.join(os.getcwd(), 'templates/')),
@@ -49,21 +50,6 @@ def page(path):
 app.register_blueprint(pages)
 
 
-@app.route('/static/<path:filename>')
-def static(filename):
-    """ Overridden to compress CSS """
-    #TODO: check if file exists
-    #TODO: setting for static folder?
-    try:
-        if filename.endswith('.css'):
-            response = send_from_directory('static', filename)
-            response.data = compress(response.data)
-            return response
-        return send_from_directory('static', filename)
-    except TemplateNotFound:
-        abort(404)
-
-
 @app.route('/')
 def index():
     latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('date'))
@@ -72,13 +58,13 @@ def index():
 
 @app.route('/feed.atom')
 def feed():
-    name = app.config.get('SITE_NAME') or 'Recent Blog Posts'
-    subtitle = app.config.get('FEED_SUBTITLE')
+    name = app.config.get('SITE_NAME')
+    subtitle = app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
     url = app.config.get('URL')
     feed = AtomFeed(title=name, subtitle=subtitle, feed_url=url_for('all_posts'), url=url)
     for post in posts:
         feed.add(post.meta.get('title'), unicode(post.html), content_type='html',
-                author=post.meta.get('author'),
+                author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
                 url=url_for('post', year=post.meta.get('date').year, month=post.meta.get('date').month, day=post.meta.get('date').day, path=post.path),
                 updated=post.meta.get('date'))
     return make_response(feed.to_string().encode('utf-8') + '\n')

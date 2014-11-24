@@ -28,21 +28,21 @@ def copy_file(src, dest):
 @cli.command('start', short_help='Create example files to get started.')
 def start():
     create_directory('templates/')
-    create_directory('static/')
-    create_directory('pages/')
-    create_directory('posts/')
-    copy_file(os.path.join(os.path.dirname(__file__), 'config.py'),
-              os.path.join('config.py'))
     copy_file(os.path.join(os.path.dirname(__file__), 'templates', '_layout.html'),
-              os.path.join('templates/', '_layout.html'))
+          os.path.join('templates/', '_layout.html'))
+    create_directory('static/')
     copy_file(os.path.join(os.path.dirname(__file__), 'static', 'reset.css'),
               os.path.join('static/', 'reset.css'))
     copy_file(os.path.join(os.path.dirname(__file__), 'static', 'style.css'),
               os.path.join('static/', 'style.css'))
+    create_directory('pages/')
     copy_file(os.path.join(os.path.dirname(__file__), 'about.html'),
               os.path.join('pages/', 'about.html'))
+    create_directory('posts/')
     copy_file(os.path.join(os.path.dirname(__file__), 'example.md'),
               os.path.join('posts/', 'example.md'))
+    copy_file(os.path.join(os.path.dirname(__file__), 'config.py'),
+              os.path.join('config.py'))
     click.echo('Add the site name and edit settings in config.py')
 
 

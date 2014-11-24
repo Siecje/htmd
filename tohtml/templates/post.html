@@ -2,12 +2,41 @@
 
 {% block title %}{{post.title}}{% endblock title %}
 
+{% block meta_tags %}
+  {{ super() }}
+  {% if post.description %}
+    <meta name="description" content="{{ post.description }}">
+  {% endif %}
+  {% if post.tags %}
+    <meta name="keywords" content="{{ post.tags}}">
+  {% endif %}
+
+  {# Open Graph Tags #}
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="{{ url_for('post', year=post.meta['date'].year, month=post.meta['date'].month, day=post.meta['date'].day, path=post.path, _external=True) }}">
+  <meta property="og:title" content="{{post.title}}">
+  <meta property="og:description" content="{{post.description}}">
+  {% if post.image or SITE_LOGO %}
+    <meta property="og:image" content="{{ url_for('static', filename=post.image or SITE_LOGO, _external=True )}}">
+  {% endif %}
+
+  {% if post.facebook_url or DEFAULT_AUTHOR_FACEBOOK %}
+    <meta property="article:author" content="{{ post.facebook_url or DEFAULT_AUTHOR_FACEBOOK }}">
+  {% endif %}
+
+  {# Twitter Specific Tags #}
+  {% if post.twitter_username or DEFAULT_AUTHOR_TWITTER %}
+    <meta name="twitter:creator" content="{{post.twitter_username or DEFAULT_AUTHOR_TWITTER}}">
+  {% endif %}
+{% endblock meta_tags %}
+
 {% block content %}
+  {# TODO: use post.image #}
   <article>
     <h1>{{ post.title }}</h1>
     <h2 class="subheading">{{ post.subtitle }}</h2>
     {% if SHOW_AUTHOR %}
-        <span class="meta">Posted by <a href="{{ url_for('author', author = post.author)}}">{{ post.author}} </a> on {{ post.date }}</span>
+        <span class="meta">Posted by <a href="{{ url_for('author', author = post.author or DEFAULT_AUTHOR)}}">{{ post.author}} </a> on {{ post.date }}</span>
     {% endif %}
     {{ post.html |safe }}
 

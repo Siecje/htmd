@@ -4,6 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>{% block title %}{% endblock title %} | {{SITE_NAME}}</title>
+  {% block meta_tags %}
+    <meta property="og:site_name" content="{{ SITENAME }}">
+    {# Facebook specific Tags #}
+    {% if FACEBOOK_APP_ID %}
+      <meta property="fb:app_id" content="{{ FACEBOOK_APP_ID }}">
+    {% endif %}
+    {% if SITE_FACEBOOK %}
+      <meta property="article:publisher" content="{{ SITE_FACEBOOK }}">
+    {% endif %}
+
+    {% if SITE_TWITTER %}
+      <meta name="twitter.card" content="summary">
+      <meta name="twitter:site" content="{{ SITE_TWITTER }}">
+    {% endif %}
+  {% endblock meta_tags %}
   <link href="http://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
   <link href="{{ url_for('static', filename='reset.css') }}" rel="stylesheet" type="text/css">
   <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" type="text/css">

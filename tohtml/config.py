@@ -1,10 +1,29 @@
-POSTS_EXTENSION = '.md'
+SITE_NAME = ''
+SITE_URL = ''
 
+### Optional Settings ###
+SITE_LOGO = ''
+
+SITE_DESCRIPTION = ''
+# @site_username
+SITE_TWITTER = ''
+# URL of a Facebook page
+SITE_FACEBOOK = ''
+# Unique Facebook ID used for platforminsights
+# https://developers.facebook.com/docs/platforminsights
+FACEBOOK_APP_ID = ''
+
+# Where to look for files
 POSTS_FOLDER = 'posts'
 PAGES_FOLDER = 'pages'
 BUILD_FOLDER = 'build'
 
-SITE_NAME = ''
-SITE_URL = ''
-FEED_SUBTITLE = ''
+POSTS_EXTENSION = '.md'
+
+# Show author and date at the top of every post?
 SHOW_AUTHOR = True
+# Author to use if author is not specified in post file
+DEFAULT_AUTHOR = ''
+# @twitter_username
+DEFAULT_AUTHOR_TWITTER = ''
+DEFAULT_AUTHOR_FACEBOOK = ''

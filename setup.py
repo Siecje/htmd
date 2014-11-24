@@ -10,8 +10,7 @@ setup(
         'Flask-FlatPages',
         'Frozen-Flask',
         'click',
-        'htmlmin',
-        'csscompressor'
+        'htmlmin'
     ],
     entry_points='''
         [console_scripts]
