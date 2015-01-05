@@ -1,3 +1,4 @@
+reload page when the file has been saved.
 start command with flag to include all templates?
 default font (**is** is hard to see the dot)
 minimize CSS
@@ -18,7 +19,6 @@ preprocess calculate width of nav li elements?
 translations? (automatically select the correct language based on request headers) (og meta translation tags)
 multiple og meta tag images?
 If preview is running and you update a post you will not see changes until you build again (preview flask app? instead of static folder?)
-document how to maintain
 be able to sort posts directory?
 tell you which files have changed in build?
 how to keep track of updates for 'updated' in feed?
@@ -27,6 +27,8 @@ how to add ads in a good way (tutorial)
 complete guest post template command
 Add draft posts
 ensure draft posts are not crawled
+sitemap?
+on home page just show site name in title
 
 ###Change log
 - Posts are sorted

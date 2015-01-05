@@ -7,10 +7,11 @@ Some issues I had were:
 - I didn't want the generated site to follow the same folder structure as the pages you created.
 So if you wanted the date in the URL you need to create a folder for the year, month and date,
 instead of having a single directory of all of the posts.
-- I didn't want to include all of the templates being, only overwrite the ones I modified.
+- I didn't want to include all of the templates being used, only overwrite the ones I modified.
+- I wanted it to be obvious where the content was coming from.
+Some static site generators I tried created a template website with content on the home page but the index.html file had no content.
 - It wasn't obvious how to set a value to use in multiple templates.
 - If you made changes to one of your templates and ran build you wouldn't update existing files unless you deleted your build folder everytime.
-
 
 
 ###What is the difference between posts and pages?

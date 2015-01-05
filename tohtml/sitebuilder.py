@@ -27,7 +27,9 @@ app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
 posts = FlatPages(app)
 freezer = Freezer(app)
 
-app.jinja_env.globals = app.config
+# Allow config settings (even new user created ones) to be used in templates
+for key in app.config:
+    app.jinja_env.globals[key] = app.config[key]
 
 app.jinja_loader = ChoiceLoader([
     FileSystemLoader(os.path.join(os.getcwd(), 'templates/')),
