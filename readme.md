@@ -37,6 +37,10 @@ The complete list of templates can be found [here](TODO: link to templates).
 ###Getting Started
 
 ```bash
+$ pip install htmd
+```
+
+```bash
 Commands:
   start    Create example files to get started.
   verify   Verify posts formatting is correct.
