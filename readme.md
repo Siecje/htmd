@@ -34,4 +34,14 @@ You can add a link to CSS file that you have created in ```static/```.
 To change other pages you will need to override the page template by creating a file with the same name in the ```templates/``` folder.
 The complete list of templates can be found [here](TODO: link to templates).
 
+###Getting Started
+
+```bash
+Commands:
+  start    Create example files to get started.
+  verify   Verify posts formatting is correct.
+  build    Create static version of the site.
+  preview  Serve files to preview site.
+```
+
 ###MIT License
