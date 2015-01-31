@@ -1,5 +1,5 @@
 <div class="post-preview">
-  <a href="{{ url_for("post", year=post.meta['date'].year, month=post.meta['date'].month, day=post.meta['date'].day, path=post.path) }}">
+  <a href="{{ url_for("post", year=post.meta['published'].year, month=post.meta['published'].month, day=post.meta['published'].day, path=post.path) }}">
     <h2 class="post-title">
       {{ post.title }}
     </h2>
@@ -8,7 +8,7 @@
     </h3>
   </a>
   {% if SHOW_AUTHOR %}
-    <p class="post-meta">Posted by <a href="{{ url_for('author', author=post.author or DEFAULT_AUTHOR)}}">{{ post.author }}</a> on {{ post.date }}</p>
+    <p class="post-meta">Posted by <a href="{{ url_for('author', author=post.author or DEFAULT_AUTHOR)}}">{{ post.author }}</a> on {{ post.published }}</p>
   {% endif %}
   {% if post.meta.tags|length %}
     <p>

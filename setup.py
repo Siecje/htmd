@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(
-    name='tohtml',
+    name='htmd',
     version='1.0',
-    packages=['tohtml'],
+    packages=['htmd'],
     include_package_data=True,
     install_requires=[
         'flask',
@@ -14,7 +14,7 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        tohtml=tohtml.cli:cli
+        htmd=htmd.cli:cli
     ''',
-    zip_safe=False,  # Required to have template files
+    zip_safe=False,  # Required to have template files as files (not strings)
 )

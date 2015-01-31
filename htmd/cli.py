@@ -50,24 +50,29 @@ def start():
 def verify():
     # import is here to avoid looking for the config
     # which doesn't exist until you run start
-    from sitebuilder import posts
+    from site import posts
     correct = True
     for post in posts:
-        for item in ['author', 'title', 'date']:
+        for item in ['author', 'title', 'published']:
             if item not in post.meta:
                 correct = False
-                click.echo(click.style('%s does not have %s', post.path, item, fg='red'))
-        if 'date' in post.meta:
+                click.echo(click.style('%s does not have %s' % (post.path, item), fg='red'))
+        if 'published' in post.meta:
             try:
-                post.meta.get('date').year
+                post.meta.get('published').year
             except AttributeError:
                 correct = False
-                click.echo(click.style('Date %s for %s is not in the format YYYY-MM-DD' % (post.meta.get('date'), post.path), fg='red'))
+                click.echo(click.style('Published date %s for %s is not in the format YYYY-MM-DD' % (post.meta.get('published'), post.path), fg='red'))
     if correct is True:
         click.echo(click.style('All posts are correctly formatted.', fg='green'))
+
+    # Check if SITE_NAME exists
+    from site import app
+    if not app.config['SITE_NAME']:
+        click.echo(click.style('Specify SITE_NAME in config.py.', fg='red'))
+    if app.config['SITE_NAME'] and correct:
         return True
-    else:
-        return False
+    return False
 
 
 @cli.command('build', short_help='Create static version of the site.')
@@ -75,7 +80,7 @@ def verify():
 def build(ctx):
     valid = ctx.invoke(verify)
     if valid:
-        from sitebuilder import freezer, app
+        from site import freezer, app
         freezer.freeze()
         click.echo(click.style('Static site was created in %s' % app.config.get('FREEZER_DESTINATION'), fg='green'))
     return valid
@@ -86,13 +91,13 @@ def build(ctx):
 @click.option('--host', '-h', default='127.0.0.1', help='Location to access the files.')
 @click.option('--port', '-p', default=9090, help='Port on which to serve the files.')
 def preview(ctx, host, port):
-    from sitebuilder import app as build_app
+    from site import app as build_app
     build_app.run(debug=True, host=host, port=port)
     # build static site
     # valid = ctx.invoke(build)
     # if valid is True:
     #     # Serve the build folder
-    #     from sitebuilder import app as build_app
+    #     from site import app as build_app
     #     app = Flask(__name__, static_folder=os.path.join(os.getcwd(), build_app.config.get('BUILD_FOLDER')))
     #
     #     @app.route('/')

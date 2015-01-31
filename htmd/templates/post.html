@@ -13,7 +13,7 @@
 
   {# Open Graph Tags #}
   <meta property="og:type" content="article">
-  <meta property="og:url" content="{{ url_for('post', year=post.meta['date'].year, month=post.meta['date'].month, day=post.meta['date'].day, path=post.path, _external=True) }}">
+  <meta property="og:url" content="{{ url_for('post', year=post.meta['published'].year, month=post.meta['published'].month, day=post.meta['published'].day, path=post.path, _external=True) }}">
   <meta property="og:title" content="{{post.title}}">
   <meta property="og:description" content="{{post.description}}">
   {% if post.image or SITE_LOGO %}

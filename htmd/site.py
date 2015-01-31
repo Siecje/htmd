@@ -1,3 +1,4 @@
+from datetime import datetime, time
 import os
 import sys
 from werkzeug.contrib.atom import AtomFeed
@@ -8,7 +9,7 @@ from flask_frozen import Freezer
 from htmlmin import minify
 
 
-app = Flask(__name__, static_folder=None)
+app = Flask(__name__, static_folder=os.path.join(os.getcwd(), 'static'))
 # Load default config
 app.config.from_pyfile('config.py')
 
@@ -54,11 +55,11 @@ app.register_blueprint(pages)
 
 @app.route('/')
 def index():
-    latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('date'))
+    latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
     return minify(render_template('index.html', posts=latest[:4]))
 
 
-@app.route('/feed.atom')
+@app.route('/feed.atom/')
 def feed():
     name = app.config.get('SITE_NAME')
     subtitle = app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
@@ -67,14 +68,14 @@ def feed():
     for post in posts:
         feed.add(post.meta.get('title'), unicode(post.html), content_type='html',
                 author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
-                url=url_for('post', year=post.meta.get('date').year, month=post.meta.get('date').month, day=post.meta.get('date').day, path=post.path),
-                updated=post.meta.get('date'))
+                url=url_for('post', year=post.meta.get('published').year, month=post.meta.get('published').month, day=post.meta.get('published').day, path=post.path),
+                updated=datetime.combine(post.meta.get('updated') or post.meta.get('published'), time()))
     return make_response(feed.to_string().encode('utf-8') + '\n')
 
 
 @app.route('/all/')
 def all_posts():
-    latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('date'))
+    latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
     return minify(render_template('all_posts.html', posts=latest))
 
 
@@ -82,7 +83,7 @@ def all_posts():
 def post(year, month, day, path):
     post = posts.get_or_404(path)
     date = '%04d-%02d-%02d' % (year, month, day)
-    if str(post.meta.get('date')) != date:
+    if str(post.meta.get('published')) != date:
         abort(404)
     return minify(render_template('post.html', post=post))
 
@@ -117,7 +118,7 @@ def all_tags():
 def tag(tag):
     tagged = [p for p in posts if tag in p.meta.get('tags', [])]
     sorted_posts = sorted(tagged, reverse=True,
-                          key=lambda p: p.meta.get('date'))
+                          key=lambda p: p.meta.get('published'))
     return minify(render_template('tag.html', posts=sorted_posts, tag=tag))
 
 
@@ -125,30 +126,30 @@ def tag(tag):
 def author(author):
     author_posts = [p for p in posts if author == p.meta.get('author', '')]
     sorted_posts = sorted(author_posts, reverse=True,
-                          key=lambda p: p.meta.get('date'))
+                          key=lambda p: p.meta.get('published'))
     return minify(render_template('author.html', author=author, posts=sorted_posts))
 
 
 @app.route('/<int:year>/')
 def year(year):
-    year_posts = [p for p in posts if year == p.meta.get('date', []).year]
+    year_posts = [p for p in posts if year == p.meta.get('published', []).year]
     sorted_posts = sorted(year_posts, reverse=False,
-                          key=lambda p: p.meta.get('date'))
+                          key=lambda p: p.meta.get('published'))
     return minify(render_template('year.html', year=year, posts=sorted_posts))
 
 
 @app.route('/<int:year>/<int:month>/')
 def month(year, month):
-    month_posts = [p for p in posts if year == p.meta.get('date').year and month == p.meta.get('date').month == month]
+    month_posts = [p for p in posts if year == p.meta.get('published').year and month == p.meta.get('published').month == month]
     sorted_posts = sorted(month_posts, reverse=False,
-                          key=lambda p: p.meta.get('date'))
+                          key=lambda p: p.meta.get('published'))
     month_string = MONTHS[month]
     return minify(render_template('month.html', year=year, month_string=month_string, posts=sorted_posts))
 
 
 @app.route('/<int:year>/<int:month>/<int:day>/')
 def day(year, month, day):
-    day_posts = [p for p in posts if year == p.meta.get('date').year and month == p.meta.get('date').month == month]
+    day_posts = [p for p in posts if year == p.meta.get('published').year and month == p.meta.get('published').month == month]
     month_string = MONTHS[month]
     return minify(render_template('day.html', year=year, month_string=month_string, day=day, posts=day_posts))
 
@@ -157,19 +158,19 @@ def day(year, month, day):
 @freezer.register_generator
 def year():
     for post in posts:
-        yield {'year': post.meta.get('date').year}
+        yield {'year': post.meta.get('published').year}
 
 
 @freezer.register_generator
 def month():
     for post in posts:
-        yield {'year': post.meta.get('date').year,
-               'month': post.meta.get('date').month}
+        yield {'year': post.meta.get('published').year,
+               'month': post.meta.get('published').month}
 
 
 @freezer.register_generator
 def day():
     for post in posts:
-        yield {'year': post.meta.get('date').year,
-               'month': post.meta.get('date').month,
-               'day': post.meta.get('date').day}
+        yield {'year': post.meta.get('published').year,
+               'month': post.meta.get('published').month,
+               'day': post.meta.get('published').day}

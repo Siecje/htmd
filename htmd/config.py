@@ -1,4 +1,4 @@
-SITE_NAME = ''
+SITE_NAME = 'HTMD'
 SITE_URL = ''
 
 ### Optional Settings ###
@@ -14,6 +14,7 @@ SITE_FACEBOOK = ''
 FACEBOOK_APP_ID = ''
 
 # Where to look for files
+STATIC_FOLDER = 'static'
 POSTS_FOLDER = 'posts'
 PAGES_FOLDER = 'pages'
 BUILD_FOLDER = 'build'
