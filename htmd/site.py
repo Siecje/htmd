@@ -25,6 +25,10 @@ app.config['FLATPAGES_ROOT'] = os.path.join(os.getcwd(), app.config.get('POSTS_F
 app.config['FREEZER_DESTINATION'] = os.path.join(os.getcwd(), app.config.get('BUILD_FOLDER'))
 app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
 
+app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
+app.config['INCLUDE_CSS'] = 'combined.min.css' in os.listdir(app.static_folder)
+
+
 posts = FlatPages(app)
 freezer = Freezer(app)
 

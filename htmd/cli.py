@@ -1,6 +1,8 @@
 import os
 import shutil
 import click
+from csscompressor import compress
+from jsmin import jsmin
 from flask import Flask
 
 
@@ -23,6 +25,44 @@ def copy_file(src, dest):
         click.echo(click.style('%s was created.' % dest, fg='green'))
     else:
         click.echo(click.style('%s already exists and was not created.' % dest, fg='red'))
+
+
+def combine_and_minify_js():
+    from site import app
+    # Combine and minify all .js files in the static folder
+    js_files = sorted([f for f in os.listdir(app.static_folder) if f.endswith('.js') and f != 'combined.min.js'])
+    if not js_files:
+        # There are no .js files in the static folder
+        return
+    with open(os.path.join(app.static_folder, 'combined.min.js'), 'w') as master:
+        for f in js_files:
+            with open(os.path.join(app.static_folder, f), 'r') as js_file:
+                # combine all .js files into one
+                master.write(js_file.read())
+    # minify should be done after combined to avoid duplicate identifiers
+    # minifying each file will use 'a' for the first identifier
+    with open(os.path.join(app.static_folder, 'combined.min.js'), 'r') as master:
+        combined = master.read()
+    with open(os.path.join(app.static_folder, 'combined.min.js'), 'w') as master:
+        master.write(jsmin(combined))
+
+def combine_and_minify_css():
+    from site import app
+    # Combine and minify all .css files in the static folder
+    css_files = sorted([f for f in os.listdir(app.static_folder) if f.endswith('.css') and f != 'combined.min.css'])
+    if not css_files:
+        # There are no .css files in the static folder
+        return
+    with open(os.path.join(app.static_folder, 'combined.min.css'), 'w') as master:
+        for f in css_files:
+            with open(os.path.join(app.static_folder, f), 'r') as css_file:
+                # combine all .css files into one
+                master.write(css_file.read())
+
+    with open(os.path.join(app.static_folder, 'combined.min.css'), 'r') as master:
+        combined = master.read()
+    with open(os.path.join(app.static_folder, 'combined.min.css'), 'w') as master:
+        master.write(compress(combined))
 
 
 @cli.command('start', short_help='Create example files to get started.')
@@ -80,6 +120,8 @@ def verify():
 def build(ctx):
     valid = ctx.invoke(verify)
     if valid:
+        combine_and_minify_js()
+        combine_and_minify_css()
         from site import freezer, app
         freezer.freeze()
         click.echo(click.style('Static site was created in %s' % app.config.get('FREEZER_DESTINATION'), fg='green'))
@@ -91,23 +133,7 @@ def build(ctx):
 @click.option('--host', '-h', default='127.0.0.1', help='Location to access the files.')
 @click.option('--port', '-p', default=9090, help='Port on which to serve the files.')
 def preview(ctx, host, port):
+    combine_and_minify_js()
+    combine_and_minify_css()
     from site import app as build_app
     build_app.run(debug=True, host=host, port=port)
-    # build static site
-    # valid = ctx.invoke(build)
-    # if valid is True:
-    #     # Serve the build folder
-    #     from site import app as build_app
-    #     app = Flask(__name__, static_folder=os.path.join(os.getcwd(), build_app.config.get('BUILD_FOLDER')))
-    #
-    #     @app.route('/')
-    #     def index():
-    #         return app.send_static_file('index.html')
-    #
-    #     @app.route('/<path:path>')
-    #     def serve_index_files(path):
-    #         if path.endswith('/'):
-    #             return app.send_static_file(os.path.join(path, 'index.html'))
-    #         return app.send_static_file(path)
-    #
-    #     app.run(debug=True, host=host, port=port)
