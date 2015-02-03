@@ -1,13 +1,11 @@
 reload page when the file has been saved.
 start command with flag to include all templates?
 default font (**is** is hard to see the dot)
-minimize CSS
 disqus
 404 page
 register all routes with frozen flask in case links in templates are changed?
 highlight menu items when you are on that page?
 In order to use an egg do not copy files for 'start' instead use strings
-specify versions in install_requires?
 pagination?
 size tags on post page?
 use rst, ascidoc, etc, (extension for flask-pages?)
@@ -26,6 +24,5 @@ Atom feed per tag?
 how to add ads in a good way (tutorial)
 complete guest post template command
 Add draft posts
-ensure draft posts are not crawled
+ensure draft posts do not appear in lists
 sitemap?
-on home page just show site name in title
