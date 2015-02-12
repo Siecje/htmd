@@ -2,3 +2,4 @@ recursive-include htmd/templates *.*
 recursive-include htmd/static *.*
 recursive-include htmd about.html
 recursive-include htmd example.md
+include requirements.txt
