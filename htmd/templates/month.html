@@ -7,7 +7,9 @@
   <h1>Posts from {{month_string}} {{year}}</h1>
   <hr class="small">
   {% for post in posts %}
-    {% include "_list.html" %}
+    {% with show_text=False %}
+      {% include "_list.html" %}
+    {% endwith %}
   {% endfor %}
   </article>
 {% endblock content %}

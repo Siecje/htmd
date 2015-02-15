@@ -26,3 +26,6 @@ complete guest post template command
 Add draft posts
 ensure draft posts do not appear in lists
 sitemap?
+with compiled styles htmd preview has to be restarted to see changes.
+Can't make build/ a git repo since it is removed
+Bug Report: with htmd preview the text "<strong>Tags</strong>" appears on the index page. But not in index.html in build/

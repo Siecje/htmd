@@ -6,7 +6,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='htmd',
-    version='1.2',
+    version='1.3.0',
     packages=['htmd'],
     include_package_data=True,
     install_requires=requirements,

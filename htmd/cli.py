@@ -71,8 +71,8 @@ def start():
     copy_file(os.path.join(os.path.dirname(__file__), 'templates', '_layout.html'),
           os.path.join('templates/', '_layout.html'))
     create_directory('static/')
-    copy_file(os.path.join(os.path.dirname(__file__), 'static', 'reset.css'),
-              os.path.join('static/', 'reset.css'))
+    copy_file(os.path.join(os.path.dirname(__file__), 'static', '_reset.css'),
+              os.path.join('static/', '_reset.css'))
     copy_file(os.path.join(os.path.dirname(__file__), 'static', 'style.css'),
               os.path.join('static/', 'style.css'))
     create_directory('pages/')

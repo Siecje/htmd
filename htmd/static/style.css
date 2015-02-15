@@ -161,6 +161,18 @@ footer li a {
   }
 }
 
-strong {
+.strong {
   font-weight: bold;
+}
+
+.post-preview-link {
+  text-decoration: none;
+}
+
+.post-preview-link:visited {
+  color :black;
+}
+
+.post-title:hover {
+  color: blue;
 }

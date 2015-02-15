@@ -34,7 +34,9 @@
   {# TODO: use post.image #}
   <article>
     <h1>{{ post.title }}</h1>
-    <h2 class="subheading">{{ post.subtitle }}</h2>
+    {% if post.subtitle %}
+      <h2 class="subheading">{{ post.subtitle }}</h2>
+    {% endif %}
     {% if SHOW_AUTHOR %}
         <span class="meta">Posted by <a href="{{ url_for('author', author = post.author or DEFAULT_AUTHOR)}}">{{ post.author}} </a> on {{ post.date }}</span>
     {% endif %}
