@@ -1,5 +1,20 @@
 #Change log
 
+## Version 1.4.0
+###Features
+
+- Adding tag class to tag links
+- Adding option to prevent minification of JS, CSS, and HTML
+- Adding pygments stylesheet
+- Adding default styles for markdown elements
+
+## Version 1.3.0
+###Features
+
+- New option to show the beginning of the post in lists.
+- Removed default links styles for posts in lists.
+
+
 ## Version 1.3.0
 ###Features
 

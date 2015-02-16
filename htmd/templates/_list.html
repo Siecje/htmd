@@ -9,7 +9,7 @@
       </h3>
     {% endif %}
     {% if show_text %}
-      {{ post.html|safe|truncate(255) }}
+      {{ truncate_post_html(post.html)|safe }}
     {% endif %}
   </a>
   {% if SHOW_AUTHOR %}
@@ -18,7 +18,7 @@
   {% if post.meta.tags|length %}
     <p>
       {% for post_tag in post.meta.tags %}
-        <a href="{{ url_for("tag", tag=post_tag) }}">{{ post_tag }}</a>
+        <a href="{{ url_for("tag", tag=post_tag) }}" class="tag">{{ post_tag }}</a>
       {% endfor %}
     </p>
   {% endif %}

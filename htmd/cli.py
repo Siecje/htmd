@@ -117,13 +117,18 @@ def verify():
 
 @cli.command('build', short_help='Create static version of the site.')
 @click.pass_context
-def build(ctx):
+@click.option('--no-min', is_flag=True, help="Prevent JS and CSS from being minified")
+def build(ctx, no_min):
     valid = ctx.invoke(verify)
     if valid:
-        combine_and_minify_js()
-        combine_and_minify_css()
         from site import freezer, app
+        if no_min is False:
+          combine_and_minify_js()
+          combine_and_minify_css()
         freezer.freeze()
+        #if no_min is False:
+            # minify HTML files in build/
+            # TODO:
         click.echo(click.style('Static site was created in %s' % app.config.get('FREEZER_DESTINATION'), fg='green'))
     return valid
 
@@ -132,8 +137,10 @@ def build(ctx):
 @click.pass_context
 @click.option('--host', '-h', default='127.0.0.1', help='Location to access the files.')
 @click.option('--port', '-p', default=9090, help='Port on which to serve the files.')
-def preview(ctx, host, port):
-    combine_and_minify_js()
-    combine_and_minify_css()
+@click.option('--no-min', is_flag=True, help="Prevent JS and CSS from being minified")
+def preview(ctx, host, port, no_min):
+    if no_min is False:
+        combine_and_minify_js()
+        combine_and_minify_css()
     from site import app as build_app
     build_app.run(debug=True, host=host, port=port)

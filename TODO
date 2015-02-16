@@ -1,23 +1,19 @@
-reload page when the file has been saved.
 start command with flag to include all templates?
-default font (**is** is hard to see the dot)
+In order to use an egg do not copy files for 'start' instead use strings
 disqus
 404 page
 register all routes with frozen flask in case links in templates are changed?
 highlight menu items when you are on that page?
-In order to use an egg do not copy files for 'start' instead use strings
 pagination?
 size tags on post page?
 use rst, ascidoc, etc, (extension for flask-pages?)
 analytics
 If you don't have a trailing slash it tries to download a binary file
-make an nginx.conf?
-serve command has output twice.
+preview command has output twice. and flask message is cut off
 preprocess calculate width of nav li elements?
 translations? (automatically select the correct language based on request headers) (og meta translation tags)
 multiple og meta tag images?
-If preview is running and you update a post you will not see changes until you build again (preview flask app? instead of static folder?)
-be able to sort posts directory?
+be able to sort posts in posts directory?
 tell you which files have changed in build?
 how to keep track of updates for 'updated' in feed?
 Atom feed per tag?
@@ -28,4 +24,9 @@ ensure draft posts do not appear in lists
 sitemap?
 with compiled styles htmd preview has to be restarted to see changes.
 Can't make build/ a git repo since it is removed
-Bug Report: with htmd preview the text "<strong>Tags</strong>" appears on the index page. But not in index.html in build/
+clean up HTML format
+display date in _list even with no author
+autocomplete for typing a link to a post
+_reset.css starts with a underscore so that when it is combined it is first, but Jekyll ignores files that start with an underscore so this causes a problem with GitHub pages. Could add a .nojekyll file on start but it is more of a deployment issue, but could include information about it in the docs.
+https://help.github.com/articles/files-that-start-with-an-underscore-are-missing/
+use md in pages. markdown template tag

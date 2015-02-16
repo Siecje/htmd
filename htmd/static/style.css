@@ -19,7 +19,7 @@ img {
 
 body {
   font-size: 100%;
-  font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 
 h1 {
@@ -161,12 +161,22 @@ footer li a {
   }
 }
 
-.strong {
+/* Re-apply defaults after reset */
+strong {
   font-weight: bold;
+}
+
+em {
+  font-style: italic;
+}
+
+pre, code {
+  font-family: monospace;
 }
 
 .post-preview-link {
   text-decoration: none;
+  color: black;
 }
 
 .post-preview-link:visited {

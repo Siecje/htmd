@@ -1,6 +1,8 @@
+BeautifulSoup==3.2.1
 Flask==0.10.1
 Flask-FlatPages==0.5
 Frozen-Flask==0.11
+Pygments==2.0.2
 click==3.3
 htmlmin==0.1.5
 jsmin==2.1.0

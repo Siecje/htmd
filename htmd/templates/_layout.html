@@ -19,10 +19,10 @@
       <meta name="twitter:site" content="{{ SITE_TWITTER }}">
     {% endif %}
   {% endblock meta_tags %}
-  <link href="http://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
   {% if INCLUDE_CSS %}
     <link href="{{ url_for('static', filename='combined.min.css') }}" rel="stylesheet" type="text/css">
   {% endif %}
+  <link href="{{ url_for('pygments_css') }}" rel="stylesheet">
   <link href="{{ url_for('feed') }}" rel="alternate" title="{{ SITE_NAME }}" type="application/atom+xml">
 </head>
 <body>
