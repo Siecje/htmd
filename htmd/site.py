@@ -1,3 +1,4 @@
+from functools import wraps
 from datetime import datetime, time
 import os
 import sys
@@ -7,6 +8,8 @@ from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
 from flask.ext.flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
 from BeautifulSoup import BeautifulSoup
+from htmlmin import minify
+from html5print import HTMLBeautifier
 
 
 app = Flask(__name__, static_folder=os.path.join(os.getcwd(), 'static'))
@@ -49,6 +52,16 @@ app.jinja_loader = ChoiceLoader([
 MONTHS = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 
 pages = Blueprint('pages', __name__, template_folder=os.path.join(os.getcwd(), app.config.get('PAGES_FOLDER')))
+
+
+@app.after_request
+def format_html(response):
+    if response.mimetype == "text/html":
+        if app.config.get('PRETTY_HTML', False):
+            response.data = HTMLBeautifier.beautify(response.data, 2)
+        elif app.config.get('MINIFY_HTML', False):
+            response.data = minify(response.data)
+    return response
 
 
 @pages.route('/<path:path>/')

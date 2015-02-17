@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>{% block title %}{% endblock title %} | {{SITE_NAME}}</title>
   {% block meta_tags %}
-    <meta property="og:site_name" content="{{ SITENAME }}">
+    {% if SITE_NAME %}
+      <meta property="og:site_name" content="{{ SITE_NAME }}">
+    {% endif %}
     {# Facebook specific Tags #}
     {% if FACEBOOK_APP_ID %}
       <meta property="fb:app_id" content="{{ FACEBOOK_APP_ID }}">

@@ -30,3 +30,5 @@ autocomplete for typing a link to a post
 _reset.css starts with a underscore so that when it is combined it is first, but Jekyll ignores files that start with an underscore so this causes a problem with GitHub pages. Could add a .nojekyll file on start but it is more of a deployment issue, but could include information about it in the docs.
 https://help.github.com/articles/files-that-start-with-an-underscore-are-missing/
 use md in pages. markdown template tag
+pretty html causes issues with links at the end of sentences. Need to not put a, i, title on different lines.
+

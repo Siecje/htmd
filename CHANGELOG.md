@@ -1,5 +1,12 @@
 #Change log
 
+## Version 1.5.0
+###Features
+
+- Adding setting MINIFY_HTML to minify resulting HTML
+- Adding setting PRETTY_HTML to fix indentation of resulting HTML
+- Fixing SITE_NAME bug in og:site_name
+
 ## Version 1.4.0
 ###Features
 

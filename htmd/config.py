@@ -21,6 +21,10 @@ BUILD_FOLDER = 'build'
 
 POSTS_EXTENSION = '.md'
 
+# How to format HTML
+PRETTY_HTML = False
+MINIFY_HTML = False
+
 # Show author and date at the top of every post?
 SHOW_AUTHOR = True
 # Author to use if author is not specified in post file
