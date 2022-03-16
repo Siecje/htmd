@@ -135,10 +135,6 @@ def verify():
     return False
 
 
-def fix_404():
-    os.rename(os.path.join("build", "404"), os.path.join("build", "404.html"))
-
-
 @cli.command('build', short_help='Create static version of the site.')
 @click.pass_context
 @click.option('--no-min', is_flag=True, help="Prevent JS and CSS from being minified")
@@ -150,8 +146,6 @@ def build(ctx, no_min):
           combine_and_minify_js()
           combine_and_minify_css()
         freezer.freeze()
-
-        fix_404()
 
         #if no_min is False:
             # minify HTML files in build/

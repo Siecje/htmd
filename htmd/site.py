@@ -157,6 +157,11 @@ def author(author):
     return render_template('author.html', active='author', author=author, posts=sorted_posts)
 
 
+@app.route('/404.html')
+def not_found():
+    return render_template('404.html')
+
+
 @app.route('/<int:year>/')
 def year(year):
     year_posts = [p for p in posts if year == p.meta.get('published', []).year]
@@ -206,14 +211,3 @@ def day():
         yield {'year': post.meta.get('published').year,
                'month': post.meta.get('published').month,
                'day': post.meta.get('published').day}
-
-
-@freezer.register_generator
-def error_handlers():
-    # We want a 404.html file in the build directory
-    # Can't use "/404.html" here because build will fail
-    # We can continue build with 404 status codes
-    # But we want to know when we link to non existant pages
-    # I don't know why this does't also cause the build to fail
-    # See fix_404() in cli.py
-    yield "/404"
