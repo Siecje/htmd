@@ -1,14 +1,9 @@
 In order to use an egg do not copy files for 'start' instead use strings
 register all routes with frozen flask in case links in templates are changed?
 pagination?
-size tags on post page?
 analytics
-If you don't have a trailing slash it tries to download a binary file
-preprocess calculate width of nav li elements?
 translations? (automatically select the correct language based on request headers) (og meta translation tags)
 multiple og meta tag images?
-be able to sort posts in posts directory?
-tell you which files have changed in build?
 how to keep track of updates for 'updated' in feed?
 Atom feed per tag?
 how to add ads in a good way (tutorial)
@@ -21,7 +16,6 @@ autocomplete for typing a link to a post
 _reset.css starts with a underscore so that when it is combined it is first, but Jekyll ignores files that start with an underscore so this causes a problem with GitHub pages. Could add a .nojekyll file on start but it is more of a deployment issue, but could include information about it in the docs.
 https://help.github.com/articles/files-that-start-with-an-underscore-are-missing/
 use md in pages. markdown template tag
-pretty html causes issues with links at the end of sentences. Need to not put a, i, title on different lines.
 remove feedwerk and use a simple template
 use reset style sheet from a package?
 have any htmd command work inside an htmd project, find the project root and use it as cwd
