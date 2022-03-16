@@ -180,6 +180,11 @@ def day(year, month, day):
     return render_template('day.html', year=year, month_string=month_string, day=day, posts=day_posts)
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+
 # Telling Frozen-Flask about routes that are not linked to in templates
 @freezer.register_generator
 def year():
@@ -200,3 +205,10 @@ def day():
         yield {'year': post.meta.get('published').year,
                'month': post.meta.get('published').month,
                'day': post.meta.get('published').day}
+
+
+@freezer.register_generator
+def error_handlers():
+    # Can't use "/404.html" here because build will fail
+    # See fix_404() in cli.py
+    yield "/404"
