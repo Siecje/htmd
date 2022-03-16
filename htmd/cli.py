@@ -66,23 +66,41 @@ def combine_and_minify_css():
         master.write(compress(combined))
 
 
+def copy_missing_templates():
+    htmd_dir = os.path.dirname(__file__)
+    template_dir = os.path.join(htmd_dir, 'templates')
+    for template_file in os.listdir(template_dir):
+        copy_file(os.path.join(template_dir, template_file),
+            os.path.join('templates', template_file))
+
+
 @cli.command('start', short_help='Create example files to get started.')
-def start():
+@click.option('--all-templates', is_flag=True, default=False, help="Include all templates.")
+def start(all_templates):
+    htmd_dir = os.path.dirname(__file__)
+
     create_directory('templates/')
-    copy_file(os.path.join(os.path.dirname(__file__), 'templates', '_layout.html'),
+    if all_templates:
+        copy_missing_templates()
+    else:
+        copy_file(os.path.join(htmd_dir, 'templates', '_layout.html'),
           os.path.join('templates/', '_layout.html'))
+
     create_directory('static/')
-    copy_file(os.path.join(os.path.dirname(__file__), 'static', '_reset.css'),
+    copy_file(os.path.join(htmd_dir, 'static', '_reset.css'),
               os.path.join('static/', '_reset.css'))
-    copy_file(os.path.join(os.path.dirname(__file__), 'static', 'style.css'),
+    copy_file(os.path.join(htmd_dir, 'static', 'style.css'),
               os.path.join('static/', 'style.css'))
+    
     create_directory('pages/')
-    copy_file(os.path.join(os.path.dirname(__file__), 'about.html'),
+    copy_file(os.path.join(htmd_dir, 'about.html'),
               os.path.join('pages/', 'about.html'))
+    
     create_directory('posts/')
-    copy_file(os.path.join(os.path.dirname(__file__), 'example.md'),
+    copy_file(os.path.join(htmd_dir, 'example.md'),
               os.path.join('posts/', 'example.md'))
-    copy_file(os.path.join(os.path.dirname(__file__), 'config.py'),
+    
+    copy_file(os.path.join(htmd_dir, 'config.py'),
               os.path.join('config.py'))
     click.echo('Add the site name and edit settings in config.py')
 

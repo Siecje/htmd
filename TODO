@@ -1,6 +1,5 @@
-start command with flag to include all templates?
+add command to copy any templates that don't exist
 In order to use an egg do not copy files for 'start' instead use strings
-disqus
 404 page
 register all routes with frozen flask in case links in templates are changed?
 highlight menu items when you are on that page?

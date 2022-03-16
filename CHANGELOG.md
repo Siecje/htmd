@@ -1,5 +1,10 @@
 # Change log
 
+## [2.0.0] - 
+### Added
+- Python 3 support
+- --all-templates option for `htmd start`
+
 ## [1.5.0] - 2015-02-16
 ### Added
 - setting MINIFY_HTML to minify resulting HTML
