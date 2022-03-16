@@ -12,9 +12,12 @@
       {{ truncate_post_html(post.html)|safe }}
     {% endif %}
   </a>
-  {% if SHOW_AUTHOR %}
-    <p class="post-meta">Posted by <a href="{{ url_for('author', author=post.author or DEFAULT_AUTHOR)}}">{{ post.author }}</a> on {{ post.published }}</p>
-  {% endif %}
+  <p class="post-meta">Posted
+    {% if SHOW_AUTHOR %}
+    by <a href="{{ url_for('author', author=post.author or DEFAULT_AUTHOR)}}">{{ post.author }}</a>
+    {% endif %}
+    on {{ post.published }}.
+  </p>
   {% if post.meta.tags|length %}
     <p>
       {% for post_tag in post.meta.tags %}
