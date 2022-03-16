@@ -29,7 +29,7 @@ def copy_file(src, dest):
 
 
 def combine_and_minify_js():
-    from site import app
+    from .site import app
     # Combine and minify all .js files in the static folder
     js_files = sorted([f for f in os.listdir(app.static_folder) if f.endswith('.js') and f != 'combined.min.js'])
     if not js_files:
@@ -48,7 +48,7 @@ def combine_and_minify_js():
         master.write(jsmin(combined))
 
 def combine_and_minify_css():
-    from site import app
+    from .site import app
     # Combine and minify all .css files in the static folder
     css_files = sorted([f for f in os.listdir(app.static_folder) if f.endswith('.css') and f != 'combined.min.css'])
     if not css_files:
@@ -91,7 +91,7 @@ def start():
 def verify():
     # import is here to avoid looking for the config
     # which doesn't exist until you run start
-    from site import posts
+    from .site import posts
     correct = True
     for post in posts:
         for item in ['author', 'title', 'published']:
@@ -108,7 +108,7 @@ def verify():
         click.echo(click.style('All posts are correctly formatted.', fg='green'))
 
     # Check if SITE_NAME exists
-    from site import app
+    from .site import app
     if not app.config['SITE_NAME']:
         click.echo(click.style('Specify SITE_NAME in config.py.', fg='red'))
     if app.config['SITE_NAME'] and correct:
@@ -122,7 +122,7 @@ def verify():
 def build(ctx, no_min):
     valid = ctx.invoke(verify)
     if valid:
-        from site import freezer, app
+        from .site import freezer, app
         if no_min is False:
           combine_and_minify_js()
           combine_and_minify_css()
@@ -143,5 +143,5 @@ def preview(ctx, host, port, no_min):
     if no_min is False:
         combine_and_minify_js()
         combine_and_minify_css()
-    from site import app as build_app
+    from .site import app as build_app
     build_app.run(debug=True, host=host, port=port)

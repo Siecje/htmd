@@ -3,14 +3,13 @@ from functools import wraps
 import os
 import sys
 
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
+from feedwerk.atom import AtomFeed
 from flask import Flask, render_template, Blueprint, abort, url_for, make_response
-from flask.ext.flatpages import FlatPages, pygments_style_defs
+from flask_flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
-from html5print import HTMLBeautifier
 from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
-from werkzeug.contrib.atom import AtomFeed
 
 
 app = Flask(__name__, static_folder=os.path.join(os.getcwd(), 'static'))
@@ -21,7 +20,7 @@ app.config.from_pyfile('config.py')
 try:
     app.config.from_pyfile(os.path.join(os.getcwd(), 'config.py'))
 except IOError:
-    print 'Can not find config.py'
+    print('Can not find config.py')
     sys.exit()
 
 # To avoid full paths in config.py
@@ -41,7 +40,7 @@ for key in app.config:
     app.jinja_env.globals[key] = app.config[key]
 
 def truncate_post_html(post_html):
-    return BeautifulSoup(post_html[:255]).prettify()
+    return BeautifulSoup(post_html[:255], 'html.parser').prettify()
 
 app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 
@@ -59,7 +58,7 @@ pages = Blueprint('pages', __name__, template_folder=os.path.join(os.getcwd(), a
 def format_html(response):
     if response.mimetype == "text/html":
         if app.config.get('PRETTY_HTML', False):
-            response.data = HTMLBeautifier.beautify(response.data, 2)
+            response.data = BeautifulSoup(response.data, 'html.parser').prettify()
         elif app.config.get('MINIFY_HTML', False):
             response.data = minify(response.data)
     return response
@@ -93,11 +92,11 @@ def feed():
     url = app.config.get('URL')
     feed = AtomFeed(title=name, subtitle=subtitle, feed_url=url_for('all_posts'), url=url)
     for post in posts:
-        feed.add(post.meta.get('title'), unicode(post.html), content_type='html',
+        feed.add(post.meta.get('title'), post.html, content_type='html',
                 author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
                 url=url_for('post', year=post.meta.get('published').year, month=post.meta.get('published').month, day=post.meta.get('published').day, path=post.path),
                 updated=datetime.combine(post.meta.get('updated') or post.meta.get('published'), time()))
-    return make_response(feed.to_string().encode('utf-8') + '\n')
+    return make_response(feed.to_string().encode('utf-8') + b'\n')
 
 
 @app.route('/all/')
