@@ -26,6 +26,7 @@ except IOError:
 # To avoid full paths in config.py
 app.config['FLATPAGES_ROOT'] = os.path.join(os.getcwd(), app.config.get('POSTS_FOLDER'))
 app.config['FREEZER_DESTINATION'] = os.path.join(os.getcwd(), app.config.get('BUILD_FOLDER'))
+app.config['FREEZER_REMOVE_EXTRA_FILES'] = False
 app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
 
 app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
@@ -209,6 +210,10 @@ def day():
 
 @freezer.register_generator
 def error_handlers():
+    # We want a 404.html file in the build directory
     # Can't use "/404.html" here because build will fail
+    # We can continue build with 404 status codes
+    # But we want to know when we link to non existant pages
+    # I don't know why this does't also cause the build to fail
     # See fix_404() in cli.py
     yield "/404"

@@ -18,7 +18,6 @@ Add draft posts
 ensure draft posts do not appear in lists
 sitemap?
 with compiled styles htmd preview has to be restarted to see changes.
-Can't make build/ a git repo since it is removed
 clean up HTML format
 display date in _list even with no author
 autocomplete for typing a link to a post
