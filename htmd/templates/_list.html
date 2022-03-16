@@ -1,5 +1,5 @@
 <div class="post-preview">
-  <a href="{{ url_for("post", year=post.meta['published'].year, month=post.meta['published'].month, day=post.meta['published'].day, path=post.path) }}" class="post-preview-link">
+  <a href="{{ url_for("post", year=post.meta['published'].year, month=post.meta['published'].strftime('%m'), day=post.meta['published'].strftime('%d'), path=post.path) }}" class="post-preview-link">
     <h2 class="post-title">
       {{ post.title }}
     </h2>

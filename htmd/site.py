@@ -106,11 +106,14 @@ def all_posts():
     return render_template('all_posts.html', active='posts', posts=latest)
 
 
-@app.route('/<int:year>/<int:month>/<int:day>/<path:path>/')
+# If month and day are ints then Flask removes leading zeros
+@app.route('/<year>/<month>/<day>/<path:path>/')
 def post(year, month, day, path):
+    if len(year) != 4 or len(month) != 2 or len(day) != 2:
+        abort(404)
     post = posts.get_or_404(path)
-    date = '%04d-%02d-%02d' % (year, month, day)
-    if str(post.meta.get('published')) != date:
+    date_str = f'{year}-{month}-{day}'
+    if str(post.meta.get('published')) != date_str:
         abort(404)
     return render_template('post.html', post=post)
 
