@@ -42,8 +42,9 @@ $ pip install htmd
 
 ```shell
 Commands:
-  start    Create example files to get started.
-  verify   Verify posts formatting is correct.
-  build    Create static version of the site.
-  preview  Serve files to preview site.
+  start      Create example files to get started.
+  verify     Verify posts formatting is correct.
+  build      Create static version of the site.
+  preview    Serve files to preview site.
+  templates  Create any missing templates
 ```
