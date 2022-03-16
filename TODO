@@ -3,10 +3,8 @@ register all routes with frozen flask in case links in templates are changed?
 highlight menu items when you are on that page?
 pagination?
 size tags on post page?
-use rst, ascidoc, etc, (extension for flask-pages?)
 analytics
 If you don't have a trailing slash it tries to download a binary file
-preview command has output twice. and flask message is cut off
 preprocess calculate width of nav li elements?
 translations? (automatically select the correct language based on request headers) (og meta translation tags)
 multiple og meta tag images?

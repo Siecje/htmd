@@ -60,7 +60,7 @@ def format_html(response):
         if app.config.get('PRETTY_HTML', False):
             response.data = BeautifulSoup(response.data, 'html.parser').prettify()
         elif app.config.get('MINIFY_HTML', False):
-            response.data = minify(response.data)
+            response.data = minify(response.data.decode('utf-8'))
     return response
 
 

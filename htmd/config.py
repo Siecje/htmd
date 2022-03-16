@@ -22,6 +22,8 @@ BUILD_FOLDER = 'build'
 POSTS_EXTENSION = '.md'
 
 # How to format HTML
+# Only set one to True
+# If PRETTY_HTML is True, MINIFY_HTML will not be checked
 PRETTY_HTML = False
 MINIFY_HTML = False
 
