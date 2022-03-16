@@ -184,6 +184,8 @@ def year(year):
     if len(year) != 4:
         abort(404)
     year_posts = [p for p in posts if year == p.meta.get('published', []).strftime('%Y')]
+    if not year_posts:
+        abort(404)
     sorted_posts = sorted(year_posts, reverse=False,
                           key=lambda p: p.meta.get('published'))
     return render_template('year.html', year=year, posts=sorted_posts)
@@ -192,6 +194,8 @@ def year(year):
 @app.route('/<year>/<month>/')
 def month(year, month):
     month_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m') == month]
+    if not month_posts:
+        abort(404)
     sorted_posts = sorted(month_posts, reverse=False,
                           key=lambda p: p.meta.get('published'))
     month_string = MONTHS[month]
@@ -201,6 +205,8 @@ def month(year, month):
 @app.route('/<year>/<month>/<day>/')
 def day(year, month, day):
     day_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m') == month]
+    if not day_posts:
+        abort(404)
     month_string = MONTHS[month]
     return render_template('day.html', year=year, month_string=month_string, day=day, posts=day_posts)
 
