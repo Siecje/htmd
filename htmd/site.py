@@ -1,15 +1,16 @@
-from functools import wraps
 from datetime import datetime, time
+from functools import wraps
 import os
 import sys
-from werkzeug.contrib.atom import AtomFeed
+
+from BeautifulSoup import BeautifulSoup
 from flask import Flask, render_template, Blueprint, abort, url_for, make_response
-from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
 from flask.ext.flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
-from BeautifulSoup import BeautifulSoup
 from htmlmin import minify
 from html5print import HTMLBeautifier
+from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
+from werkzeug.contrib.atom import AtomFeed
 
 
 app = Flask(__name__, static_folder=os.path.join(os.getcwd(), 'static'))

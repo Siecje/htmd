@@ -1,9 +1,10 @@
 import os
 import shutil
+
 import click
 from csscompressor import compress
-from jsmin import jsmin
 from flask import Flask
+from jsmin import jsmin
 
 
 @click.group()
