@@ -1,4 +1,3 @@
-add command to copy any templates that don't exist
 In order to use an egg do not copy files for 'start' instead use strings
 404 page
 register all routes with frozen flask in case links in templates are changed?
@@ -32,3 +31,4 @@ use md in pages. markdown template tag
 pretty html causes issues with links at the end of sentences. Need to not put a, i, title on different lines.
 remove feedwerk and use a simple template
 use reset style sheet from a package?
+have any htmd command work inside an htmd project, find the project root and use it as cwd

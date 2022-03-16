@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 
 import click
 from csscompressor import compress
@@ -163,3 +164,12 @@ def preview(ctx, host, port, no_min):
         combine_and_minify_css()
     from .site import app as build_app
     build_app.run(debug=True, host=host, port=port)
+
+
+@cli.command('templates', short_help='Create any missing templates')
+def templates():
+    try:
+        copy_missing_templates()
+    except FileNotFoundError:
+        click.echo(click.style('templates/ directory not found.', fg='red'))
+        sys.exit(1)
