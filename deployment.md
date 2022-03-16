@@ -1,6 +1,6 @@
-###Deployment
+### Deployment
 
-```bash
+```shell
 $ python setup.py sdist
 $ twine upload dist/*
 ```
