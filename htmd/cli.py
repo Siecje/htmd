@@ -145,6 +145,7 @@ def build(ctx, no_min):
         if no_min is False:
           combine_and_minify_js()
           combine_and_minify_css()
+
         freezer.freeze()
 
         #if no_min is False:

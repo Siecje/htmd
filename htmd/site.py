@@ -50,7 +50,20 @@ app.jinja_loader = ChoiceLoader([
     app.jinja_loader
 ])
 
-MONTHS = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
+MONTHS = {
+    '01': 'January',
+    '02': 'February',
+    '3': 'March',
+    '4': 'April',
+    '5': 'May', 
+    '6': 'June',
+    '7': 'July', 
+    '8': 'August',
+    '9': 'September', 
+    '10': 'October',
+    '11': 'November', 
+    '12': 'December',
+}
 
 pages = Blueprint('pages', __name__, template_folder=os.path.join(os.getcwd(), app.config.get('PAGES_FOLDER')))
 
@@ -95,7 +108,7 @@ def feed():
     for post in posts:
         feed.add(post.meta.get('title'), post.html, content_type='html',
                 author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
-                url=url_for('post', year=post.meta.get('published').year, month=post.meta.get('published').month, day=post.meta.get('published').day, path=post.path),
+                url=url_for('post', year=post.meta.get('published').strftime("%Y"), month=post.meta.get('published').strftime("%m"), day=post.meta.get('published').strftime("%d"), path=post.path),
                 updated=datetime.combine(post.meta.get('updated') or post.meta.get('published'), time()))
     return make_response(feed.to_string().encode('utf-8') + b'\n')
 
@@ -167,24 +180,27 @@ def not_found():
 
 @app.route('/<int:year>/')
 def year(year):
-    year_posts = [p for p in posts if year == p.meta.get('published', []).year]
+    year = str(year)
+    if len(year) != 4:
+        abort(404)
+    year_posts = [p for p in posts if year == p.meta.get('published', []).strftime('%Y')]
     sorted_posts = sorted(year_posts, reverse=False,
                           key=lambda p: p.meta.get('published'))
     return render_template('year.html', year=year, posts=sorted_posts)
 
 
-@app.route('/<int:year>/<int:month>/')
+@app.route('/<year>/<month>/')
 def month(year, month):
-    month_posts = [p for p in posts if year == p.meta.get('published').year and month == p.meta.get('published').month == month]
+    month_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m') == month]
     sorted_posts = sorted(month_posts, reverse=False,
                           key=lambda p: p.meta.get('published'))
     month_string = MONTHS[month]
     return render_template('month.html', year=year, month_string=month_string, posts=sorted_posts)
 
 
-@app.route('/<int:year>/<int:month>/<int:day>/')
+@app.route('/<year>/<month>/<day>/')
 def day(year, month, day):
-    day_posts = [p for p in posts if year == p.meta.get('published').year and month == p.meta.get('published').month == month]
+    day_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m') == month]
     month_string = MONTHS[month]
     return render_template('day.html', year=year, month_string=month_string, day=day, posts=day_posts)
 
@@ -205,12 +221,12 @@ def year():
 def month():
     for post in posts:
         yield {'year': post.meta.get('published').year,
-               'month': post.meta.get('published').month}
+               'month': post.meta.get('published').strftime('%m')}
 
 
 @freezer.register_generator
 def day():
     for post in posts:
         yield {'year': post.meta.get('published').year,
-               'month': post.meta.get('published').month,
-               'day': post.meta.get('published').day}
+               'month': post.meta.get('published').strftime('%m'),
+               'day': post.meta.get('published').strftime('%d')}
