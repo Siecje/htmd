@@ -1,6 +1,5 @@
 In order to use an egg do not copy files for 'start' instead use strings
 register all routes with frozen flask in case links in templates are changed?
-highlight menu items when you are on that page?
 pagination?
 size tags on post page?
 analytics
@@ -18,7 +17,6 @@ Add draft posts
 ensure draft posts do not appear in lists
 sitemap?
 with compiled styles htmd preview has to be restarted to see changes.
-clean up HTML format
 display date in _list even with no author
 autocomplete for typing a link to a post
 _reset.css starts with a underscore so that when it is combined it is first, but Jekyll ignores files that start with an underscore so this causes a problem with GitHub pages. Could add a .nojekyll file on start but it is more of a deployment issue, but could include information about it in the docs.

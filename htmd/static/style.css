@@ -186,3 +186,7 @@ pre, code {
 .post-title:hover {
   color: blue;
 }
+
+li.active {
+  font-weight: bold;
+}

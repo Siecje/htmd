@@ -68,7 +68,7 @@ def format_html(response):
 @pages.route('/<path:path>/')
 def page(path):
     try:
-        return render_template(path + '.html')
+        return render_template(path + '.html', active=path)
     except TemplateNotFound:
         abort(404)
 
@@ -83,7 +83,7 @@ def pygments_css():
 @app.route('/')
 def index():
     latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
-    return render_template('index.html', posts=latest[:4])
+    return render_template('index.html', active='home', posts=latest[:4])
 
 
 @app.route('/feed.atom/')
@@ -103,7 +103,7 @@ def feed():
 @app.route('/all/')
 def all_posts():
     latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
-    return render_template('all_posts.html', posts=latest)
+    return render_template('all_posts.html', active='posts', posts=latest)
 
 
 @app.route('/<int:year>/<int:month>/<int:day>/<path:path>/')
@@ -138,7 +138,7 @@ def all_tags():
                 tags.append({'tag': tag, 'count': 1})
             else:
                 increment_tag_count(tags, tag)
-    return render_template('all_tags.html', tags=tags)
+    return render_template('all_tags.html', active='tags', tags=tags)
 
 
 @app.route('/tags/<string:tag>/')
@@ -154,7 +154,7 @@ def author(author):
     author_posts = [p for p in posts if author == p.meta.get('author', '')]
     sorted_posts = sorted(author_posts, reverse=True,
                           key=lambda p: p.meta.get('published'))
-    return render_template('author.html', author=author, posts=sorted_posts)
+    return render_template('author.html', active='author', author=author, posts=sorted_posts)
 
 
 @app.route('/<int:year>/')
