@@ -1,53 +1,50 @@
-#Change log
+# Change log
 
-## Version 1.5.0
-###Features
+## [1.5.0] - 2015-02-16
+### Added
+- setting MINIFY_HTML to minify resulting HTML
+- setting PRETTY_HTML to fix indentation of resulting HTML
 
-- Adding setting MINIFY_HTML to minify resulting HTML
-- Adding setting PRETTY_HTML to fix indentation of resulting HTML
-- Fixing SITE_NAME bug in og:site_name
+### Fixed
+- SITE_NAME bug in og:site_name
 
-## Version 1.4.0
-###Features
+## [1.4.0] - 2015-02-15
+### Added
+- tag class to tag links
+- option to prevent minification of JS, CSS, and HTML
+- pygments stylesheet
+- default styles for Markdown elements
 
-- Adding tag class to tag links
-- Adding option to prevent minification of JS, CSS, and HTML
-- Adding pygments stylesheet
-- Adding default styles for markdown elements
-
-## Version 1.3.0
-###Features
-
-- New option to show the beginning of the post in lists.
-- Removed default links styles for posts in lists.
-
-
-## Version 1.3.0
-###Features
-
-- New option to show the beginning of the post in lists.
-- Removed default links styles for posts in lists.
-
-## Version 1.2.0
-###Features
-
-- Getting install_requires from requirements.txt
+## [1.3.0] - 2015-02-15
+### Added
+- option to show the beginning of the post in lists.
+### Removed
+- default links styles for posts in lists.
 
 
-## Version 1.1.0
-###Features
+## [1.2.1] - 2015-02-12
+### Added
+- option to show the beginning of the post in lists.
 
+### Removed
+- default links styles for posts in lists.
+
+## [1.2.0] - 2015-02-12
+### Changed
+- getting install_requires from requirements.txt
+
+## [1.1.0] - 2015-02-01
+### Changed
 - .js files in the static directory are combined and minified and combined.min.js is used in _layout.html
 - .css files in the static directory are combined and minified and combined.min.css is used in _layout.html
 
-## Version 1.0.0
-###Features
-
-- Posts are sorted
-- Routes for tags and authors
-- Tags are sized based on number of times used
-- Can add custom meta tags and use in templates
-- Can override templates
-- Separate folders for posts (think blog) and pages (think about, contact)
+## [1.0.0] - 2015-01-31
+### Added
+- posts are sorted
+- routes for tags and authors
+- tags are sized based on number of times used
+- custom meta tags and use in templates
+- override templates
+- separate folders for posts (think blog) and pages (think about, contact)
 - Atom feed for all posts
-- Multiple author support
+- multiple author support
