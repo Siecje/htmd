@@ -14,11 +14,12 @@ def cli():
 
 
 def create_directory(name):
-    if os.path.isdir(name) is False:
+    try:
         os.mkdir(name)
-        click.echo(click.style('%s was created.' % name, fg='green'))
+    except FileExistsError:
+        click.echo(click.style(f'{name} already exists and was not created.', fg='red'))
     else:
-        click.echo(click.style('%s already exists and was not created.' % name, fg='red'))
+        click.echo(click.style(f'{name} was created.', fg='green'))
 
 
 def copy_file(src, dest):
@@ -47,6 +48,7 @@ def combine_and_minify_js():
         combined = master.read()
     with open(os.path.join(app.static_folder, 'combined.min.js'), 'w') as master:
         master.write(jsmin(combined))
+
 
 def combine_and_minify_css():
     from .site import app
