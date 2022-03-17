@@ -131,18 +131,18 @@ def verify():
             except AttributeError:
                 correct = False
                 click.echo(click.style('Published date %s for %s is not in the format YYYY-MM-DD' % (post.meta.get('published'), post.path), fg='red'))
-    if correct is True:
+    if correct:
         click.echo(click.style('All posts are correctly formatted.', fg='green'))
 
     # Check if SITE_NAME exists
     app = site.app
-    site_name = app.config['SITE_NAME']
+    site_name = app.config.get('SITE_NAME')
     if not site_name:
-        click.echo(click.style('Specify SITE_NAME in config.py.', fg='red'))
+        click.echo(click.style('SITE_NAME is not set in config.py.', fg='red'))
 
-    if site_name and correct:
-        return True
-    sys.exit(1)
+    # SITE_NAME is not required
+    if not correct:
+        sys.exit(1)
 
 
 @cli.command('build', short_help='Create static version of the site.')
@@ -168,7 +168,11 @@ def build(ctx, css_minify, js_minify):
         reload(site)
 
     freezer = site.freezer
-    freezer.freeze()
+    try:
+        freezer.freeze()
+    except ValueError as exc:
+        click.echo(click.style(str(exc), fg='red'))
+        sys.exit(1)
 
     build_dir = app.config.get('FREEZER_DESTINATION')
     click.echo(click.style(f'Static site was created in {build_dir}', fg='green'))

@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 
 from click.testing import CliRunner
 from htmd.cli import build, start
@@ -35,9 +36,6 @@ def test_build_verify_fails():
 
 
 def test_build_js_minify():
-    expected_output = (
-        'All posts are correctly formatted.\n'
-    )
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -51,9 +49,6 @@ def test_build_js_minify():
 
 
 def test_build_js_minify_no_js_files():
-    expected_output = (
-        'All posts are correctly formatted.\n'
-    )
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -63,9 +58,6 @@ def test_build_js_minify_no_js_files():
 
 
 def test_build_no_js_minify():
-    expected_output = (
-        'All posts are correctly formatted.\n'
-    )
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -75,9 +67,6 @@ def test_build_no_js_minify():
 
 
 def test_build_css_minify():
-    expected_output = (
-        'All posts are correctly formatted.\n'
-    )
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -90,9 +79,6 @@ def test_build_css_minify():
 
 
 def test_build_no_css_minify():
-    expected_output = (
-        'All posts are correctly formatted.\n'
-    )
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -102,9 +88,6 @@ def test_build_no_css_minify():
 
 
 def test_build_css_minify_no_css_files():
-    expected_output = (
-        'All posts are correctly formatted.\n'
-    )
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -113,3 +96,315 @@ def test_build_css_minify_no_css_files():
         result = runner.invoke(build, ['--css-minify'])
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
+
+
+def test_build_PRETTY_HTML_True():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+        with open('config.py', 'r') as config_file:
+            lines = config_file.readlines()
+
+        with open('config.py', 'w') as config_file:
+            for line in lines:
+                if 'PRETTY_HTML' in line:
+                    config_file.write('PRETTY_HTML = True\n')
+                else:
+                    config_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+
+def test_build_MINIFY_HTML_True():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+        with open('config.py', 'r') as config_file:
+            lines = config_file.readlines()
+
+        with open('config.py', 'w') as config_file:
+            for line in lines:
+                if 'MINIFY_HTML' in line:
+                    config_file.write('MINIFY_HTML = True\n')
+                else:
+                    config_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+
+def test_build_page_404():
+    # Linking to a page that doesn't exist
+    # will cause a 404 status code
+    # and stop the build
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        "Unexpected status '404 NOT FOUND' on URL /dne/\n"
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+
+        with open(os.path.join('pages','about.html'), 'r') as about_file:
+            lines = about_file.readlines()
+
+        with open(os.path.join('pages', 'about.html'), 'w') as about_file:
+            for line in lines:
+                if '<p>This is the about page.</p>' in line:
+                    about_file.write('''<p><a href="{{ url_for('pages.page', path='dne') }}">DNE link</a></p>\n''')
+                else:
+                    about_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 1
+    assert result.output == expected_output
+
+
+def test_build_post_404_invalid_date_year():
+    # Linking to a post with incorrect values
+    # for dates will cause 404 and stop the build
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        "Unexpected status '404 NOT FOUND' on URL /14/10/30/example/\n"
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+
+        with open(os.path.join('pages','about.html'), 'r') as about_file:
+            lines = about_file.readlines()
+
+        with open(os.path.join('pages', 'about.html'), 'w') as about_file:
+            for line in lines:
+                if '<p>This is the about page.</p>' in line:
+                    about_file.write('''<p><a href="{{ url_for('post', year=14, month='10', day='30', path='example') }}">DNE link</a></p>\n''')
+                else:
+                    about_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 1
+    assert result.output == expected_output
+
+
+def test_build_post_404_invalid_date_month():
+    # Linking to a post with incorrect values
+    # for dates will cause 404 and stop the build
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        "Unexpected status '404 NOT FOUND' on URL /2014/1/30/example/\n"
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            lines = post_file.readlines()
+
+        with open(os.path.join('posts', 'about.html'), 'w') as post_file:
+            for line in lines:
+                if 'published' in line:
+                    post_file.write('published: 2014-01-30')
+                elif 'updated' in line:
+                    post_file.write('updated: 2014-01-30')
+                else:
+                    post_file.write(line)
+
+        with open(os.path.join('pages', 'about.html'), 'r') as about_file:
+            lines = about_file.readlines()
+
+        with open(os.path.join('pages', 'about.html'), 'w') as about_file:
+            for line in lines:
+                if '<p>This is the about page.</p>' in line:
+                    about_file.write('''<p><a href="{{ url_for('post', year=2014, month='1', day='30', path='example') }}">DNE link</a></p>\n''')
+                else:
+                    about_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 1
+    assert result.output == expected_output
+
+
+def test_build_post_404_invalid_date_day():
+    # Linking to a post with incorrect values
+    # for dates will cause 404 and stop the build
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        "Unexpected status '404 NOT FOUND' on URL /2014/10/3/example/\n"
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            lines = post_file.readlines()
+
+        with open(os.path.join('posts', 'about.html'), 'w') as post_file:
+            for line in lines:
+                if 'published' in line:
+                    post_file.write('published: 2014-10-03')
+                elif 'updated' in line:
+                    post_file.write('updated: 2014-10-03')
+                else:
+                    post_file.write(line)
+
+        with open(os.path.join('pages', 'about.html'), 'r') as about_file:
+            lines = about_file.readlines()
+
+        with open(os.path.join('pages', 'about.html'), 'w') as about_file:
+            for line in lines:
+                if '<p>This is the about page.</p>' in line:
+                    about_file.write('''<p><a href="{{ url_for('post', year=2014, month='10', day='3', path='example') }}">DNE link</a></p>\n''')
+                else:
+                    about_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 1
+    assert result.output == expected_output
+
+
+def test_build_post_404_different_date():
+    # Linking to a page with the wrong date
+    # will cause a 404 status code
+    # and stop the build
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        "Unexpected status '404 NOT FOUND' on URL /2014/10/29/example/\n"
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+
+        with open(os.path.join('pages','about.html'), 'r') as about_file:
+            lines = about_file.readlines()
+
+        with open(os.path.join('pages', 'about.html'), 'w') as about_file:
+            for line in lines:
+                if '<p>This is the about page.</p>' in line:
+                    about_file.write('''<p><a href="{{ url_for('post', year=2014, month='10', day='29', path='example') }}">DNE link</a></p>\n''')
+                else:
+                    about_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 1
+    assert result.output == expected_output
+
+
+def test_build_multiple_posts():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+        shutil.copyfile(os.path.join('posts', 'example.md'), os.path.join('posts', 'sample.md'))
+        result = runner.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+
+def test_build_year_404_incorrect():
+    # Linking to a page with the wrong date
+    # will cause a 404 status code
+    # and stop the build
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        "Unexpected status '404 NOT FOUND' on URL /14/\n"
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+
+        with open(os.path.join('pages','about.html'), 'r') as about_file:
+            lines = about_file.readlines()
+
+        with open(os.path.join('pages', 'about.html'), 'w') as about_file:
+            for line in lines:
+                if '<p>This is the about page.</p>' in line:
+                    about_file.write('''<p><a href="{{ url_for('year', year=14) }}">DNE link</a></p>\n''')
+                else:
+                    about_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 1
+    assert result.output == expected_output
+
+
+def test_build_year_404_no_posts():
+    # Linking to a page with the wrong date
+    # will cause a 404 status code
+    # and stop the build
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        "Unexpected status '404 NOT FOUND' on URL /2013/\n"
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+
+        with open(os.path.join('pages','about.html'), 'r') as about_file:
+            lines = about_file.readlines()
+
+        with open(os.path.join('pages', 'about.html'), 'w') as about_file:
+            for line in lines:
+                if '<p>This is the about page.</p>' in line:
+                    about_file.write('''<p><a href="{{ url_for('year', year=2013) }}">DNE link</a></p>\n''')
+                else:
+                    about_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 1
+    assert result.output == expected_output
+
+
+def test_build_month_404_no_posts():
+    # Linking to a page with the wrong date
+    # will cause a 404 status code
+    # and stop the build
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        "Unexpected status '404 NOT FOUND' on URL /2014/01/\n"
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+
+        with open(os.path.join('pages','about.html'), 'r') as about_file:
+            lines = about_file.readlines()
+
+        with open(os.path.join('pages', 'about.html'), 'w') as about_file:
+            for line in lines:
+                if '<p>This is the about page.</p>' in line:
+                    about_file.write('''<p><a href="{{ url_for('month', year=2014, month='01') }}">DNE link</a></p>\n''')
+                else:
+                    about_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 1
+    assert result.output == expected_output
+
+
+def test_build_day_404_no_posts():
+    # Linking to a page with the wrong date
+    # will cause a 404 status code
+    # and stop the build
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        "Unexpected status '404 NOT FOUND' on URL /2014/10/29/\n"
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(start)
+
+        with open(os.path.join('pages','about.html'), 'r') as about_file:
+            lines = about_file.readlines()
+
+        with open(os.path.join('pages', 'about.html'), 'w') as about_file:
+            for line in lines:
+                if '<p>This is the about page.</p>' in line:
+                    about_file.write('''<p><a href="{{ url_for('day', year=2014, month='10', day='29') }}">DNE link</a></p>\n''')
+                else:
+                    about_file.write(line)
+
+        result = runner.invoke(build)
+    assert result.exit_code == 1
+    assert result.output == expected_output

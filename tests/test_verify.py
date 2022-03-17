@@ -131,12 +131,12 @@ def test_verify_published_invalid_day():
 def test_verify_SITE_NAME_empty():
     expected_output = (
         'All posts are correctly formatted.\n'
-        'Specify SITE_NAME in config.py.\n'
+        'SITE_NAME is not set in config.py.\n'
     )
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
-        
+
         with open('config.py', 'r') as post:
             lines = post.readlines()
         with open('config.py', 'w') as post:
@@ -147,29 +147,42 @@ def test_verify_SITE_NAME_empty():
                     post.write(line)
 
         result = runner.invoke(verify)
-    assert result.exit_code == 1
+    # SITE_NAME isn't required
+    assert result.exit_code == 0
     assert result.output == expected_output
 
 
-# def test_verify_SITE_NAME_missing():
-#     expected_output = (
-#         'All posts are correctly formatted.\n'
-#         'Specify SITE_NAME in config.py.\n'
-#     )
-#     runner = CliRunner()
-#     with runner.isolated_filesystem():
-#         runner.invoke(start)
+def test_verify_SITE_NAME_missing():
+    expected_output = (
+        'All posts are correctly formatted.\n'
+        'SITE_NAME is not set in config.py.\n'
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
         
-#         with open('config.py', 'r') as post:
-#             lines = post.readlines()
-#         with open('config.py', 'w') as post:
-#             for line in lines:
-#                 if 'SITE_NAME' not in line:
-#                     post.write(line)
+        with open('config.py', 'r') as post:
+            lines = post.readlines()
+        with open('config.py', 'w') as post:
+            for line in lines:
+                if 'SITE_NAME' not in line:
+                    post.write(line)
 
-#         result = runner.invoke(verify)
-#     # TODO: Enable this test
-#     # TODO: Flask config will not remove old SITE_NAME value
-#     # TODO: set in previous tests
-#     assert result.exit_code == 1
-#     assert result.output == expected_output
+        result = runner.invoke(verify)
+
+    assert result.exit_code == 0
+    assert result.output == expected_output
+
+
+def test_verify_no_config():
+    expected_output = 'Can not find config.py\n'
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        
+        os.remove('config.py')
+
+        result = runner.invoke(verify)
+
+    assert result.exit_code == 1
+    assert result.output == expected_output

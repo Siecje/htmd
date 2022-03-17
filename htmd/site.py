@@ -13,15 +13,12 @@ from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
 
 
 app = Flask(__name__, static_folder=os.path.join(os.getcwd(), 'static'))
-# Load default config
-app.config.from_pyfile('config.py')
 
-# Override defaults
 try:
     app.config.from_pyfile(os.path.join(os.getcwd(), 'config.py'))
 except IOError:
     print('Can not find config.py')
-    sys.exit()
+    sys.exit(1)
 
 # To avoid full paths in config.py
 app.config['FLATPAGES_ROOT'] = os.path.join(os.getcwd(), app.config.get('POSTS_FOLDER'))
@@ -195,7 +192,7 @@ def year(year):
 
 @app.route('/<year>/<month>/')
 def month(year, month):
-    month_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m') == month]
+    month_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m')]
     if not month_posts:
         abort(404)
     sorted_posts = sorted(month_posts, reverse=False,
@@ -206,7 +203,7 @@ def month(year, month):
 
 @app.route('/<year>/<month>/<day>/')
 def day(year, month, day):
-    day_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m') == month]
+    day_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m') and day == p.meta.get('published').strftime('%d') ]
     if not day_posts:
         abort(404)
     month_string = MONTHS[month]
