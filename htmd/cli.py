@@ -1,3 +1,4 @@
+from importlib import reload
 import os
 import shutil
 import sys
@@ -112,13 +113,17 @@ def start(all_templates):
 def verify():
     # import is here to avoid looking for the config
     # which doesn't exist until you run start
-    from .site import posts
+    from . import site
+    # reload is needed for testing when the directory changes
+    # FlatPages has already been loaded so the pages do not reload
+    reload(site)
+
     correct = True
-    for post in posts:
+    for post in site.posts:
         for item in ['author', 'title', 'published']:
             if item not in post.meta:
                 correct = False
-                click.echo(click.style('%s does not have %s' % (post.path, item), fg='red'))
+                click.echo(click.style(f'Post "{post.path}" does not have field {item}.', fg='red'))
         if 'published' in post.meta:
             try:
                 post.meta.get('published').year
@@ -129,12 +134,14 @@ def verify():
         click.echo(click.style('All posts are correctly formatted.', fg='green'))
 
     # Check if SITE_NAME exists
-    from .site import app
-    if not app.config['SITE_NAME']:
+    app = site.app
+    site_name = app.config['SITE_NAME']
+    if not site_name:
         click.echo(click.style('Specify SITE_NAME in config.py.', fg='red'))
-    if app.config['SITE_NAME'] and correct:
+
+    if site_name and correct:
         return True
-    return False
+    sys.exit(1)
 
 
 @cli.command('build', short_help='Create static version of the site.')
