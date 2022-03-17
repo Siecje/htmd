@@ -25,9 +25,9 @@ def create_directory(name):
 def copy_file(src, dest):
     if os.path.exists(dest) is False:
         shutil.copyfile(src, dest)
-        click.echo(click.style('%s was created.' % dest, fg='green'))
+        click.echo(click.style(f'{dest} was created.', fg='green'))
     else:
-        click.echo(click.style('%s already exists and was not created.' % dest, fg='red'))
+        click.echo(click.style(f'{dest} already exists and was not created.', fg='red'))
 
 
 def combine_and_minify_js():
@@ -153,7 +153,7 @@ def build(ctx, no_min):
     freezer.freeze()
 
     build_dir = app.config.get('FREEZER_DESTINATION')
-    click.echo(click.style(f'Static site was created in {build_dir}' % , fg='green'))
+    click.echo(click.style(f'Static site was created in {build_dir}', fg='green'))
 
 
 @cli.command('preview', short_help='Serve files to preview site.')
