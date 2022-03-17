@@ -142,19 +142,18 @@ def verify():
 @click.option('--no-min', is_flag=True, help="Prevent JS and CSS from being minified")
 def build(ctx, no_min):
     valid = ctx.invoke(verify)
-    if valid:
-        from .site import freezer, app
-        if no_min is False:
-          combine_and_minify_js()
-          combine_and_minify_css()
+    if not valid:
+        return valid
 
-        freezer.freeze()
+    from .site import freezer, app
+    if no_min is False:
+        combine_and_minify_js()
+        combine_and_minify_css()
 
-        #if no_min is False:
-            # minify HTML files in build/
-            # TODO:
-        click.echo(click.style('Static site was created in %s' % app.config.get('FREEZER_DESTINATION'), fg='green'))
-    return valid
+    freezer.freeze()
+
+    build_dir = app.config.get('FREEZER_DESTINATION')
+    click.echo(click.style(f'Static site was created in {build_dir}' % , fg='green'))
 
 
 @cli.command('preview', short_help='Serve files to preview site.')
