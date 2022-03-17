@@ -11,7 +11,7 @@ from jsmin import jsmin
 
 @click.group()
 def cli():
-    pass
+    pass # pragma: no cover
 
 
 def create_directory(name):
@@ -178,13 +178,22 @@ def build(ctx, css_minify, js_minify):
 @click.pass_context
 @click.option('--host', '-h', default='127.0.0.1', help='Location to access the files.')
 @click.option('--port', '-p', default=9090, help='Port on which to serve the files.')
-@click.option('--no-min', is_flag=True, help="Prevent JS and CSS from being minified")
-def preview(ctx, host, port, no_min):
-    if no_min is False:
-        combine_and_minify_js()
-        combine_and_minify_css()
-    from .site import app as build_app
-    build_app.run(debug=True, host=host, port=port)
+@click.option('--css-minify/--no-css-minify', default=True, help="If CSS should be minified")
+@click.option('--js-minify/--no-js-minify', default=True, help="If JavaScript should be minified")
+def preview(ctx, host, port, css_minify, js_minify):
+    from . import site
+    # reload for tests to refresh app.static_folder
+    # otherwise app.static_folder will be from another test
+    reload(site)
+    app = site.app
+
+    if css_minify:
+        combine_and_minify_css(app.static_folder)
+    
+    if js_minify:
+        combine_and_minify_js(app.static_folder)
+
+    app.run(debug=True, host=host, port=port)
 
 
 @cli.command('templates', short_help='Create any missing templates')
