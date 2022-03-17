@@ -88,7 +88,9 @@ def page(path):
 
 app.register_blueprint(pages)
 
-@app.route('/pygments.css')
+
+# Will end up in the static directory
+@app.route('/static/pygments.css')
 def pygments_css():
     return pygments_style_defs('tango'), 200, {'Content-Type': 'text/css'}
 
