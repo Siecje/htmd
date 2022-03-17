@@ -6,6 +6,7 @@
 - --all-templates option for `htmd start`
 - templates command
 - 404 page
+- tests
 
 ## [1.5.0] - 2015-02-16
 ### Added

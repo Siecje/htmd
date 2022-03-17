@@ -31,43 +31,44 @@ def copy_file(src, dest):
         click.echo(click.style(f'{dest} already exists and was not created.', fg='red'))
 
 
-def combine_and_minify_js():
-    from .site import app
-    # Combine and minify all .js files in the static folder
-    js_files = sorted([f for f in os.listdir(app.static_folder) if f.endswith('.js') and f != 'combined.min.js'])
-    if not js_files:
-        # There are no .js files in the static folder
-        return
-    with open(os.path.join(app.static_folder, 'combined.min.js'), 'w') as master:
-        for f in js_files:
-            with open(os.path.join(app.static_folder, f), 'r') as js_file:
-                # combine all .js files into one
-                master.write(js_file.read())
-    # minify should be done after combined to avoid duplicate identifiers
-    # minifying each file will use 'a' for the first identifier
-    with open(os.path.join(app.static_folder, 'combined.min.js'), 'r') as master:
-        combined = master.read()
-    with open(os.path.join(app.static_folder, 'combined.min.js'), 'w') as master:
-        master.write(jsmin(combined))
-
-
-def combine_and_minify_css():
-    from .site import app
+def combine_and_minify_css(static_folder):
     # Combine and minify all .css files in the static folder
-    css_files = sorted([f for f in os.listdir(app.static_folder) if f.endswith('.css') and f != 'combined.min.css'])
+    css_files = sorted([f for f in os.listdir(static_folder) if f.endswith('.css') and f != 'combined.min.css'])
     if not css_files:
         # There are no .css files in the static folder
         return
-    with open(os.path.join(app.static_folder, 'combined.min.css'), 'w') as master:
+
+    with open(os.path.join(static_folder, 'combined.min.css'), 'w') as master:
         for f in css_files:
-            with open(os.path.join(app.static_folder, f), 'r') as css_file:
+            with open(os.path.join(static_folder, f), 'r') as css_file:
                 # combine all .css files into one
                 master.write(css_file.read())
 
-    with open(os.path.join(app.static_folder, 'combined.min.css'), 'r') as master:
+    with open(os.path.join(static_folder, 'combined.min.css'), 'r') as master:
         combined = master.read()
-    with open(os.path.join(app.static_folder, 'combined.min.css'), 'w') as master:
+    with open(os.path.join(static_folder, 'combined.min.css'), 'w') as master:
         master.write(compress(combined))
+
+
+def combine_and_minify_js(static_folder):
+    # Combine and minify all .js files in the static folder
+    js_files = sorted([f for f in os.listdir(static_folder) if f.endswith('.js') and f != 'combined.min.js'])
+    if not js_files:
+        # There are no .js files in the static folder
+        return
+
+    with open(os.path.join(static_folder, 'combined.min.js'), 'w') as master:
+        for f in js_files:
+            with open(os.path.join(static_folder, f), 'r') as js_file:
+                # combine all .js files into one
+                master.write(js_file.read())
+
+    # minify should be done after combined to avoid duplicate identifiers
+    # minifying each file will use 'a' for the first identifier
+    with open(os.path.join(static_folder, 'combined.min.js'), 'r') as master:
+        combined = master.read()
+    with open(os.path.join(static_folder, 'combined.min.js'), 'w') as master:
+        master.write(jsmin(combined))
 
 
 def copy_missing_templates():
@@ -146,17 +147,27 @@ def verify():
 
 @cli.command('build', short_help='Create static version of the site.')
 @click.pass_context
-@click.option('--no-min', is_flag=True, help="Prevent JS and CSS from being minified")
-def build(ctx, no_min):
-    valid = ctx.invoke(verify)
-    if not valid:
-        return valid
+@click.option('--css-minify/--no-css-minify', default=True, help="If CSS should be minified")
+@click.option('--js-minify/--no-js-minify', default=True, help="If JavaScript should be minified")
+def build(ctx, css_minify, js_minify):
+    ctx.invoke(verify)
+    # If verify fails sys.exit(1) will run
 
-    from .site import freezer, app
-    if no_min is False:
-        combine_and_minify_js()
-        combine_and_minify_css()
+    from . import site
+    app = site.app
 
+    if css_minify:
+        combine_and_minify_css(app.static_folder)
+        
+    if js_minify:
+        combine_and_minify_js(app.static_folder)
+
+    if css_minify or js_minify:
+        # reload to set app.config['INCLUDE_CSS'] and app.config['INCLUDE_JS']
+        # setting them here doesn't work
+        reload(site)
+
+    freezer = site.freezer
     freezer.freeze()
 
     build_dir = app.config.get('FREEZER_DESTINATION')

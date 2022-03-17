@@ -33,7 +33,6 @@ def test_verify_author_missing():
         remove_field_from_example_post("author")
 
         result = runner.invoke(verify)
-    print(result.output)
     assert result.exit_code == 1
     expected_output = 'Post "example" does not have field author.\n'
     assert result.output == expected_output

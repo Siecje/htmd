@@ -29,8 +29,8 @@ app.config['FREEZER_DESTINATION'] = os.path.join(os.getcwd(), app.config.get('BU
 app.config['FREEZER_REMOVE_EXTRA_FILES'] = False
 app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
 
-app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
 app.config['INCLUDE_CSS'] = 'combined.min.css' in os.listdir(app.static_folder)
+app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
 
 
 posts = FlatPages(app)
@@ -70,7 +70,7 @@ pages = Blueprint('pages', __name__, template_folder=os.path.join(os.getcwd(), a
 
 @app.after_request
 def format_html(response):
-    if response.mimetype == "text/html":
+    if response.mimetype == 'text/html':
         if app.config.get('PRETTY_HTML', False):
             response.data = BeautifulSoup(response.data, 'html.parser').prettify()
         elif app.config.get('MINIFY_HTML', False):
