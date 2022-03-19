@@ -66,6 +66,6 @@ def combine_and_minify_js(static_folder):
 def copy_missing_templates():
     htmd_dir = os.path.dirname(__file__)
     template_dir = os.path.join(htmd_dir, 'example_site', 'templates')
-    for template_file in os.listdir(template_dir):
+    for template_file in sorted(os.listdir(template_dir)):
         copy_file(os.path.join(template_dir, template_file),
             os.path.join('templates', template_file))
