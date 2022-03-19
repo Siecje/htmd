@@ -21,24 +21,24 @@ def start(all_templates):
     if all_templates:
         copy_missing_templates()
     else:
-        copy_file(os.path.join(htmd_dir, 'templates', '_layout.html'),
+        copy_file(os.path.join(htmd_dir, 'example_site', 'templates', '_layout.html'),
           os.path.join('templates/', '_layout.html'))
 
     create_directory('static/')
-    copy_file(os.path.join(htmd_dir, 'static', '_reset.css'),
+    copy_file(os.path.join(htmd_dir, 'example_site', 'static', '_reset.css'),
               os.path.join('static/', '_reset.css'))
-    copy_file(os.path.join(htmd_dir, 'static', 'style.css'),
+    copy_file(os.path.join(htmd_dir, 'example_site', 'static', 'style.css'),
               os.path.join('static/', 'style.css'))
     
     create_directory('pages/')
-    copy_file(os.path.join(htmd_dir, 'about.html'),
+    copy_file(os.path.join(htmd_dir, 'example_site', 'pages', 'about.html'),
               os.path.join('pages/', 'about.html'))
     
     create_directory('posts/')
-    copy_file(os.path.join(htmd_dir, 'example.md'),
+    copy_file(os.path.join(htmd_dir, 'example_site', 'posts', 'example.md'),
               os.path.join('posts/', 'example.md'))
     
-    copy_file(os.path.join(htmd_dir, 'config.py'),
+    copy_file(os.path.join(htmd_dir, 'example_site', 'config.py'),
               os.path.join('config.py'))
     click.echo('Add the site name and edit settings in config.py')
 

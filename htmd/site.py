@@ -12,7 +12,13 @@ from htmlmin import minify
 from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
 
 
-app = Flask(__name__, static_folder=os.path.join(os.getcwd(), 'static'))
+this_dir = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(__name__,
+    static_folder=os.path.join(os.getcwd(), 'static'),
+    template_folder=os.path.join(this_dir, 'example_site', 'templates'),
+)
+
 
 try:
     app.config.from_pyfile(os.path.join(os.getcwd(), 'config.py'))
@@ -42,6 +48,8 @@ def truncate_post_html(post_html):
 
 app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 
+
+# Include current htmd site templates
 app.jinja_loader = ChoiceLoader([
     FileSystemLoader(os.path.join(os.getcwd(), 'templates/')),
     app.jinja_loader

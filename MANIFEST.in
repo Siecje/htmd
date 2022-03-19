@@ -1,4 +1,6 @@
-recursive-include htmd/templates *.*
-recursive-include htmd/static *.*
-recursive-include htmd about.html example.md
+recursive-include htmd/example_site/templates *.*
+recursive-include htmd/example_site/static *.*
+recursive-include htmd/example_site/pages about.html
+recursive-include htmd/example_site/posts example.md
+recursive-include htmd/example_site/ config.py
 include requirements.txt
