@@ -78,7 +78,6 @@ def combine_and_minify_js(static_folder):
 
 
 def copy_missing_templates():
-    htmd_dir = os.path.dirname(__file__)
     template_dir = importlib.resources.contents('htmd.example_site.templates')
     for template_file in sorted(template_dir):
         if template_file in ('__init__.py', '__pycache__'):

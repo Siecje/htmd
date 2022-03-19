@@ -28,8 +28,6 @@ def cli():
     help='Include all templates.'
 )
 def start(all_templates):
-    htmd_dir = os.path.dirname(__file__)
-
     create_directory('templates/')
     if all_templates:
         copy_missing_templates()
