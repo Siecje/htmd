@@ -48,3 +48,35 @@ Commands:
   preview    Serve files to preview site.
   templates  Create any missing templates
 ```
+
+## Development
+
+### Running the development version locally
+
+```shell
+$ git clone https://github.com/Siecje/htmd.git
+$ python3 -m venv venv
+$ venv/bin/python -m pip install pip setuptools wheel --upgrade
+$ venv/bin/python -m pip install -e htmd/
+# You can now make changes inside htmd/ without having to re-install
+$ mkdir my_site
+$ cd my_site
+$ ../venv/bin/htmd start
+$ ../venv/bin/htmd build
+```
+
+### Running the tests
+
+```shell
+$ venv/bin/python -m pip install pytest
+$ venv/bin/python -m pytest .
+```
+
+#### Running the tests with coverage.py
+
+```shell
+$ venv/bin/python -m pip install coverage
+$ venv/bin/coverage run -m pytest .
+$ venv/bin/coverage html --omit='/private/*'
+$ open htmlcov/index.html
+```
