@@ -1,4 +1,6 @@
-from importlib import reload
+import importlib
+# Need to import importlib.resources explicitly
+import importlib.resources
 import os
 import sys
 
@@ -33,26 +35,36 @@ def start(all_templates):
         copy_missing_templates()
     else:
         copy_file(
-            os.path.join(htmd_dir, 'example_site', 'templates', '_layout.html'),
+            importlib.resources.path('htmd.example_site.templates', '_layout.html'),
             os.path.join('templates/', '_layout.html')
         )
 
     create_directory('static/')
-    copy_file(os.path.join(htmd_dir, 'example_site', 'static', '_reset.css'),
-              os.path.join('static/', '_reset.css'))
-    copy_file(os.path.join(htmd_dir, 'example_site', 'static', 'style.css'),
-              os.path.join('static/', 'style.css'))
+    copy_file(
+        importlib.resources.path('htmd.example_site.static', '_reset.css'),
+        os.path.join('static/', '_reset.css')
+    )
+    copy_file(
+        importlib.resources.path('htmd.example_site.static', 'style.css'),
+        os.path.join('static/', 'style.css'),
+    )
 
     create_directory('pages/')
-    copy_file(os.path.join(htmd_dir, 'example_site', 'pages', 'about.html'),
-              os.path.join('pages/', 'about.html'))
+    copy_file(
+        importlib.resources.path('htmd.example_site.pages', 'about.html'),
+        os.path.join('pages/', 'about.html'),
+    )
 
     create_directory('posts/')
-    copy_file(os.path.join(htmd_dir, 'example_site', 'posts', 'example.md'),
-              os.path.join('posts/', 'example.md'))
+    copy_file(
+        importlib.resources.path('htmd.example_site.posts', 'example.md'),
+        os.path.join('posts/', 'example.md'),
+    )
 
-    copy_file(os.path.join(htmd_dir, 'example_site', 'config.py'),
-              os.path.join('config.py'))
+    copy_file(
+        importlib.resources.path('htmd.example_site', 'config.py'),
+        os.path.join('config.py'),
+    )
     click.echo('Add the site name and edit settings in config.py')
 
 
@@ -63,7 +75,7 @@ def verify():
     from . import site
     # reload is needed for testing when the directory changes
     # FlatPages has already been loaded so the pages do not reload
-    reload(site)
+    importlib.reload(site)
 
     correct = True
     for post in site.posts:
@@ -126,7 +138,7 @@ def build(ctx, css_minify, js_minify):
     if css_minify or js_minify:
         # reload to set app.config['INCLUDE_CSS'] and app.config['INCLUDE_JS']
         # setting them here doesn't work
-        reload(site)
+        importlib.reload(site)
 
     freezer = site.freezer
     try:
@@ -166,7 +178,7 @@ def preview(ctx, host, port, css_minify, js_minify):
     from . import site
     # reload for tests to refresh app.static_folder
     # otherwise app.static_folder will be from another test
-    reload(site)
+    importlib.reload(site)
     app = site.app
 
     if css_minify:
