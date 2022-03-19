@@ -1,11 +1,12 @@
-from datetime import datetime, time
-from functools import wraps
+import datetime
 import os
 import sys
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
-from flask import Flask, render_template, Blueprint, abort, url_for, make_response
+from flask import (
+    abort, Blueprint, Flask, render_template, make_response, url_for
+)
 from flask_flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
@@ -14,7 +15,8 @@ from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 
-app = Flask(__name__,
+app = Flask(
+    __name__,
     static_folder=os.path.join(os.getcwd(), 'static'),
     template_folder=os.path.join(this_dir, 'example_site', 'templates'),
 )
@@ -27,8 +29,12 @@ except IOError:
     sys.exit(1)
 
 # To avoid full paths in config.py
-app.config['FLATPAGES_ROOT'] = os.path.join(os.getcwd(), app.config.get('POSTS_FOLDER'))
-app.config['FREEZER_DESTINATION'] = os.path.join(os.getcwd(), app.config.get('BUILD_FOLDER'))
+app.config['FLATPAGES_ROOT'] = os.path.join(
+    os.getcwd(), app.config.get('POSTS_FOLDER')
+)
+app.config['FREEZER_DESTINATION'] = os.path.join(
+    os.getcwd(), app.config.get('BUILD_FOLDER')
+)
 app.config['FREEZER_REMOVE_EXTRA_FILES'] = False
 app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
 
@@ -43,8 +49,10 @@ freezer = Freezer(app)
 for key in app.config:
     app.jinja_env.globals[key] = app.config[key]
 
+
 def truncate_post_html(post_html):
     return BeautifulSoup(post_html[:255], 'html.parser').prettify()
+
 
 app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 
@@ -60,24 +68,31 @@ MONTHS = {
     '02': 'February',
     '3': 'March',
     '4': 'April',
-    '5': 'May', 
+    '5': 'May',
     '6': 'June',
-    '7': 'July', 
+    '7': 'July',
     '8': 'August',
-    '9': 'September', 
+    '9': 'September',
     '10': 'October',
-    '11': 'November', 
+    '11': 'November',
     '12': 'December',
 }
 
-pages = Blueprint('pages', __name__, template_folder=os.path.join(os.getcwd(), app.config.get('PAGES_FOLDER')))
+pages = Blueprint(
+    'pages',
+    __name__,
+    template_folder=os.path.join(os.getcwd(), app.config.get('PAGES_FOLDER'))
+)
 
 
 @app.after_request
 def format_html(response):
     if response.mimetype == 'text/html':
         if app.config.get('PRETTY_HTML', False):
-            response.data = BeautifulSoup(response.data, 'html.parser').prettify()
+            response.data = BeautifulSoup(
+                response.data,
+                'html.parser'
+            ).prettify()
         elif app.config.get('MINIFY_HTML', False):
             response.data = minify(response.data.decode('utf-8'))
     return response
@@ -111,12 +126,30 @@ def feed():
     name = app.config.get('SITE_NAME')
     subtitle = app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
     url = app.config.get('URL')
-    feed = AtomFeed(title=name, subtitle=subtitle, feed_url=url_for('all_posts'), url=url)
+    feed = AtomFeed(
+        title=name,
+        subtitle=subtitle,
+        feed_url=url_for('all_posts'),
+        url=url
+    )
     for post in posts:
-        feed.add(post.meta.get('title'), post.html, content_type='html',
-                author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
-                url=url_for('post', year=post.meta.get('published').strftime("%Y"), month=post.meta.get('published').strftime("%m"), day=post.meta.get('published').strftime("%d"), path=post.path),
-                updated=datetime.combine(post.meta.get('updated') or post.meta.get('published'), time()))
+        url = url_for(
+            'post',
+            year=post.meta.get('published').strftime('%Y'),
+            month=post.meta.get('published').strftime('%m'),
+            day=post.meta.get('published').strftime('%d'),
+            path=post.path
+        )
+        updated = datetime.datetime.combine(
+            post.meta.get('updated') or post.meta.get('published'),
+            datetime.time()
+        )
+        feed.add(
+            post.meta.get('title'), post.html, content_type='html',
+            author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
+            url=url,
+            updated=updated,
+        )
     return make_response(feed.to_string().encode('utf-8') + b'\n')
 
 
@@ -177,7 +210,12 @@ def author(author):
     author_posts = [p for p in posts if author == p.meta.get('author', '')]
     sorted_posts = sorted(author_posts, reverse=True,
                           key=lambda p: p.meta.get('published'))
-    return render_template('author.html', active='author', author=author, posts=sorted_posts)
+    return render_template(
+        'author.html',
+        active='author',
+        author=author,
+        posts=sorted_posts
+    )
 
 
 @app.route('/404.html')
@@ -190,7 +228,9 @@ def year(year):
     year = str(year)
     if len(year) != 4:
         abort(404)
-    year_posts = [p for p in posts if year == p.meta.get('published', []).strftime('%Y')]
+    year_posts = [
+        p for p in posts if year == p.meta.get('published', []).strftime('%Y')
+    ]
     if not year_posts:
         abort(404)
     sorted_posts = sorted(year_posts, reverse=False,
@@ -200,22 +240,40 @@ def year(year):
 
 @app.route('/<year>/<month>/')
 def month(year, month):
-    month_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m')]
+    month_posts = [
+        p for p in posts if year == p.meta.get('published').strftime('%Y')
+        and month == p.meta.get('published').strftime('%m')
+    ]
     if not month_posts:
         abort(404)
     sorted_posts = sorted(month_posts, reverse=False,
                           key=lambda p: p.meta.get('published'))
     month_string = MONTHS[month]
-    return render_template('month.html', year=year, month_string=month_string, posts=sorted_posts)
+    return render_template(
+        'month.html',
+        year=year,
+        month_string=month_string,
+        posts=sorted_posts
+    )
 
 
 @app.route('/<year>/<month>/<day>/')
 def day(year, month, day):
-    day_posts = [p for p in posts if year == p.meta.get('published').strftime('%Y') and month == p.meta.get('published').strftime('%m') and day == p.meta.get('published').strftime('%d') ]
+    day_posts = [
+        p for p in posts if year == p.meta.get('published').strftime('%Y')
+        and month == p.meta.get('published').strftime('%m')
+        and day == p.meta.get('published').strftime('%d')
+    ]
     if not day_posts:
         abort(404)
     month_string = MONTHS[month]
-    return render_template('day.html', year=year, month_string=month_string, day=day, posts=day_posts)
+    return render_template(
+        'day.html',
+        year=year,
+        month_string=month_string,
+        day=day,
+        posts=day_posts,
+    )
 
 
 @app.errorhandler(404)

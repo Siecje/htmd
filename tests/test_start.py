@@ -62,11 +62,12 @@ def test_start_with_existing_template():
     with runner.isolated_filesystem():
         os.mkdir('templates')
         with open(os.path.join('templates', '_layout.html'), 'w') as layout:
-            pass 
+            pass
         result = runner.invoke(start)
         with open(os.path.join('templates', '_layout.html'), 'r') as layout:
             # _layout.html was not replaced
             assert layout.read() == ''
     assert result.exit_code == 0
     assert 'templates/ already exists and was not created.' in result.output
-    assert 'templates/_layout.html already exists and was not created.' in result.output
+    expected2 = 'templates/_layout.html already exists and was not created.'
+    assert expected2 in result.output

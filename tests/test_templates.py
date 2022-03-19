@@ -1,5 +1,3 @@
-import os
-
 from click.testing import CliRunner
 from htmd.cli import start, templates
 

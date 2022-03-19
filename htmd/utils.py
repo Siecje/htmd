@@ -10,7 +10,8 @@ def create_directory(name):
     try:
         os.mkdir(name)
     except FileExistsError:
-        click.echo(click.style(f'{name} already exists and was not created.', fg='red'))
+        msg = f'{name} already exists and was not created.'
+        click.echo(click.style(msg, fg='red'))
     else:
         click.echo(click.style(f'{name} was created.', fg='green'))
 
@@ -20,12 +21,18 @@ def copy_file(src, dest):
         shutil.copyfile(src, dest)
         click.echo(click.style(f'{dest} was created.', fg='green'))
     else:
-        click.echo(click.style(f'{dest} already exists and was not created.', fg='red'))
+        msg = f'{dest} already exists and was not created.'
+        click.echo(click.style(msg, fg='red'))
 
 
 def combine_and_minify_css(static_folder):
     # Combine and minify all .css files in the static folder
-    css_files = sorted([f for f in os.listdir(static_folder) if f.endswith('.css') and f != 'combined.min.css'])
+    css_files = sorted(
+        [
+            f for f in os.listdir(static_folder)
+            if f.endswith('.css') and f != 'combined.min.css'
+        ]
+    )
     if not css_files:
         # There are no .css files in the static folder
         return
@@ -44,7 +51,13 @@ def combine_and_minify_css(static_folder):
 
 def combine_and_minify_js(static_folder):
     # Combine and minify all .js files in the static folder
-    js_files = sorted([f for f in os.listdir(static_folder) if f.endswith('.js') and f != 'combined.min.js'])
+    js_files = sorted(
+        [
+            f for f in os.listdir(static_folder)
+            if f.endswith('.js')
+            and f != 'combined.min.js'
+        ]
+    )
     if not js_files:
         # There are no .js files in the static folder
         return
@@ -67,5 +80,7 @@ def copy_missing_templates():
     htmd_dir = os.path.dirname(__file__)
     template_dir = os.path.join(htmd_dir, 'example_site', 'templates')
     for template_file in sorted(os.listdir(template_dir)):
-        copy_file(os.path.join(template_dir, template_file),
-            os.path.join('templates', template_file))
+        copy_file(
+            os.path.join(template_dir, template_file),
+            os.path.join('templates', template_file)
+        )

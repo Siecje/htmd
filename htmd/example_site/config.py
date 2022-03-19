@@ -1,7 +1,5 @@
 SITE_NAME = 'HTMD'
 SITE_URL = ''
-
-### Optional Settings ###
 SITE_LOGO = ''
 
 SITE_DESCRIPTION = ''
