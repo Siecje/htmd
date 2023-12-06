@@ -224,7 +224,7 @@ def not_found():
 
 
 @app.route('/<int:year>/')
-def year(year):
+def year_view(year):
     year = str(year)
     if len(year) != 4:
         abort(404)
@@ -239,7 +239,7 @@ def year(year):
 
 
 @app.route('/<year>/<month>/')
-def month(year, month):
+def month_view(year, month):
     month_posts = [
         p for p in posts if year == p.meta.get('published').strftime('%Y')
         and month == p.meta.get('published').strftime('%m')
@@ -258,7 +258,7 @@ def month(year, month):
 
 
 @app.route('/<year>/<month>/<day>/')
-def day(year, month, day):
+def day_view(year, month, day):
     day_posts = [
         p for p in posts if year == p.meta.get('published').strftime('%Y')
         and month == p.meta.get('published').strftime('%m')
@@ -283,20 +283,20 @@ def page_not_found(e):
 
 # Telling Frozen-Flask about routes that are not linked to in templates
 @freezer.register_generator
-def year():
+def year_view():
     for post in posts:
         yield {'year': post.meta.get('published').year}
 
 
 @freezer.register_generator
-def month():
+def month_view():
     for post in posts:
         yield {'year': post.meta.get('published').year,
                'month': post.meta.get('published').strftime('%m')}
 
 
 @freezer.register_generator
-def day():
+def day_view():
     for post in posts:
         yield {'year': post.meta.get('published').year,
                'month': post.meta.get('published').strftime('%m'),

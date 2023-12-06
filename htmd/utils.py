@@ -17,12 +17,12 @@ def create_directory(name):
         click.echo(click.style(f'{name} was created.', fg='green'))
 
 
-def copy_file(src, dest):
-    if os.path.exists(dest) is False:
-        shutil.copyfile(src, dest)
-        click.echo(click.style(f'{dest} was created.', fg='green'))
+def copy_file(source, destination):
+    if os.path.exists(destination) is False:
+        shutil.copyfile(source, destination)
+        click.echo(click.style(f'{destination} was created.', fg='green'))
     else:
-        msg = f'{dest} already exists and was not created.'
+        msg = f'{destination} already exists and was not created.'
         click.echo(click.style(msg, fg='red'))
 
 
@@ -83,7 +83,9 @@ def copy_missing_templates():
         if template_file in ('__init__.py', '__pycache__'):
             # __init__.py is that this directory for importlib.resources to work
             continue
-        copy_file(
-            importlib.resources.path('htmd.example_site.templates', template_file),
-            os.path.join('templates', template_file)
-        )
+        resource_path = importlib.resources.path('htmd.example_site.templates', template_file)
+        with resource_path as path:
+            copy_file(
+                path,
+                os.path.join('templates', template_file)
+            )

@@ -326,7 +326,7 @@ def test_build_year_404_incorrect():
         with open(os.path.join('pages', 'about.html'), 'r') as about_file:
             lines = about_file.readlines()
 
-        new_line = '''<p><a href="{{ url_for('year', year=14) }}">DNE link</a></p>\n'''
+        new_line = '''<p><a href="{{ url_for('year_view', year=14) }}">DNE link</a></p>\n'''
         with open(os.path.join('pages', 'about.html'), 'w') as about_file:
             for line in lines:
                 if '<p>This is the about page.</p>' in line:
@@ -336,6 +336,7 @@ def test_build_year_404_incorrect():
 
         result = runner.invoke(build)
     assert result.exit_code == 1
+    print(result.output)
     assert result.output == expected_output
 
 
@@ -354,7 +355,7 @@ def test_build_year_404_no_posts():
         with open(os.path.join('pages', 'about.html'), 'r') as about_file:
             lines = about_file.readlines()
 
-        new_line = '''<p><a href="{{ url_for('year', year=2013) }}">DNE link</a></p>\n'''
+        new_line = '''<p><a href="{{ url_for('year_view', year=2013) }}">DNE link</a></p>\n'''
         with open(os.path.join('pages', 'about.html'), 'w') as about_file:
             for line in lines:
                 if '<p>This is the about page.</p>' in line:
@@ -382,7 +383,7 @@ def test_build_month_404_no_posts():
         with open(os.path.join('pages', 'about.html'), 'r') as about_file:
             lines = about_file.readlines()
 
-        new_line = '''<p><a href="{{ url_for('month', year=2014, month='01') }}">DNE link</a></p>\n'''
+        new_line = '''<p><a href="{{ url_for('month_view', year=2014, month='01') }}">DNE link</a></p>\n'''
         with open(os.path.join('pages', 'about.html'), 'w') as about_file:
             for line in lines:
                 if '<p>This is the about page.</p>' in line:
@@ -410,7 +411,7 @@ def test_build_day_404_no_posts():
         with open(os.path.join('pages', 'about.html'), 'r') as about_file:
             lines = about_file.readlines()
 
-        new_line = '''<p><a href="{{ url_for('day', year=2014, month='10', day='29') }}">DNE link</a></p>\n'''
+        new_line = '''<p><a href="{{ url_for('day_view', year=2014, month='10', day='29') }}">DNE link</a></p>\n'''
         with open(os.path.join('pages', 'about.html'), 'w') as about_file:
             for line in lines:
                 if '<p>This is the about page.</p>' in line:

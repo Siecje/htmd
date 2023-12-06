@@ -62,12 +62,19 @@ $ venv/bin/python -m pip install -e htmd/
 $ mkdir my_site
 $ cd my_site
 $ ../venv/bin/htmd start
+# You can also create a symlink to htmd
+# somewhere on your $PATH and just use `htmd start`
 $ ../venv/bin/htmd build
 ```
 
 ### Running the tests
 
 ```shell
+$ git clone https://github.com/Siecje/htmd.git
+$ cd htmd
+$ python3 -m venv venv
+$ venv/bin/python -m pip install pip setuptools wheel --upgrade
+$ venv/bin/python -m pip install -e .
 $ venv/bin/python -m pip install pytest
 $ venv/bin/python -m pytest .
 ```
