@@ -1,6 +1,5 @@
 import importlib
-# Need to import importlib.resources explicitly
-import importlib.resources
+from importlib.resources import as_file, files
 import os
 import sys
 
@@ -32,47 +31,41 @@ def start(all_templates):
     if all_templates:
         copy_missing_templates()
     else:
-        resource_path = importlib.resources.path('htmd.example_site.templates', '_layout.html')
-        with resource_path as path:
+        with as_file(files('htmd.example_site.templates') / '_layout.html') as file:
             copy_file(
-                path,
+                file,
                 os.path.join('templates/', '_layout.html')
             )
 
     create_directory('static/')
-    resource_path = importlib.resources.path('htmd.example_site.static', '_reset.css')
-    with resource_path as path:
+    with as_file(files('htmd.example_site.static') / '_reset.css') as file:
         copy_file(
-            path,
+            file,
             os.path.join('static/', '_reset.css')
         )
-    resource_path = importlib.resources.path('htmd.example_site.static', 'style.css')
-    with resource_path as path:
+    with as_file(files('htmd.example_site.static') / 'style.css') as file:
         copy_file(
-            path,
+            file,
             os.path.join('static/', 'style.css'),
         )
 
     create_directory('pages/')
-    resource_path = importlib.resources.path('htmd.example_site.pages', 'about.html')
-    with resource_path as path:
+    with as_file(files('htmd.example_site.pages') / 'about.html') as file:
         copy_file(
-            path,
+            file,
             os.path.join('pages/', 'about.html'),
         )
 
     create_directory('posts/')
-    resource_path = importlib.resources.path('htmd.example_site.posts', 'example.md')
-    with resource_path as path:
+    with as_file(files('htmd.example_site.posts') / 'example.md') as file:
         copy_file(
-            path,
+            file,
             os.path.join('posts/', 'example.md'),
         )
 
-    resource_path = importlib.resources.path('htmd.example_site', 'config.py')
-    with resource_path as path:
+    with as_file(files('htmd.example_site') / 'config.py') as file:
         copy_file(
-            path,
+            file,
             'config.py',
         )
     click.echo('Add the site name and edit settings in config.py')
