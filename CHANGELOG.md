@@ -1,5 +1,10 @@
 # Change log
 
+## [2.0.1] - 2023-12-07
+### Added
+- Python 3.12 support
+- Remove deprecation warnings
+
 ## [2.0.0] - 2022-03-19
 ### Added
 - Python 3 support
