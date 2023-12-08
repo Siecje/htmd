@@ -1,6 +1,6 @@
 ### Release Steps
 
-- Change version in setup.cfg
+- Change version in pyproject.toml
 - Add changes to CHANGELOG.md
 
 ```shell
