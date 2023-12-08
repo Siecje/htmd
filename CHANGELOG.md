@@ -1,5 +1,11 @@
 # Change log
 
+## [2.0.2] - 2023-12-08
+### Added
+- Use only pyproject.toml
+### Removed
+- __init__.py files in example_site
+
 ## [2.0.1] - 2023-12-07
 ### Added
 - Python 3.12 support
