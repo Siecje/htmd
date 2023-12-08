@@ -35,11 +35,11 @@ version = "2.0.1"
 htmd = "htmd.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/siecje/htmd"
-Documentation = "https://github.com/siecje/htmd"
-Repository = "https://github.com/siecje/htmd.git"
-Issues = "https://github.com/siecje/htmd/issues"
 Changelog = "https://github.com/siecje/htmd/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/siecje/htmd"
+Homepage = "https://github.com/siecje/htmd"
+Issues = "https://github.com/siecje/htmd/issues"
+Repository = "https://github.com/siecje/htmd.git"
 
 [tool.setuptools]
 include-package-data = true
