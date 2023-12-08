@@ -15,6 +15,7 @@ from .utils import (
 
 
 @click.group()
+@click.version_option()
 def cli():
     pass  # pragma: no cover
 
