@@ -1,4 +1,0 @@
-include htmd/example_site/templates/*.html
-include htmd/example_site/pages/*.html
-include htmd/example_site/posts/*.md
-include htmd/example_site/static/*.css
