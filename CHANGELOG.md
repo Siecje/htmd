@@ -1,6 +1,6 @@
 # Change log
 
-## [3.0.0] -
+## [3.0.0] - 2023-12-08
 ### Added
 - Use toml for the config file
 - `htmd` will work from child directories in the project
