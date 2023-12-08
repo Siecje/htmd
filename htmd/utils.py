@@ -82,8 +82,7 @@ def copy_missing_templates():
     template_dir = files('htmd.example_site') / 'templates'
     for template_file in sorted(template_dir.iterdir()):
         skip_file = False
-        for skip_file_name in ('__init__.py', '__pycache__',):
-            # __init__.py is in this directory for importlib.resources to work
+        for skip_file_name in ('__pycache__',):
             if skip_file_name in str(template_file):
                 skip_file = True
                 break
