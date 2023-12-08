@@ -45,12 +45,12 @@ Changelog = "https://github.com/siecje/htmd/blob/main/CHANGELOG.md"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["."]
+include = ["htmd"]
 
 [tool.setuptools.package-data]
 htmd = [
-  "htmd/example_site/pages/*.html",
-  "htmd/example_site/posts/*.md",
-  "htmd/example_site/static/*.css",
-  "htmd/example_site/templates/*.html",
+  "example_site/pages/*.html",
+  "example_site/posts/*.md",
+  "example_site/static/*.css",
+  "example_site/templates/*.html",
 ]
