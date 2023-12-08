@@ -1,5 +1,12 @@
 # Change log
 
+## [3.0.0] -
+### Added
+- Use toml for the config file
+- `htmd` will work from child directories in the project
+### Removed
+- Dropped support for Python 3.10
+
 ## [2.0.3] - 2023-12-08
 ### Added
 - `--version` option

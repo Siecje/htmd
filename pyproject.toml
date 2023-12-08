@@ -28,7 +28,7 @@ maintainers = [
 ]
 name = "htmd"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 version = "2.0.3"
 
 [project.scripts]
@@ -49,7 +49,7 @@ include = ["htmd"]
 
 [tool.setuptools.package-data]
 htmd = [
-  "example_site/config.py",
+  "example_site/config.toml",
   "example_site/pages/*.html",
   "example_site/posts/*.md",
   "example_site/static/*.css",

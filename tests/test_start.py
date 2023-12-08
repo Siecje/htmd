@@ -16,8 +16,8 @@ def test_start():
         'pages/about.html was created.\n'
         'posts/ was created.\n'
         'posts/example.md was created.\n'
-        'config.py was created.\n'
-        'Add the site name and edit settings in config.py\n'
+        'config.toml was created.\n'
+        'Add the site name and edit settings in config.toml\n'
     )
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -48,8 +48,8 @@ def test_start_all_templates():
         'pages/about.html was created.\n'
         'posts/ was created.\n'
         'posts/example.md was created.\n'
-        'config.py was created.\n'
-        'Add the site name and edit settings in config.py\n'
+        'config.toml was created.\n'
+        'Add the site name and edit settings in config.toml\n'
     )
     with runner.isolated_filesystem():
         result = runner.invoke(start, ['--all-templates'])

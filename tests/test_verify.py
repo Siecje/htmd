@@ -134,26 +134,29 @@ def test_verify_published_invalid_day():
     assert result.output == expected_output
 
 
-def test_verify_SITE_NAME_empty():
+def test_verify_site_name_empty():
     expected_output = (
         'All posts are correctly formatted.\n'
-        'SITE_NAME is not set in config.py.\n'
+        '[site] name is not set in config.toml.\n'
     )
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
 
-        with open('config.py', 'r') as post:
+        with open('config.toml', 'r') as post:
             lines = post.readlines()
-        with open('config.py', 'w') as post:
+        with open('config.toml', 'w') as post:
+            seen = False
             for line in lines:
-                if 'SITE_NAME' in line:
-                    post.write("SITE_NAME = ''\n")
+                if 'name' in line and not seen:
+                    # [site] name is the first name
+                    seen = True
+                    post.write("name = ''\n")
                 else:
                     post.write(line)
 
         result = runner.invoke(verify)
-    # SITE_NAME isn't required
+    # [site] name isn't required
     assert result.exit_code == 0
     assert result.output == expected_output
 
@@ -161,17 +164,17 @@ def test_verify_SITE_NAME_empty():
 def test_verify_SITE_NAME_missing():
     expected_output = (
         'All posts are correctly formatted.\n'
-        'SITE_NAME is not set in config.py.\n'
+        '[site] name is not set in config.toml.\n'
     )
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
 
-        with open('config.py', 'r') as post:
+        with open('config.toml', 'r') as post:
             lines = post.readlines()
-        with open('config.py', 'w') as post:
+        with open('config.toml', 'w') as post:
             for line in lines:
-                if 'SITE_NAME' not in line:
+                if 'name' not in line:
                     post.write(line)
 
         result = runner.invoke(verify)
@@ -181,12 +184,12 @@ def test_verify_SITE_NAME_missing():
 
 
 def test_verify_no_config():
-    expected_output = 'Can not find config.py\n'
+    expected_output = 'Can not find config.toml\n'
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
 
-        os.remove('config.py')
+        os.remove('config.toml')
 
         result = runner.invoke(verify)
 

@@ -64,12 +64,12 @@ def start(all_templates):
             os.path.join('posts/', 'example.md'),
         )
 
-    with as_file(files('htmd.example_site') / 'config.py') as file:
+    with as_file(files('htmd.example_site') / 'config.toml') as file:
         copy_file(
             file,
-            'config.py',
+            'config.toml',
         )
-    click.echo('Add the site name and edit settings in config.py')
+    click.echo('Add the site name and edit settings in config.toml')
 
 
 @cli.command('verify', short_help='Verify posts formatting is correct.')
@@ -107,7 +107,7 @@ def verify():
     app = site.app
     site_name = app.config.get('SITE_NAME')
     if not site_name:
-        click.echo(click.style('SITE_NAME is not set in config.py.', fg='red'))
+        click.echo(click.style('[site] name is not set in config.toml.', fg='red'))
 
     # SITE_NAME is not required
     if not correct:

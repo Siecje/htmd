@@ -1,0 +1,39 @@
+[site]
+description = ""
+# URL of a Facebook page
+facebook = ""
+# Unique Facebook ID used for platforminsights
+# https://developers.facebook.com/docs/platforminsights
+facebook_app_id = ""
+logo = ""
+name = "htmd"
+# @twitter_username
+twitter = "@"
+url = ""
+
+# Where to look for files
+[folders]
+static = "static"
+posts = "posts"
+pages = "pages"
+build = "build"
+
+[posts]
+extension = ".md"
+
+[html]
+# How to format HTML
+# Only set one to True
+# If pretty is true, minify will not be checked
+pretty = false
+minify = false
+
+[author]
+# Show author and date at the top of every post?
+show = true
+# Author to use if author is not specified in the post file
+default_name = ""
+# @twitter_username
+default_twitter = ""
+# facebook URL
+default_facebook = ""

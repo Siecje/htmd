@@ -99,17 +99,17 @@ def test_build_css_minify_no_css_files():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_PRETTY_HTML_True():
+def test_build_html_pretty_true():
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
-        with open('config.py', 'r') as config_file:
+        with open('config.toml', 'r') as config_file:
             lines = config_file.readlines()
 
-        with open('config.py', 'w') as config_file:
+        with open('config.toml', 'w') as config_file:
             for line in lines:
-                if 'PRETTY_HTML' in line:
-                    config_file.write('PRETTY_HTML = True\n')
+                if 'pretty =' in line:
+                    config_file.write('pretty = true\n')
                 else:
                     config_file.write(line)
 
@@ -118,17 +118,17 @@ def test_build_PRETTY_HTML_True():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_MINIFY_HTML_True():
+def test_build_html_minify_true():
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
-        with open('config.py', 'r') as config_file:
+        with open('config.toml', 'r') as config_file:
             lines = config_file.readlines()
 
-        with open('config.py', 'w') as config_file:
+        with open('config.toml', 'w') as config_file:
             for line in lines:
-                if 'MINIFY_HTML' in line:
-                    config_file.write('MINIFY_HTML = True\n')
+                if 'minify =' in line:
+                    config_file.write('minify = true\n')
                 else:
                     config_file.write(line)
 

@@ -1,6 +1,7 @@
 import datetime
 import os
 import sys
+import tomllib
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
@@ -19,7 +20,7 @@ def get_project_dir():
     current_directory = os.getcwd()
 
     while True:
-        file_path = os.path.join(current_directory, 'config.py')
+        file_path = os.path.join(current_directory, 'config.toml')
 
         if os.path.isfile(file_path):
             return current_directory
@@ -45,12 +46,34 @@ app = Flask(
 
 
 try:
-    app.config.from_pyfile(os.path.join(project_dir, 'config.py'))
+    with open(os.path.join(project_dir, 'config.toml'), 'rb') as config_file:
+        htmd_config = tomllib.load(config_file)
 except IOError:
-    print('Can not find config.py')
+    print('Can not find config.toml')
     sys.exit(1)
 
-# To avoid full paths in config.py
+# Flask configs are flat, our toml file is not
+app.config['SITE_NAME'] = htmd_config.get('site', {}).get('name', '')
+app.config['SITE_URL'] = htmd_config.get('site', {}).get('url', '')
+app.config['SITE_LOGO'] = htmd_config.get('site', {}).get('logo', '')
+app.config['SITE_DESCRIPTION'] = htmd_config.get('site', {}).get('description', '')
+app.config['SITE_TWITTER'] = htmd_config.get('site', {}).get('twitter', '')
+app.config['SITE_FACEBOOK'] = htmd_config.get('site', {}).get('facebook', '')
+app.config['FACEBOOK_APP_ID'] = htmd_config.get('site', {}).get('facebook_app_id', '')
+app.config['STATIC_FOLDER'] = htmd_config.get('folders', {}).get('static', 'static')
+app.config['POSTS_FOLDER'] = htmd_config.get('folders', {}).get('posts', 'posts')
+app.config['PAGES_FOLDER'] = htmd_config.get('folders', {}).get('pages', 'pages')
+app.config['BUILD_FOLDER'] = htmd_config.get('folders', {}).get('build', 'build')
+app.config['POSTS_EXTENSION'] = htmd_config.get('posts', {}).get('extension', '.md')
+app.config['PRETTY_HTML'] = htmd_config.get('html', {}).get('pretty', False)
+app.config['MINIFY_HTML'] = htmd_config.get('html', {}).get('minify', False)
+app.config['SHOW_AUTHOR'] = htmd_config.get('author', {}).get('show', True)
+app.config['DEFAULT_AUTHOR'] = htmd_config.get('author', {}).get('default_name', '')
+app.config['DEFAULT_AUTHOR_TWITTER'] = htmd_config.get('author', {}).get('default_twitter', '')
+app.config['DEFAULT_AUTHOR_FACEBOOK'] = htmd_config.get('author', {}).get('default_facebook', '')
+
+
+# To avoid full paths in config.toml
 app.config['FLATPAGES_ROOT'] = os.path.join(
     project_dir, app.config.get('POSTS_FOLDER')
 )
