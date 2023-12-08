@@ -1,6 +1,15 @@
-### Deployment
+### Release Steps
+
+- Change version in setup.cfg
+- Add changes to CHANGELOG.md
 
 ```shell
+git add -u
+git commit -m "Version X"
+git push origin main
+# Remove __pycache__ directories
+cd ..
+rm -rf htmd
 git clone git@github.com:Siecje/htmd.git
 cd htmd
 python3 -m venv venv
