@@ -15,25 +15,47 @@ from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 
+def get_project_dir():
+    current_directory = os.getcwd()
+
+    while True:
+        file_path = os.path.join(current_directory, 'config.py')
+
+        if os.path.isfile(file_path):
+            return current_directory
+
+        # Move to the parent directory
+        parent_directory = os.path.dirname(current_directory)
+
+        # If the current and parent directories are the same, break the loop
+        if current_directory == parent_directory:
+            break
+
+        current_directory = parent_directory
+
+    return os.getcwd()
+
+project_dir = get_project_dir()
+
 app = Flask(
     __name__,
-    static_folder=os.path.join(os.getcwd(), 'static'),
+    static_folder=os.path.join(project_dir, 'static'),
     template_folder=os.path.join(this_dir, 'example_site', 'templates'),
 )
 
 
 try:
-    app.config.from_pyfile(os.path.join(os.getcwd(), 'config.py'))
+    app.config.from_pyfile(os.path.join(project_dir, 'config.py'))
 except IOError:
     print('Can not find config.py')
     sys.exit(1)
 
 # To avoid full paths in config.py
 app.config['FLATPAGES_ROOT'] = os.path.join(
-    os.getcwd(), app.config.get('POSTS_FOLDER')
+    project_dir, app.config.get('POSTS_FOLDER')
 )
 app.config['FREEZER_DESTINATION'] = os.path.join(
-    os.getcwd(), app.config.get('BUILD_FOLDER')
+    project_dir, app.config.get('BUILD_FOLDER')
 )
 app.config['FREEZER_REMOVE_EXTRA_FILES'] = False
 app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
@@ -59,7 +81,7 @@ app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 
 # Include current htmd site templates
 app.jinja_loader = ChoiceLoader([
-    FileSystemLoader(os.path.join(os.getcwd(), 'templates/')),
+    FileSystemLoader(os.path.join(project_dir, 'templates/')),
     app.jinja_loader
 ])
 
@@ -81,7 +103,7 @@ MONTHS = {
 pages = Blueprint(
     'pages',
     __name__,
-    template_folder=os.path.join(os.getcwd(), app.config.get('PAGES_FOLDER'))
+    template_folder=os.path.join(project_dir, app.config.get('PAGES_FOLDER'))
 )
 
 
