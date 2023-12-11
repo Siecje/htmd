@@ -6,12 +6,12 @@ import tomllib
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
 from flask import (
-    abort, Blueprint, Flask, render_template, make_response, url_for
+    abort, Blueprint, Flask, make_response, render_template, url_for
 )
 from flask_flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
-from jinja2 import TemplateNotFound, ChoiceLoader, FileSystemLoader
+from jinja2 import ChoiceLoader, FileSystemLoader, TemplateNotFound
 
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
