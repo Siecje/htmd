@@ -3,24 +3,24 @@ requires = ["setuptools", "wheel"]
 
 [project]
 authors = [
-  {name = "Cody Scott", email = "cody.j.b.scott@gmail.com"},
+  {email = "cody.j.b.scott@gmail.com", name = "Cody Scott"},
 ]
 classifiers = [
-  "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
 ]
 dependencies = [
   "beautifulsoup4",
+  "click",
+  "csscompressor",
   "feedwerk",
   "Flask",
   "Flask-FlatPages",
   "Frozen-Flask",
-  "Pygments",
-  "click",
   "htmlmin",
   "jsmin",
-  "csscompressor",
+  "Pygments",
 ]
 description = "Write Markdown and Jinja2 templates to create a website"
 maintainers = [
