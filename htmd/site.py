@@ -166,17 +166,35 @@ def index():
     return render_template('index.html', active='home', posts=latest[:4])
 
 
+def set_post_time(post, property, current_time):
+    file_path = os.path.join(
+        app.config['FLATPAGES_ROOT'],
+        post.path + app.config['FLATPAGES_EXTENSION']
+    )
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    
+    found = False
+    with open(file_path, 'w') as file:
+        for line in lines:
+            if not found and property in line:
+                line = f'{property}: {current_time.isoformat()}\n'
+                found = True
+            file.write(line)
+
+
 @app.route('/feed.atom/')
 def feed():
     name = app.config.get('SITE_NAME')
     subtitle = app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
     url = app.config.get('URL')
-    feed = AtomFeed(
-        title=name,
-        subtitle=subtitle,
+    atom = AtomFeed(
         feed_url=url_for('all_posts'),
+        subtitle=subtitle,
+        title=name,
         url=url
     )
+    current_time = datetime.datetime.now().time()
     for post in posts:
         url = url_for(
             'post',
@@ -185,17 +203,23 @@ def feed():
             day=post.meta.get('published').strftime('%d'),
             path=post.path
         )
-        updated = datetime.datetime.combine(
-            post.meta.get('updated') or post.meta.get('published'),
-            datetime.time()
-        )
-        feed.add(
+
+        updated = post.meta.get('updated') or post.meta.get('published')
+        if isinstance(updated, datetime.date):
+            updated = datetime.datetime.combine(updated, current_time)
+            if 'updated' in post.meta:
+                property = 'updated'
+            else:
+                property = 'published'
+            set_post_time(post, property, updated)
+        atom.add(
             post.meta.get('title'), post.html, content_type='html',
             author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
             url=url,
             updated=updated,
         )
-    return make_response(feed.to_string().encode('utf-8') + b'\n')
+    ret = make_response(atom.to_string().encode('utf-8') + b'\n')
+    return ret
 
 
 @app.route('/all/')
