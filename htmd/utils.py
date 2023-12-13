@@ -1,4 +1,3 @@
-import importlib
 from importlib.resources import as_file, files
 import os
 import shutil
@@ -13,18 +12,9 @@ def create_directory(name):
         os.mkdir(name)
     except FileExistsError:
         msg = f'{name} already exists and was not created.'
-        click.echo(click.style(msg, fg='red'))
+        click.echo(click.style(msg, fg='yellow'))
     else:
         click.echo(click.style(f'{name} was created.', fg='green'))
-
-
-def copy_file(source, destination):
-    if os.path.exists(destination) is False:
-        shutil.copyfile(source, destination)
-        click.echo(click.style(f'{destination} was created.', fg='green'))
-    else:
-        msg = f'{destination} already exists and was not created.'
-        click.echo(click.style(msg, fg='red'))
 
 
 def combine_and_minify_css(static_folder):
@@ -77,6 +67,14 @@ def combine_and_minify_js(static_folder):
     with open(os.path.join(static_folder, 'combined.min.js'), 'w') as master:
         master.write(jsmin(combined))
 
+def copy_file(source, destination):
+    if os.path.exists(destination) is False:
+        shutil.copyfile(source, destination)
+        click.echo(click.style(f'{destination} was created.', fg='green'))
+    else:
+        msg = f'{destination} already exists and was not created.'
+        click.echo(click.style(msg, fg='yellow'))
+
 
 def copy_missing_templates():
     template_dir = files('htmd.example_site') / 'templates'
@@ -93,3 +91,15 @@ def copy_missing_templates():
             template_file,
             os.path.join('templates/', file_name)
         )
+
+
+def copy_site_file(directory, filename):
+    if directory == '':
+        anchor = 'htmd.example_site'
+    else:
+        anchor = f'htmd.example_site.{directory}'
+    source_path = files(anchor) / filename
+    destination_path = os.path.join(directory, filename)
+
+    with as_file(source_path) as file:
+        copy_file(file, destination_path)

@@ -1,6 +1,4 @@
 import importlib
-from importlib.resources import as_file, files
-import os
 import sys
 
 import click
@@ -8,8 +6,8 @@ import click
 from .utils import (
     combine_and_minify_css,
     combine_and_minify_js,
-    copy_file,
     copy_missing_templates,
+    copy_site_file,
     create_directory,
 )
 
@@ -32,43 +30,19 @@ def start(all_templates):
     if all_templates:
         copy_missing_templates()
     else:
-        with as_file(files('htmd.example_site.templates') / '_layout.html') as file:
-            copy_file(
-                file,
-                os.path.join('templates/', '_layout.html')
-            )
+        copy_site_file('templates', '_layout.html')
 
     create_directory('static/')
-    with as_file(files('htmd.example_site.static') / '_reset.css') as file:
-        copy_file(
-            file,
-            os.path.join('static/', '_reset.css')
-        )
-    with as_file(files('htmd.example_site.static') / 'style.css') as file:
-        copy_file(
-            file,
-            os.path.join('static/', 'style.css'),
-        )
+    copy_site_file('static', '_reset.css')
+    copy_site_file('static', 'style.css')
 
     create_directory('pages/')
-    with as_file(files('htmd.example_site.pages') / 'about.html') as file:
-        copy_file(
-            file,
-            os.path.join('pages/', 'about.html'),
-        )
+    copy_site_file('pages', 'about.html')
 
     create_directory('posts/')
-    with as_file(files('htmd.example_site.posts') / 'example.md') as file:
-        copy_file(
-            file,
-            os.path.join('posts/', 'example.md'),
-        )
+    copy_site_file('posts', 'example.md')
 
-    with as_file(files('htmd.example_site') / 'config.toml') as file:
-        copy_file(
-            file,
-            'config.toml',
-        )
+    copy_site_file('', 'config.toml')
     click.echo('Add the site name and edit settings in config.toml')
 
 
@@ -83,7 +57,7 @@ def verify():
 
     correct = True
     for post in site.posts:
-        for item in ['author', 'title', 'published']:
+        for item in ['author', 'published', 'title']:
             if item not in post.meta:
                 correct = False
                 msg = f'Post "{post.path}" does not have field {item}.'
@@ -107,9 +81,10 @@ def verify():
     app = site.app
     site_name = app.config.get('SITE_NAME')
     if not site_name:
-        click.echo(click.style('[site] name is not set in config.toml.', fg='red'))
-
-    # SITE_NAME is not required
+        # SITE_NAME is not required
+        message = '[site] name is not set in config.toml.'
+        click.echo(click.style(message, fg='yellow'))
+    
     if not correct:
         sys.exit(1)
 

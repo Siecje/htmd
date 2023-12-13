@@ -52,25 +52,33 @@ except IOError:
     print('Can not find config.toml')
     sys.exit(1)
 
-# Flask configs are flat, our toml file is not
-app.config['SITE_NAME'] = htmd_config.get('site', {}).get('name', '')
-app.config['SITE_URL'] = htmd_config.get('site', {}).get('url', '')
-app.config['SITE_LOGO'] = htmd_config.get('site', {}).get('logo', '')
-app.config['SITE_DESCRIPTION'] = htmd_config.get('site', {}).get('description', '')
-app.config['SITE_TWITTER'] = htmd_config.get('site', {}).get('twitter', '')
-app.config['SITE_FACEBOOK'] = htmd_config.get('site', {}).get('facebook', '')
-app.config['FACEBOOK_APP_ID'] = htmd_config.get('site', {}).get('facebook_app_id', '')
-app.config['STATIC_FOLDER'] = htmd_config.get('folders', {}).get('static', 'static')
-app.config['POSTS_FOLDER'] = htmd_config.get('folders', {}).get('posts', 'posts')
-app.config['PAGES_FOLDER'] = htmd_config.get('folders', {}).get('pages', 'pages')
-app.config['BUILD_FOLDER'] = htmd_config.get('folders', {}).get('build', 'build')
-app.config['POSTS_EXTENSION'] = htmd_config.get('posts', {}).get('extension', '.md')
-app.config['PRETTY_HTML'] = htmd_config.get('html', {}).get('pretty', False)
-app.config['MINIFY_HTML'] = htmd_config.get('html', {}).get('minify', False)
-app.config['SHOW_AUTHOR'] = htmd_config.get('author', {}).get('show', True)
-app.config['DEFAULT_AUTHOR'] = htmd_config.get('author', {}).get('default_name', '')
-app.config['DEFAULT_AUTHOR_TWITTER'] = htmd_config.get('author', {}).get('default_twitter', '')
-app.config['DEFAULT_AUTHOR_FACEBOOK'] = htmd_config.get('author', {}).get('default_facebook', '')
+# Flask configs are flat, config.toml is not
+# Define the configuration keys and their default values
+config_keys = {
+    'SITE_NAME': ['site', 'name', ''],
+    'SITE_URL': ['site', 'url', ''],
+    'SITE_LOGO': ['site', 'logo', ''],
+    'SITE_DESCRIPTION': ['site', 'description', ''],
+    'SITE_TWITTER': ['site', 'twitter', ''],
+    'SITE_FACEBOOK': ['site', 'facebook', ''],
+    'FACEBOOK_APP_ID': ['site', 'facebook_app_id', ''],
+    'STATIC_FOLDER': ['folders', 'static', 'static'],
+    'POSTS_FOLDER': ['folders', 'posts', 'posts'],
+    'PAGES_FOLDER': ['folders', 'pages', 'pages'],
+    'BUILD_FOLDER': ['folders', 'build', 'build'],
+    'POSTS_EXTENSION': ['posts', 'extension', '.md'],
+    'PRETTY_HTML': ['html', 'pretty', False],
+    'MINIFY_HTML': ['html', 'minify', False],
+    'SHOW_AUTHOR': ['author', 'show', True],
+    'DEFAULT_AUTHOR': ['author', 'default_name', ''],
+    'DEFAULT_AUTHOR_TWITTER': ['author', 'default_twitter', ''],
+    'DEFAULT_AUTHOR_FACEBOOK': ['author', 'default_facebook', ''],
+}
+
+# Update app.config using the configuration keys
+for flask_key, (table, key, default) in config_keys.items():
+    app.config[flask_key] = htmd_config.get(table, {}).get(key, default)
+    
 
 
 # To avoid full paths in config.toml
@@ -354,19 +362,25 @@ def page_not_found(e):
 @freezer.register_generator
 def year_view():
     for post in posts:
-        yield {'year': post.meta.get('published').year}
+        yield {
+            'year': post.meta.get('published').year
+        }
 
 
 @freezer.register_generator
 def month_view():
     for post in posts:
-        yield {'year': post.meta.get('published').year,
-               'month': post.meta.get('published').strftime('%m')}
+        yield {
+            'month': post.meta.get('published').strftime('%m'),
+            'year': post.meta.get('published').year,
+        }
 
 
 @freezer.register_generator
 def day_view():
     for post in posts:
-        yield {'year': post.meta.get('published').year,
-               'month': post.meta.get('published').strftime('%m'),
-               'day': post.meta.get('published').strftime('%d')}
+        yield {
+            'day': post.meta.get('published').strftime('%d'),
+            'month': post.meta.get('published').strftime('%m'),
+            'year': post.meta.get('published').year,
+        }
