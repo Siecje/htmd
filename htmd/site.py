@@ -6,7 +6,7 @@ import tomllib
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
 from flask import (
-    abort, Blueprint, Flask, make_response, render_template, url_for
+    abort, Blueprint, Flask, render_template, url_for
 )
 from flask_flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
@@ -183,7 +183,7 @@ def set_post_time(post, property, current_time):
             file.write(line)
 
 
-@app.route('/feed.atom/')
+@app.route('/feed.atom')
 def feed():
     name = app.config.get('SITE_NAME')
     subtitle = app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
@@ -218,7 +218,7 @@ def feed():
             url=url,
             updated=updated,
         )
-    ret = make_response(atom.to_string().encode('utf-8') + b'\n')
+    ret = atom.get_response()
     return ret
 
 
