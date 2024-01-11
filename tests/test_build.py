@@ -433,3 +433,13 @@ def test_build_from_sub_directory():
         result = runner.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
+
+
+def test_build_feed_dot_atom():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        runner.invoke(build)
+        current_directory = os.getcwd()
+        assert os.path.isfile(os.path.join(current_directory, 'build', 'feed.atom'))
+
