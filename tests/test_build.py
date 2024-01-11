@@ -422,3 +422,14 @@ def test_build_day_404_no_posts():
         result = runner.invoke(build)
     assert result.exit_code == 1
     assert result.output == expected_output
+
+
+def test_build_from_sub_directory():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        current_directory = os.getcwd()
+        os.chdir(os.path.join(current_directory, 'posts'))
+        result = runner.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
