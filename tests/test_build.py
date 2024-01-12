@@ -1,3 +1,4 @@
+import datetime
 import os
 import re
 import shutil
@@ -443,3 +444,94 @@ def test_build_feed_dot_atom():
         current_directory = os.getcwd()
         assert os.path.isfile(os.path.join(current_directory, 'build', 'feed.atom'))
 
+
+def test_build_updated_time_is_added():
+    # If there is no published/updated time then
+    # build will add it
+    # verify that time is not there
+    # ensure correct time is added
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            b_lines = post_file.readlines()
+        runner.invoke(build)
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            a_lines = post_file.readlines()
+    for b_line, a_line in zip(b_lines, a_lines):
+        if 'updated' in b_line:
+            b_updated = b_line
+            a_updated = a_line
+        if 'published' in b_line:
+            b_published = b_line
+            a_published = a_line
+
+    # Verify published didn't change
+    assert a_published is not None
+    assert b_published.strip() == a_published.strip()
+
+    assert a_updated.startswith(b_updated.strip())
+    assert len(a_updated) > len(b_updated)
+    b_datetime_str = b_updated.replace('updated:', '').strip()
+    a_datetime_str = a_updated.replace('updated:', '').strip()                      
+    b_datetime = datetime.datetime.fromisoformat(b_datetime_str)
+    a_datetime = datetime.datetime.fromisoformat(a_datetime_str)
+
+    # Before didn't have a time
+    assert b_datetime.hour == 0
+    assert b_datetime.minute == 0
+    assert b_datetime.second == 0
+
+    date_with_current_time = datetime.datetime.now().replace(year=a_datetime.year, month=a_datetime.month, day=a_datetime.day)
+    time_difference = abs(a_datetime - date_with_current_time)
+
+    # Verify updated time is close to now
+    threshold_seconds = 60
+    assert time_difference.total_seconds() < threshold_seconds
+
+
+def test_build_published_time_is_added():
+    # If there is no published/updated time then
+    # build will add it
+    # verify that time is not there
+    # ensure correct time is added
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            b_lines = post_file.readlines()
+        with open(os.path.join('posts', 'example.md'), 'w') as post_file:
+            for line in b_lines:
+                if 'updated' not in line:
+                    post_file.write(line)
+        runner.invoke(build)
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            a_lines = post_file.readlines()
+    for b_line, a_line in zip(b_lines, a_lines):
+        if 'published' in b_line:
+            b_published = b_line
+            a_published = a_line
+
+    assert a_published.startswith(b_published.strip())
+    assert len(a_published) > len(b_published)
+    b_datetime_str = b_published.replace('published:', '').strip()
+    a_datetime_str = a_published.replace('published:', '').strip()                      
+    b_datetime = datetime.datetime.fromisoformat(b_datetime_str)
+    a_datetime = datetime.datetime.fromisoformat(a_datetime_str)
+    
+    # Before didn't have a time
+    assert b_datetime.hour == 0
+    assert b_datetime.minute == 0
+    assert b_datetime.second == 0
+
+    date_with_current_time = datetime.datetime.now().replace(year=a_datetime.year, month=a_datetime.month, day=a_datetime.day)
+    time_difference = abs(a_datetime - date_with_current_time)
+
+    # Verify published time is close to now
+    threshold_seconds = 60
+    assert time_difference.total_seconds() < threshold_seconds
+
+    # verify updated is not added
+    for a_line in a_lines:
+        if 'updated' in a_line:
+            assert False, 'updated found in example post'
