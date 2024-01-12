@@ -174,7 +174,7 @@ def index():
     return render_template('index.html', active='home', posts=latest[:4])
 
 
-def set_post_time(post, property, current_time):
+def set_post_time(post, property, date_time):
     file_path = os.path.join(
         app.config['FLATPAGES_ROOT'],
         post.path + app.config['FLATPAGES_EXTENSION']
@@ -186,7 +186,10 @@ def set_post_time(post, property, current_time):
     with open(file_path, 'w') as file:
         for line in lines:
             if not found and property in line:
-                line = f'{property}: {current_time.isoformat()}\n'
+                line = f'{property}: {date_time.isoformat()}\n'
+                found = True
+            elif not found and '...' in line:
+                file.write(f'{property}: {date_time.isoformat()}\n')
                 found = True
             file.write(line)
 
@@ -212,19 +215,28 @@ def feed():
             path=post.path
         )
 
-        updated = post.meta.get('updated') or post.meta.get('published')
-        if isinstance(updated, datetime.date):
-            updated = datetime.datetime.combine(updated, current_time)
-            if 'updated' in post.meta:
+        if 'updated' not in post.meta:
+            published = post.meta.get('published')
+            if isinstance(published, datetime.datetime):
                 property = 'updated'
             else:
                 property = 'published'
-            set_post_time(post, property, updated)
+        else:
+            property = 'updated'
+
+        datetime_field = post.meta.get(property)
+        if isinstance(datetime_field, datetime.date):
+            datetime_field = datetime.datetime.combine(
+                datetime_field, current_time
+            )
+        else:
+            datetime_field = datetime.datetime.now()
+        set_post_time(post, property, datetime_field)
         atom.add(
             post.meta.get('title'), post.html, content_type='html',
             author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
             url=url,
-            updated=updated,
+            updated=datetime_field,
         )
     ret = atom.get_response()
     return ret

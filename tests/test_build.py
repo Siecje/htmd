@@ -535,3 +535,66 @@ def test_build_published_time_is_added():
     for a_line in a_lines:
         if 'updated' in a_line:
             assert False, 'updated found in example post'
+
+
+def test_build_updated_is_added():
+    # If published has a time
+    # and there is no updated then
+    # build will add updated with time
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        # Remove updated from example post
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            b_lines = post_file.readlines()
+        with open(os.path.join('posts', 'example.md'), 'w') as post_file:
+            for line in b_lines:
+                if 'updated' not in line:
+                    post_file.write(line)
+        # First build adds published time
+        runner.invoke(build)
+        # Second build adds updated
+        runner.invoke(build)
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            a_lines = post_file.readlines()
+    for a_line in a_lines:
+        if 'updated' in a_line:
+            a_updated = a_line
+
+    a_datetime_str = a_updated.replace('updated:', '').strip()
+    a_datetime = datetime.datetime.fromisoformat(a_datetime_str)
+
+    date_with_current_time = datetime.datetime.now().replace(year=a_datetime.year, month=a_datetime.month, day=a_datetime.day)
+    time_difference = abs(a_datetime - date_with_current_time)
+
+    # Verify published time is close to now
+    threshold_seconds = 60
+    assert time_difference.total_seconds() < threshold_seconds
+
+
+def test_build_updated_is_added_once():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        # Remove updated from example post
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            b_lines = post_file.readlines()
+        with open(os.path.join('posts', 'example.md'), 'w') as post_file:
+            for line in b_lines:
+                if 'updated' not in line:
+                    post_file.write(line)
+            # add "..." to post content
+            post_file.write('...\n')
+
+        # First build adds published time
+        runner.invoke(build)
+        # Second build adds updated
+        runner.invoke(build)
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            a_lines = post_file.readlines()
+    count = 0
+    for a_line in a_lines:
+        if 'updated' in a_line:
+            count += 1
+
+    assert count == 1
