@@ -3,6 +3,8 @@ import os
 from click.testing import CliRunner
 from htmd.cli import start, verify
 
+from utils import remove_fields_from_example_post
+
 
 def test_verify():
     runner = CliRunner()
@@ -14,22 +16,13 @@ def test_verify():
     assert result.output == expected_output
 
 
-def remove_field_from_example_post(field_name):
-    with open(os.path.join('posts', 'example.md'), 'r') as post:
-        lines = post.readlines()
-    with open(os.path.join('posts', 'example.md'), 'w') as post:
-        for line in lines:
-            if field_name not in line:
-                post.write(line)
-
-
 def test_verify_author_missing():
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
 
         # Remove author from example post
-        remove_field_from_example_post('author')
+        remove_fields_from_example_post(('author',))
 
         result = runner.invoke(verify)
     assert result.exit_code == 1
@@ -43,7 +36,7 @@ def test_verify_title_missing():
         runner.invoke(start)
 
         # Remove title from example post
-        remove_field_from_example_post('title')
+        remove_fields_from_example_post(('title',))
 
         result = runner.invoke(verify)
     assert result.exit_code == 1
@@ -57,12 +50,14 @@ def test_verify_published_missing():
         runner.invoke(start)
 
         # Remove published from example post
-        remove_field_from_example_post('published')
+        remove_fields_from_example_post(('published',))
 
         result = runner.invoke(verify)
-    assert result.exit_code == 1
-    expected_output = 'Post "example" does not have field published.\n'
+    # verify doesn't check for published
+    # since it will be added on build.
+    expected_output = 'All posts are correctly formatted.\n'
     assert result.output == expected_output
+    assert result.exit_code == 0
 
 
 def test_verify_published_invalid_year():

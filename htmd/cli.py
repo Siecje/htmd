@@ -1,4 +1,6 @@
+import datetime
 import importlib
+import os
 import sys
 
 import click
@@ -56,11 +58,12 @@ def verify():
     importlib.reload(site)
 
     correct = True
+    required_fields = ('author', 'title')
     for post in site.posts:
-        for item in ['author', 'published', 'title']:
-            if item not in post.meta:
+        for field in required_fields:
+            if field not in post.meta:
                 correct = False
-                msg = f'Post "{post.path}" does not have field {item}.'
+                msg = f'Post "{post.path}" does not have field {field}.'
                 click.echo(click.style(msg, fg='red'))
         if 'published' in post.meta:
             try:
@@ -87,6 +90,53 @@ def verify():
     
     if not correct:
         sys.exit(1)
+
+
+def set_post_time(app, post, property, date_time):
+    file_path = os.path.join(
+        app.config['FLATPAGES_ROOT'],
+        post.path + app.config['FLATPAGES_EXTENSION']
+    )
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    
+    found = False
+    with open(file_path, 'w') as file:
+        for line in lines:
+            if not found and property in line:
+                line = f'{property}: {date_time.isoformat()}\n'
+                found = True
+            elif not found and '...' in line:
+                file.write(f'{property}: {date_time.isoformat()}\n')
+                found = True
+            file.write(line)
+
+
+def set_posts_datetime(app, posts):
+    # Ensure each post has a published date
+    # set time for correct date field
+    for post in posts:
+        if 'updated' not in post.meta:
+            published = post.meta.get('published')
+            if isinstance(published, datetime.datetime):
+                property = 'updated'
+            else:
+                property = 'published'
+        else:
+            property = 'updated'
+
+        post_datetime = post.meta.get(property)
+        now = datetime.datetime.now()
+        current_time = now.time()
+        if isinstance(post_datetime, datetime.date):
+            post_datetime = datetime.datetime.combine(
+                post_datetime, current_time
+            )
+        else:
+            post_datetime = now
+        post.meta[property] = post_datetime
+        set_post_time(app, post, property, post_datetime)
+
 
 
 @cli.command('build', short_help='Create static version of the site.')
@@ -118,6 +168,8 @@ def build(ctx, css_minify, js_minify):
         # reload to set app.config['INCLUDE_CSS'] and app.config['INCLUDE_JS']
         # setting them here doesn't work
         importlib.reload(site)
+
+    set_posts_datetime(site.app, site.posts)
 
     freezer = site.freezer
     try:

@@ -54,6 +54,7 @@ except IOError:
 
 # Flask configs are flat, config.toml is not
 # Define the configuration keys and their default values
+# [section, key, default]
 config_keys = {
     'SITE_NAME': ['site', 'name', ''],
     'SITE_URL': ['site', 'url', ''],
@@ -78,7 +79,6 @@ config_keys = {
 # Update app.config using the configuration keys
 for flask_key, (table, key, default) in config_keys.items():
     app.config[flask_key] = htmd_config.get(table, {}).get(key, default)
-    
 
 
 # To avoid full paths in config.toml
@@ -174,26 +174,6 @@ def index():
     return render_template('index.html', active='home', posts=latest[:4])
 
 
-def set_post_time(post, property, date_time):
-    file_path = os.path.join(
-        app.config['FLATPAGES_ROOT'],
-        post.path + app.config['FLATPAGES_EXTENSION']
-    )
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
-    
-    found = False
-    with open(file_path, 'w') as file:
-        for line in lines:
-            if not found and property in line:
-                line = f'{property}: {date_time.isoformat()}\n'
-                found = True
-            elif not found and '...' in line:
-                file.write(f'{property}: {date_time.isoformat()}\n')
-                found = True
-            file.write(line)
-
-
 @app.route('/feed.atom')
 def feed():
     name = app.config.get('SITE_NAME')
@@ -205,7 +185,6 @@ def feed():
         title=name,
         url=url
     )
-    current_time = datetime.datetime.now().time()
     for post in posts:
         url = url_for(
             'post',
@@ -215,28 +194,12 @@ def feed():
             path=post.path
         )
 
-        if 'updated' not in post.meta:
-            published = post.meta.get('published')
-            if isinstance(published, datetime.datetime):
-                property = 'updated'
-            else:
-                property = 'published'
-        else:
-            property = 'updated'
-
-        datetime_field = post.meta.get(property)
-        if isinstance(datetime_field, datetime.date):
-            datetime_field = datetime.datetime.combine(
-                datetime_field, current_time
-            )
-        else:
-            datetime_field = datetime.datetime.now()
-        set_post_time(post, property, datetime_field)
+        post_datetime = post.meta.get('updated') or post.meta.get('published')
         atom.add(
             post.meta.get('title'), post.html, content_type='html',
             author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
             url=url,
-            updated=datetime_field,
+            updated=post_datetime,
         )
     ret = atom.get_response()
     return ret

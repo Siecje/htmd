@@ -79,13 +79,6 @@ def copy_file(source, destination):
 def copy_missing_templates():
     template_dir = files('htmd.example_site') / 'templates'
     for template_file in sorted(template_dir.iterdir()):
-        skip_file = False
-        for skip_file_name in ('__pycache__',):
-            if skip_file_name in str(template_file):
-                skip_file = True
-                break
-        if skip_file:
-            continue
         file_name = os.path.basename(template_file)
         copy_file(
             template_file,

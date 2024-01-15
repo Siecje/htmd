@@ -6,7 +6,7 @@ import shutil
 from click.testing import CliRunner
 from htmd.cli import build, start
 
-from test_verify import remove_field_from_example_post
+from utils import remove_fields_from_example_post
 
 
 SUCCESS_REGEX = (
@@ -31,7 +31,7 @@ def test_build_verify_fails():
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
-        remove_field_from_example_post('title')
+        remove_fields_from_example_post(('title',))
         result = runner.invoke(build)
     assert result.exit_code == 1
     assert result.output == expected_output
@@ -498,12 +498,9 @@ def test_build_published_time_is_added():
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
+        remove_fields_from_example_post(('updated',))
         with open(os.path.join('posts', 'example.md'), 'r') as post_file:
             b_lines = post_file.readlines()
-        with open(os.path.join('posts', 'example.md'), 'w') as post_file:
-            for line in b_lines:
-                if 'updated' not in line:
-                    post_file.write(line)
         runner.invoke(build)
         with open(os.path.join('posts', 'example.md'), 'r') as post_file:
             a_lines = post_file.readlines()
@@ -532,9 +529,7 @@ def test_build_published_time_is_added():
     assert time_difference.total_seconds() < threshold_seconds
 
     # verify updated is not added
-    for a_line in a_lines:
-        if 'updated' in a_line:
-            assert False, 'updated found in example post'
+    assert 'updated' not in ''.join(a_lines)
 
 
 def test_build_updated_is_added():
@@ -545,15 +540,10 @@ def test_build_updated_is_added():
     with runner.isolated_filesystem():
         runner.invoke(start)
         # Remove updated from example post
-        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
-            b_lines = post_file.readlines()
-        with open(os.path.join('posts', 'example.md'), 'w') as post_file:
-            for line in b_lines:
-                if 'updated' not in line:
-                    post_file.write(line)
-        # First build adds published time
+        remove_fields_from_example_post(('updated',))
+        # First build adds time to published
         runner.invoke(build)
-        # Second build adds updated
+        # Second build adds updated with time
         runner.invoke(build)
         with open(os.path.join('posts', 'example.md'), 'r') as post_file:
             a_lines = post_file.readlines()
@@ -595,6 +585,24 @@ def test_build_updated_is_added_once():
     count = 0
     for a_line in a_lines:
         if 'updated' in a_line:
+            count += 1
+
+    assert count == 1
+
+
+def test_build_without_published():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        remove_fields_from_example_post(('published', 'updated',))
+
+        # First build adds published time
+        runner.invoke(build)
+        with open(os.path.join('posts', 'example.md'), 'r') as post_file:
+            a_lines = post_file.readlines()
+    count = 0
+    for a_line in a_lines:
+        if 'published' in a_line:
             count += 1
 
     assert count == 1
