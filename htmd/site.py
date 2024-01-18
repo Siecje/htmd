@@ -47,9 +47,9 @@ app = Flask(
 try:
     with open(os.path.join(project_dir, 'config.toml'), 'rb') as config_file:
         htmd_config = tomllib.load(config_file)
-except IOError:
-    print('Can not find config.toml')
-    sys.exit(1)
+except FileNotFoundError:
+    msg = 'Can not find config.toml'
+    sys.exit(msg)
 
 # Flask configs are flat, config.toml is not
 # Define the configuration keys and their default values
@@ -215,7 +215,7 @@ def all_posts():
 # If month and day are ints then Flask removes leading zeros
 @app.route('/<year>/<month>/<day>/<path:path>/')
 def post(year, month, day, path):
-    if len(year) != 4 or len(month) != 2 or len(day) != 2:
+    if len(year) != 4 or len(month) != 2 or len(day) != 2:  # noqa: PLR2004
         abort(404)
     post = posts.get_or_404(path)
     date_str = f'{year}-{month}-{day}'
@@ -225,10 +225,7 @@ def post(year, month, day, path):
 
 
 def tag_in_list(list_of_tags, tag):
-    for i in list_of_tags:
-        if i['tag'] == tag:
-            return True
-    return False
+    return any(i['tag'] == tag for i in list_of_tags)
 
 
 def increment_tag_count(list_of_tags, tag):
@@ -285,7 +282,7 @@ def not_found():
 @app.route('/<int:year>/')
 def year_view(year):
     year = str(year)
-    if len(year) != 4:
+    if len(year) != len('YYYY'):
         abort(404)
     year_posts = [
         p for p in posts if year == p.meta.get('published', []).strftime('%Y')
@@ -342,13 +339,13 @@ def day_view(year, month, day):
 
 
 @app.errorhandler(404)
-def page_not_found(e):
+def page_not_found(_e):
     return render_template('404.html'), 404
 
 
 # Telling Frozen-Flask about routes that are not linked to in templates
 @freezer.register_generator
-def year_view():
+def year_view():  # noqa: F811
     for post in posts:
         yield {
             'year': post.meta.get('published').year,
@@ -356,7 +353,7 @@ def year_view():
 
 
 @freezer.register_generator
-def month_view():
+def month_view():  # noqa: F811
     for post in posts:
         yield {
             'month': post.meta.get('published').strftime('%m'),
@@ -365,7 +362,7 @@ def month_view():
 
 
 @freezer.register_generator
-def day_view():
+def day_view():  # noqa: F811
     for post in posts:
         yield {
             'day': post.meta.get('published').strftime('%d'),

@@ -7,4 +7,6 @@ def test_preview():
     with runner.isolated_filesystem():
         result = runner.invoke(start)
         result = runner.invoke(preview)
-    assert result.exit_code == 5
+    # Why is this 5?
+    expected_exit_code = 5
+    assert result.exit_code == expected_exit_code

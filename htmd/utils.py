@@ -19,12 +19,10 @@ def create_directory(name):
 
 def combine_and_minify_css(static_folder):
     # Combine and minify all .css files in the static folder
-    css_files = sorted(
-        [
-            f for f in os.listdir(static_folder)
-            if f.endswith('.css') and f != 'combined.min.css'
-        ]
-    )
+    css_files = sorted([
+        f for f in os.listdir(static_folder)
+        if f.endswith('.css') and f != 'combined.min.css'
+    ])
     if not css_files:
         # There are no .css files in the static folder
         return
@@ -43,13 +41,11 @@ def combine_and_minify_css(static_folder):
 
 def combine_and_minify_js(static_folder):
     # Combine and minify all .js files in the static folder
-    js_files = sorted(
-        [
-            f for f in os.listdir(static_folder)
-            if f.endswith('.js')
-            and f != 'combined.min.js'
-        ]
-    )
+    js_files = sorted([
+        f for f in os.listdir(static_folder)
+        if f.endswith('.js')
+        and f != 'combined.min.js'
+    ])
     if not js_files:
         # There are no .js files in the static folder
         return

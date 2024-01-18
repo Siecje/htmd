@@ -66,16 +66,15 @@ def verify():
                 msg = f'Post "{post.path}" does not have field {field}.'
                 click.echo(click.style(msg, fg='red'))
         if 'published' in post.meta:
-            try:
-                post.meta.get('published').year
-            except AttributeError:
+            published = post.meta.get('published')
+            if not hasattr(published, 'year'):
                 correct = False
-                published = post.meta.get('published')
                 msg = (
                     f'Published date {published} for {post.path}'
                     ' is not in the format YYYY-MM-DD.'
                 )
                 click.echo(click.style(msg, fg='red'))
+
     if correct:
         msg = 'All posts are correctly formatted.'
         click.echo(click.style(msg, fg='green'))
@@ -104,9 +103,11 @@ def set_post_time(app, post, field, date_time):
     with open(file_path, 'w') as file:
         for line in lines:
             if not found and field in line:
-                line = f'{field}: {date_time.isoformat()}\n'
+                # Update datetime value
+                line = f'{field}: {date_time.isoformat()}\n'  # noqa: PLW2901
                 found = True
             elif not found and '...' in line:
+                # Write field and value before '...'
                 file.write(f'{field}: {date_time.isoformat()}\n')
                 found = True
             file.write(line)
@@ -126,12 +127,12 @@ def set_posts_datetime(app, posts):
             field = 'updated'
 
         post_datetime = post.meta.get(field)
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(tz=datetime.UTC)
         current_time = now.time()
         if isinstance(post_datetime, datetime.date):
             post_datetime = datetime.datetime.combine(
                 post_datetime, current_time,
-            )
+            ).replace(tzinfo=datetime.UTC)
         else:
             post_datetime = now
         post.meta[field] = post_datetime
@@ -204,7 +205,7 @@ def build(ctx, css_minify, js_minify):
     default=True,
     help='If JavaScript should be minified',
 )
-def preview(ctx, host, port, css_minify, js_minify):
+def preview(_ctx, host, port, css_minify, js_minify):
     from . import site
     # reload for tests to refresh app.static_folder
     # otherwise app.static_folder will be from another test

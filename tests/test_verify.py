@@ -156,7 +156,7 @@ def test_verify_site_name_empty():
     assert result.output == expected_output
 
 
-def test_verify_SITE_NAME_missing():
+def test_verify_site_name_missing():
     expected_output = (
         'All posts are correctly formatted.\n'
         '[site] name is not set in config.toml.\n'
