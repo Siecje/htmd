@@ -67,6 +67,7 @@ def combine_and_minify_js(static_folder):
     with open(os.path.join(static_folder, 'combined.min.js'), 'w') as master:
         master.write(jsmin(combined))
 
+
 def copy_file(source, destination):
     if os.path.exists(destination) is False:
         shutil.copyfile(source, destination)
@@ -80,10 +81,7 @@ def copy_missing_templates():
     template_dir = files('htmd.example_site') / 'templates'
     for template_file in sorted(template_dir.iterdir()):
         file_name = os.path.basename(template_file)
-        copy_file(
-            template_file,
-            os.path.join('templates/', file_name)
-        )
+        copy_file(template_file, os.path.join('templates/', file_name))
 
 
 def copy_site_file(directory, filename):

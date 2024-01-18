@@ -25,9 +25,7 @@ def test_build():
 
 
 def test_build_verify_fails():
-    expected_output = (
-        'Post "example" does not have field title.\n'
-    )
+    expected_output = 'Post "example" does not have field title.\n'
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -305,7 +303,7 @@ def test_build_multiple_posts():
         result = runner.invoke(start)
         shutil.copyfile(
             os.path.join('posts', 'example.md'),
-            os.path.join('posts', 'sample.md')
+            os.path.join('posts', 'sample.md'),
         )
         result = runner.invoke(build)
     assert result.exit_code == 0
@@ -337,7 +335,6 @@ def test_build_year_404_incorrect():
 
         result = runner.invoke(build)
     assert result.exit_code == 1
-    print(result.output)
     assert result.output == expected_output
 
 
@@ -473,7 +470,7 @@ def test_build_updated_time_is_added():
     assert a_updated.startswith(b_updated.strip())
     assert len(a_updated) > len(b_updated)
     b_datetime_str = b_updated.replace('updated:', '').strip()
-    a_datetime_str = a_updated.replace('updated:', '').strip()                      
+    a_datetime_str = a_updated.replace('updated:', '').strip()
     b_datetime = datetime.datetime.fromisoformat(b_datetime_str)
     a_datetime = datetime.datetime.fromisoformat(a_datetime_str)
 
@@ -482,7 +479,11 @@ def test_build_updated_time_is_added():
     assert b_datetime.minute == 0
     assert b_datetime.second == 0
 
-    date_with_current_time = datetime.datetime.now().replace(year=a_datetime.year, month=a_datetime.month, day=a_datetime.day)
+    date_with_current_time = datetime.datetime.now().replace(
+        year=a_datetime.year,
+        month=a_datetime.month,
+        day=a_datetime.day,
+    )
     time_difference = abs(a_datetime - date_with_current_time)
 
     # Verify updated time is close to now
@@ -512,16 +513,20 @@ def test_build_published_time_is_added():
     assert a_published.startswith(b_published.strip())
     assert len(a_published) > len(b_published)
     b_datetime_str = b_published.replace('published:', '').strip()
-    a_datetime_str = a_published.replace('published:', '').strip()                      
+    a_datetime_str = a_published.replace('published:', '').strip()
     b_datetime = datetime.datetime.fromisoformat(b_datetime_str)
     a_datetime = datetime.datetime.fromisoformat(a_datetime_str)
-    
+
     # Before didn't have a time
     assert b_datetime.hour == 0
     assert b_datetime.minute == 0
     assert b_datetime.second == 0
 
-    date_with_current_time = datetime.datetime.now().replace(year=a_datetime.year, month=a_datetime.month, day=a_datetime.day)
+    date_with_current_time = datetime.datetime.now().replace(
+        year=a_datetime.year,
+        month=a_datetime.month,
+        day=a_datetime.day,
+    )
     time_difference = abs(a_datetime - date_with_current_time)
 
     # Verify published time is close to now
@@ -554,7 +559,11 @@ def test_build_updated_is_added():
     a_datetime_str = a_updated.replace('updated:', '').strip()
     a_datetime = datetime.datetime.fromisoformat(a_datetime_str)
 
-    date_with_current_time = datetime.datetime.now().replace(year=a_datetime.year, month=a_datetime.month, day=a_datetime.day)
+    date_with_current_time = datetime.datetime.now().replace(
+        year=a_datetime.year,
+        month=a_datetime.month,
+        day=a_datetime.day,
+    )
     time_difference = abs(a_datetime - date_with_current_time)
 
     # Verify published time is close to now
@@ -594,7 +603,7 @@ def test_build_without_published():
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
-        remove_fields_from_example_post(('published', 'updated',))
+        remove_fields_from_example_post(('published', 'updated'))
 
         # First build adds published time
         runner.invoke(build)

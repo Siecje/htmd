@@ -25,7 +25,7 @@ def cli():
     '--all-templates',
     is_flag=True,
     default=False,
-    help='Include all templates.'
+    help='Include all templates.',
 )
 def start(all_templates):
     create_directory('templates/')
@@ -87,27 +87,27 @@ def verify():
         # SITE_NAME is not required
         message = '[site] name is not set in config.toml.'
         click.echo(click.style(message, fg='yellow'))
-    
+
     if not correct:
         sys.exit(1)
 
 
-def set_post_time(app, post, property, date_time):
+def set_post_time(app, post, field, date_time):
     file_path = os.path.join(
         app.config['FLATPAGES_ROOT'],
-        post.path + app.config['FLATPAGES_EXTENSION']
+        post.path + app.config['FLATPAGES_EXTENSION'],
     )
     with open(file_path, 'r') as file:
         lines = file.readlines()
-    
+
     found = False
     with open(file_path, 'w') as file:
         for line in lines:
-            if not found and property in line:
-                line = f'{property}: {date_time.isoformat()}\n'
+            if not found and field in line:
+                line = f'{field}: {date_time.isoformat()}\n'
                 found = True
             elif not found and '...' in line:
-                file.write(f'{property}: {date_time.isoformat()}\n')
+                file.write(f'{field}: {date_time.isoformat()}\n')
                 found = True
             file.write(line)
 
@@ -119,24 +119,23 @@ def set_posts_datetime(app, posts):
         if 'updated' not in post.meta:
             published = post.meta.get('published')
             if isinstance(published, datetime.datetime):
-                property = 'updated'
+                field = 'updated'
             else:
-                property = 'published'
+                field = 'published'
         else:
-            property = 'updated'
+            field = 'updated'
 
-        post_datetime = post.meta.get(property)
+        post_datetime = post.meta.get(field)
         now = datetime.datetime.now()
         current_time = now.time()
         if isinstance(post_datetime, datetime.date):
             post_datetime = datetime.datetime.combine(
-                post_datetime, current_time
+                post_datetime, current_time,
             )
         else:
             post_datetime = now
-        post.meta[property] = post_datetime
-        set_post_time(app, post, property, post_datetime)
-
+        post.meta[field] = post_datetime
+        set_post_time(app, post, field, post_datetime)
 
 
 @cli.command('build', short_help='Create static version of the site.')
@@ -144,12 +143,12 @@ def set_posts_datetime(app, posts):
 @click.option(
     '--css-minify/--no-css-minify',
     default=True,
-    help='If CSS should be minified'
+    help='If CSS should be minified',
 )
 @click.option(
     '--js-minify/--no-js-minify',
     default=True,
-    help='If JavaScript should be minified'
+    help='If JavaScript should be minified',
 )
 def build(ctx, css_minify, js_minify):
     ctx.invoke(verify)
@@ -188,22 +187,22 @@ def build(ctx, css_minify, js_minify):
 @click.option(
     '--host', '-h',
     default='127.0.0.1',
-    help='Location to access the files.'
+    help='Location to access the files.',
 )
 @click.option(
     '--port', '-p',
     default=9090,
-    help='Port on which to serve the files.'
+    help='Port on which to serve the files.',
 )
 @click.option(
     '--css-minify/--no-css-minify',
     default=True,
-    help='If CSS should be minified'
+    help='If CSS should be minified',
 )
 @click.option(
     '--js-minify/--no-js-minify',
     default=True,
-    help='If JavaScript should be minified'
+    help='If JavaScript should be minified',
 )
 def preview(ctx, host, port, css_minify, js_minify):
     from . import site

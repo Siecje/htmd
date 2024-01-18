@@ -1,13 +1,10 @@
-import datetime
 import os
 import sys
 import tomllib
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
-from flask import (
-    abort, Blueprint, Flask, render_template, url_for
-)
+from flask import abort, Blueprint, Flask, render_template, url_for
 from flask_flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
@@ -15,6 +12,7 @@ from jinja2 import ChoiceLoader, FileSystemLoader, TemplateNotFound
 
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
+
 
 def get_project_dir():
     current_directory = os.getcwd()
@@ -36,6 +34,7 @@ def get_project_dir():
 
     return os.getcwd()
 
+
 project_dir = get_project_dir()
 
 app = Flask(
@@ -54,7 +53,7 @@ except IOError:
 
 # Flask configs are flat, config.toml is not
 # Define the configuration keys and their default values
-# [section, key, default]
+# 'Flask config': [section, key, default]
 config_keys = {
     'SITE_NAME': ['site', 'name', ''],
     'SITE_URL': ['site', 'url', ''],
@@ -83,10 +82,10 @@ for flask_key, (table, key, default) in config_keys.items():
 
 # To avoid full paths in config.toml
 app.config['FLATPAGES_ROOT'] = os.path.join(
-    project_dir, app.config.get('POSTS_FOLDER')
+    project_dir, app.config.get('POSTS_FOLDER'),
 )
 app.config['FREEZER_DESTINATION'] = os.path.join(
-    project_dir, app.config.get('BUILD_FOLDER')
+    project_dir, app.config.get('BUILD_FOLDER'),
 )
 app.config['FREEZER_REMOVE_EXTRA_FILES'] = False
 app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
@@ -113,7 +112,7 @@ app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 # Include current htmd site templates
 app.jinja_loader = ChoiceLoader([
     FileSystemLoader(os.path.join(project_dir, 'templates/')),
-    app.jinja_loader
+    app.jinja_loader,
 ])
 
 MONTHS = {
@@ -134,7 +133,7 @@ MONTHS = {
 pages = Blueprint(
     'pages',
     __name__,
-    template_folder=os.path.join(project_dir, app.config.get('PAGES_FOLDER'))
+    template_folder=os.path.join(project_dir, app.config.get('PAGES_FOLDER')),
 )
 
 
@@ -144,7 +143,7 @@ def format_html(response):
         if app.config.get('PRETTY_HTML', False):
             response.data = BeautifulSoup(
                 response.data,
-                'html.parser'
+                'html.parser',
             ).prettify()
         elif app.config.get('MINIFY_HTML', False):
             response.data = minify(response.data.decode('utf-8'))
@@ -183,7 +182,7 @@ def feed():
         feed_url=url_for('all_posts'),
         subtitle=subtitle,
         title=name,
-        url=url
+        url=url,
     )
     for post in posts:
         url = url_for(
@@ -191,12 +190,14 @@ def feed():
             year=post.meta.get('published').strftime('%Y'),
             month=post.meta.get('published').strftime('%m'),
             day=post.meta.get('published').strftime('%d'),
-            path=post.path
+            path=post.path,
         )
 
         post_datetime = post.meta.get('updated') or post.meta.get('published')
         atom.add(
-            post.meta.get('title'), post.html, content_type='html',
+            post.meta.get('title'),
+            post.html,
+            content_type='html',
             author=post.meta.get('author', app.config.get('DEFAULT_AUTHOR')),
             url=url,
             updated=post_datetime,
@@ -252,21 +253,27 @@ def all_tags():
 @app.route('/tags/<string:tag>/')
 def tag(tag):
     tagged = [p for p in posts if tag in p.meta.get('tags', [])]
-    sorted_posts = sorted(tagged, reverse=True,
-                          key=lambda p: p.meta.get('published'))
+    sorted_posts = sorted(
+        tagged,
+        reverse=True,
+        key=lambda p: p.meta.get('published'),
+    )
     return render_template('tag.html', posts=sorted_posts, tag=tag)
 
 
 @app.route('/author/<author>/')
 def author(author):
     author_posts = [p for p in posts if author == p.meta.get('author', '')]
-    sorted_posts = sorted(author_posts, reverse=True,
-                          key=lambda p: p.meta.get('published'))
+    sorted_posts = sorted(
+        author_posts,
+        reverse=True,
+        key=lambda p: p.meta.get('published'),
+    )
     return render_template(
         'author.html',
         active='author',
         author=author,
-        posts=sorted_posts
+        posts=sorted_posts,
     )
 
 
@@ -285,8 +292,11 @@ def year_view(year):
     ]
     if not year_posts:
         abort(404)
-    sorted_posts = sorted(year_posts, reverse=False,
-                          key=lambda p: p.meta.get('published'))
+    sorted_posts = sorted(
+        year_posts,
+        reverse=False,
+        key=lambda p: p.meta.get('published'),
+    )
     return render_template('year.html', year=year, posts=sorted_posts)
 
 
@@ -298,14 +308,17 @@ def month_view(year, month):
     ]
     if not month_posts:
         abort(404)
-    sorted_posts = sorted(month_posts, reverse=False,
-                          key=lambda p: p.meta.get('published'))
+    sorted_posts = sorted(
+        month_posts,
+        reverse=False,
+        key=lambda p: p.meta.get('published'),
+    )
     month_string = MONTHS[month]
     return render_template(
         'month.html',
         year=year,
         month_string=month_string,
-        posts=sorted_posts
+        posts=sorted_posts,
     )
 
 
@@ -338,7 +351,7 @@ def page_not_found(e):
 def year_view():
     for post in posts:
         yield {
-            'year': post.meta.get('published').year
+            'year': post.meta.get('published').year,
         }
 
 
