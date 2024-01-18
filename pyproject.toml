@@ -42,7 +42,6 @@ Issues = "https://github.com/siecje/htmd/issues"
 Repository = "https://github.com/siecje/htmd.git"
 
 [tool.ruff.lint]
-select = ["ALL"]
 ignore = [
   "D100", "D103", "D104",  "D203", "D211", "D212", "D213",
   "INP001",
@@ -51,6 +50,7 @@ ignore = [
   "UP015",
   "ANN", "PTH", "I",
 ]
+select = ["ALL"]
 
 [tool.ruff.lint.flake8-quotes]
 inline-quotes = "single"
@@ -58,6 +58,13 @@ multiline-quotes = "single"
 
 [tool.ruff.format]
 quote-style = "single"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-third-party = ["htmd"]
+lines-after-imports = 2
+order-by-type = false
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.setuptools]
 include-package-data = true
