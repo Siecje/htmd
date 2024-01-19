@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import sys
 import tomllib
 
@@ -11,20 +12,20 @@ from htmlmin import minify
 from jinja2 import ChoiceLoader, FileSystemLoader, TemplateNotFound
 
 
-this_dir = os.path.dirname(os.path.abspath(__file__))
+this_dir = Path(__file__).parent
 
 
 def get_project_dir():
-    current_directory = os.getcwd()
+    current_directory = Path.cwd()
 
     while True:
-        file_path = os.path.join(current_directory, 'config.toml')
+        file_path = current_directory / 'config.toml'
 
-        if os.path.isfile(file_path):
+        if file_path.is_file():
             return current_directory
 
         # Move to the parent directory
-        parent_directory = os.path.dirname(current_directory)
+        parent_directory = current_directory.parent
 
         # If the current and parent directories are the same, break the loop
         if current_directory == parent_directory:
@@ -32,20 +33,20 @@ def get_project_dir():
 
         current_directory = parent_directory
 
-    return os.getcwd()
+    return Path.cwd()
 
 
 project_dir = get_project_dir()
 
 app = Flask(
     __name__,
-    static_folder=os.path.join(project_dir, 'static'),
-    template_folder=os.path.join(this_dir, 'example_site', 'templates'),
+    static_folder=project_dir / 'static',
+    template_folder=this_dir / 'example_site' / 'templates',
 )
 
 
 try:
-    with open(os.path.join(project_dir, 'config.toml'), 'rb') as config_file:
+    with (project_dir / 'config.toml').open('rb') as config_file:
         htmd_config = tomllib.load(config_file)
 except FileNotFoundError:
     msg = 'Can not find config.toml'
@@ -81,11 +82,11 @@ for flask_key, (table, key, default) in config_keys.items():
 
 
 # To avoid full paths in config.toml
-app.config['FLATPAGES_ROOT'] = os.path.join(
-    project_dir, app.config.get('POSTS_FOLDER'),
+app.config['FLATPAGES_ROOT'] = (
+    project_dir / app.config.get('POSTS_FOLDER')
 )
-app.config['FREEZER_DESTINATION'] = os.path.join(
-    project_dir, app.config.get('BUILD_FOLDER'),
+app.config['FREEZER_DESTINATION'] = (
+    project_dir / app.config.get('BUILD_FOLDER')
 )
 app.config['FREEZER_REMOVE_EXTRA_FILES'] = False
 app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
@@ -111,7 +112,7 @@ app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 
 # Include current htmd site templates
 app.jinja_loader = ChoiceLoader([
-    FileSystemLoader(os.path.join(project_dir, 'templates/')),
+    FileSystemLoader(project_dir / 'templates/'),
     app.jinja_loader,
 ])
 
@@ -133,7 +134,7 @@ MONTHS = {
 pages = Blueprint(
     'pages',
     __name__,
-    template_folder=os.path.join(project_dir, app.config.get('PAGES_FOLDER')),
+    template_folder=project_dir / app.config.get('PAGES_FOLDER'),
 )
 
 

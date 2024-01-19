@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from click.testing import CliRunner
 from htmd.cli import start, verify
@@ -65,9 +65,9 @@ def test_verify_published_invalid_year():
     with runner.isolated_filesystem():
         runner.invoke(start)
 
-        with open(os.path.join('posts', 'example.md'), 'r') as post:
+        with (Path('posts') / 'example.md').open('r') as post:
             lines = post.readlines()
-        with open(os.path.join('posts', 'example.md'), 'w') as post:
+        with (Path('posts') / 'example.md').open('w') as post:
             for line in lines:
                 if 'published' in line:
                     post.write('published: 14-10-30\n')
@@ -88,9 +88,9 @@ def test_verify_published_invalid_month():
     with runner.isolated_filesystem():
         runner.invoke(start)
 
-        with open(os.path.join('posts', 'example.md'), 'r') as post:
+        with (Path('posts') / 'example.md').open('r') as post:
             lines = post.readlines()
-        with open(os.path.join('posts', 'example.md'), 'w') as post:
+        with (Path('posts') / 'example.md').open('w') as post:
             for line in lines:
                 if 'published' in line:
                     post.write('published: 2014-1-30\n')
@@ -111,9 +111,9 @@ def test_verify_published_invalid_day():
     with runner.isolated_filesystem():
         runner.invoke(start)
 
-        with open(os.path.join('posts', 'example.md'), 'r') as post:
+        with (Path('posts') / 'example.md').open('r') as post:
             lines = post.readlines()
-        with open(os.path.join('posts', 'example.md'), 'w') as post:
+        with (Path('posts') / 'example.md').open('w') as post:
             for line in lines:
                 if 'published' in line:
                     post.write('published: 2014-01-3\n')
@@ -138,9 +138,9 @@ def test_verify_site_name_empty():
     with runner.isolated_filesystem():
         runner.invoke(start)
 
-        with open('config.toml', 'r') as post:
+        with Path('config.toml').open('r') as post:
             lines = post.readlines()
-        with open('config.toml', 'w') as post:
+        with Path('config.toml').open('w') as post:
             seen = False
             for line in lines:
                 if 'name' in line and not seen:
@@ -165,9 +165,9 @@ def test_verify_site_name_missing():
     with runner.isolated_filesystem():
         runner.invoke(start)
 
-        with open('config.toml', 'r') as post:
+        with Path('config.toml').open('r') as post:
             lines = post.readlines()
-        with open('config.toml', 'w') as post:
+        with Path('config.toml').open('w') as post:
             for line in lines:
                 if 'name' not in line:
                     post.write(line)
@@ -184,7 +184,7 @@ def test_verify_no_config():
     with runner.isolated_filesystem():
         runner.invoke(start)
 
-        os.remove('config.toml')
+        Path('config.toml').unlink()
 
         result = runner.invoke(verify)
 

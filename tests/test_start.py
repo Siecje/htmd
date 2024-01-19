@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from click.testing import CliRunner
 from htmd.cli import start
@@ -60,11 +60,11 @@ def test_start_all_templates():
 def test_start_with_existing_template():
     runner = CliRunner()
     with runner.isolated_filesystem():
-        os.mkdir('templates')
-        with open(os.path.join('templates', '_layout.html'), 'w') as layout:
+        Path('templates').mkdir()
+        with (Path('templates') / '_layout.html').open('w') as layout:
             pass
         result = runner.invoke(start)
-        with open(os.path.join('templates', '_layout.html'), 'r') as layout:
+        with (Path('templates') / '_layout.html').open('r') as layout:
             # _layout.html was not replaced
             assert layout.read() == ''
     assert result.exit_code == 0

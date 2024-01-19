@@ -1,6 +1,6 @@
 import datetime
 import importlib
-import os
+from pathlib import Path
 import sys
 
 import click
@@ -28,23 +28,23 @@ def cli():
     help='Include all templates.',
 )
 def start(all_templates):
-    create_directory('templates/')
+    dir_templates = create_directory('templates/')
     if all_templates:
         copy_missing_templates()
     else:
-        copy_site_file('templates', '_layout.html')
+        copy_site_file(dir_templates, '_layout.html')
 
-    create_directory('static/')
-    copy_site_file('static', '_reset.css')
-    copy_site_file('static', 'style.css')
+    dir_static = create_directory('static/')
+    copy_site_file(dir_static, '_reset.css')
+    copy_site_file(dir_static, 'style.css')
 
-    create_directory('pages/')
-    copy_site_file('pages', 'about.html')
+    dir_pages = create_directory('pages/')
+    copy_site_file(dir_pages, 'about.html')
 
-    create_directory('posts/')
-    copy_site_file('posts', 'example.md')
+    dir_posts = create_directory('posts/')
+    copy_site_file(dir_posts, 'example.md')
 
-    copy_site_file('', 'config.toml')
+    copy_site_file(Path(), 'config.toml')
     click.echo('Add the site name and edit settings in config.toml')
 
 
@@ -92,15 +92,15 @@ def verify():
 
 
 def set_post_time(app, post, field, date_time):
-    file_path = os.path.join(
-        app.config['FLATPAGES_ROOT'],
-        post.path + app.config['FLATPAGES_EXTENSION'],
+    file_path = (
+        Path(app.config['FLATPAGES_ROOT'])
+        / (post.path + app.config['FLATPAGES_EXTENSION'])
     )
-    with open(file_path, 'r') as file:
+    with file_path.open('r') as file:
         lines = file.readlines()
 
     found = False
-    with open(file_path, 'w') as file:
+    with file_path.open('w') as file:
         for line in lines:
             if not found and field in line:
                 # Update datetime value
@@ -159,10 +159,10 @@ def build(ctx, css_minify, js_minify):
     app = site.app
 
     if css_minify:
-        combine_and_minify_css(app.static_folder)
+        combine_and_minify_css(Path(app.static_folder))
 
     if js_minify:
-        combine_and_minify_js(app.static_folder)
+        combine_and_minify_js(Path(app.static_folder))
 
     if css_minify or js_minify:
         # reload to set app.config['INCLUDE_CSS'] and app.config['INCLUDE_JS']
@@ -213,10 +213,10 @@ def preview(_ctx, host, port, css_minify, js_minify):
     app = site.app
 
     if css_minify:
-        combine_and_minify_css(app.static_folder)
+        combine_and_minify_css(Path(app.static_folder))
 
     if js_minify:
-        combine_and_minify_js(app.static_folder)
+        combine_and_minify_js(Path(app.static_folder))
 
     app.run(debug=True, host=host, port=port)
 
