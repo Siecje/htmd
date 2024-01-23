@@ -1,5 +1,14 @@
 # Change log
 
+## [4.0.0] - 2024-
+### Added
+- Set post time on build
+- Add published or updated on build
+### Changed
+- tags sent to all_tags.html is now a dict
+### Fixed
+- Atom feed URL
+
 ## [3.0.0] - 2023-12-08
 ### Added
 - Use toml for the config file
@@ -35,7 +44,6 @@
 ### Added
 - setting MINIFY_HTML to minify resulting HTML
 - setting PRETTY_HTML to fix indentation of resulting HTML
-
 ### Fixed
 - SITE_NAME bug in og:site_name
 
