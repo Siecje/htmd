@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 import sys
 import tomllib
-from typing import TypedDict
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
@@ -227,32 +226,15 @@ def post(year: str, month: str, day:str, path: str) -> Response:
     return render_template('post.html', post=post)
 
 
-class TagDict(TypedDict):
-    tag: str
-    count: int
-
-
-def tag_in_list(list_of_tags: [TagDict], tag: str) -> bool:
-    return any(i['tag'] == tag for i in list_of_tags)
-
-
-def increment_tag_count(list_of_tags: [TagDict], tag: str) -> [TagDict]:
-    for i in list_of_tags:
-        if i['tag'] == tag:
-            i['count'] += 1
-    return list_of_tags
-
-
 @app.route('/tags/')
 def all_tags() -> Response:
-    tags = []
+    tag_counts: {str: int} = {}
     for post in posts:
         for tag in post.meta.get('tags', []):
-            if tag_in_list(tags, tag) is False:
-                tags.append({'tag': tag, 'count': 1})
-            else:
-                increment_tag_count(tags, tag)
-    return render_template('all_tags.html', active='tags', tags=tags)
+            if tag not in tag_counts:
+                tag_counts[tag] = 0
+            tag_counts[tag] += 1
+    return render_template('all_tags.html', active='tags', tags=tag_counts)
 
 
 @app.route('/tags/<string:tag>/')
