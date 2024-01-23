@@ -16,7 +16,7 @@ SUCCESS_REGEX = (
 )
 
 
-def test_build():
+def test_build() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -25,7 +25,7 @@ def test_build():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_verify_fails():
+def test_build_verify_fails() -> None:
     expected_output = 'Post "example" does not have field title.\n'
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -36,7 +36,7 @@ def test_build_verify_fails():
     assert result.output == expected_output
 
 
-def test_build_js_minify():
+def test_build_js_minify() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -49,7 +49,7 @@ def test_build_js_minify():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_js_minify_no_js_files():
+def test_build_js_minify_no_js_files() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -58,7 +58,7 @@ def test_build_js_minify_no_js_files():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_no_js_minify():
+def test_build_no_js_minify() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -67,7 +67,7 @@ def test_build_no_js_minify():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_css_minify():
+def test_build_css_minify() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -79,7 +79,7 @@ def test_build_css_minify():
     assert 'combined.min.css' in contents
 
 
-def test_build_no_css_minify():
+def test_build_no_css_minify() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -88,7 +88,7 @@ def test_build_no_css_minify():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_css_minify_no_css_files():
+def test_build_css_minify_no_css_files() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -99,7 +99,7 @@ def test_build_css_minify_no_css_files():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_html_pretty_true():
+def test_build_html_pretty_true() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -118,7 +118,7 @@ def test_build_html_pretty_true():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_html_minify_true():
+def test_build_html_minify_true() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -137,7 +137,7 @@ def test_build_html_minify_true():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_page_404():
+def test_build_page_404() -> None:
     # Linking to a page that doesn't exist
     # will cause a 404 status code
     # and stop the build
@@ -165,7 +165,7 @@ def test_build_page_404():
     assert result.output == expected_output
 
 
-def test_build_post_404_invalid_date_year():
+def test_build_post_404_invalid_date_year() -> None:
     # Linking to a post with incorrect values
     # for dates will cause 404 and stop the build
     expected_output = (
@@ -192,7 +192,7 @@ def test_build_post_404_invalid_date_year():
     assert result.output == expected_output
 
 
-def test_build_post_404_invalid_date_month():
+def test_build_post_404_invalid_date_month() -> None:
     # Linking to a post with incorrect values
     # for dates will cause 404 and stop the build
     expected_output = (
@@ -231,7 +231,7 @@ def test_build_post_404_invalid_date_month():
     assert result.output == expected_output
 
 
-def test_build_post_404_invalid_date_day():
+def test_build_post_404_invalid_date_day() -> None:
     # Linking to a post with incorrect values
     # for dates will cause 404 and stop the build
     expected_output = (
@@ -270,7 +270,7 @@ def test_build_post_404_invalid_date_day():
     assert result.output == expected_output
 
 
-def test_build_post_404_different_date():
+def test_build_post_404_different_date() -> None:
     # Linking to a page with the wrong date
     # will cause a 404 status code
     # and stop the build
@@ -298,7 +298,7 @@ def test_build_post_404_different_date():
     assert result.output == expected_output
 
 
-def test_build_multiple_posts():
+def test_build_multiple_posts() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
@@ -311,7 +311,7 @@ def test_build_multiple_posts():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_year_404_incorrect():
+def test_build_year_404_incorrect() -> None:
     # Linking to a page with the wrong date
     # will cause a 404 status code
     # and stop the build
@@ -339,7 +339,7 @@ def test_build_year_404_incorrect():
     assert result.output == expected_output
 
 
-def test_build_year_404_no_posts():
+def test_build_year_404_no_posts() -> None:
     # Linking to a page with the wrong date
     # will cause a 404 status code
     # and stop the build
@@ -367,7 +367,7 @@ def test_build_year_404_no_posts():
     assert result.output == expected_output
 
 
-def test_build_month_404_no_posts():
+def test_build_month_404_no_posts() -> None:
     # Linking to a page with the wrong date
     # will cause a 404 status code
     # and stop the build
@@ -395,7 +395,7 @@ def test_build_month_404_no_posts():
     assert result.output == expected_output
 
 
-def test_build_day_404_no_posts():
+def test_build_day_404_no_posts() -> None:
     # Linking to a page with the wrong date
     # will cause a 404 status code
     # and stop the build
@@ -423,7 +423,7 @@ def test_build_day_404_no_posts():
     assert result.output == expected_output
 
 
-def test_build_from_sub_directory():
+def test_build_from_sub_directory() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -434,7 +434,7 @@ def test_build_from_sub_directory():
     assert re.search(SUCCESS_REGEX, result.output)
 
 
-def test_build_feed_dot_atom():
+def test_build_feed_dot_atom() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -443,7 +443,7 @@ def test_build_feed_dot_atom():
         assert (Path(current_directory) / 'build' / 'feed.atom').is_file
 
 
-def test_build_updated_time_is_added():
+def test_build_updated_time_is_added() -> None:
     # If there is no published/updated time then
     # build will add it
     # verify that time is not there
@@ -492,7 +492,7 @@ def test_build_updated_time_is_added():
     assert time_difference.total_seconds() < threshold_seconds
 
 
-def test_build_published_time_is_added():
+def test_build_published_time_is_added() -> None:
     # If there is no published/updated time then
     # build will add it
     # verify that time is not there
@@ -538,7 +538,7 @@ def test_build_published_time_is_added():
     assert 'updated' not in ''.join(a_lines)
 
 
-def test_build_updated_is_added():
+def test_build_updated_is_added() -> None:
     # If published has a time
     # and there is no updated then
     # build will add updated with time
@@ -572,7 +572,7 @@ def test_build_updated_is_added():
     assert time_difference.total_seconds() < threshold_seconds
 
 
-def test_build_updated_is_added_once():
+def test_build_updated_is_added_once() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -600,7 +600,7 @@ def test_build_updated_is_added_once():
     assert count == 1
 
 
-def test_build_without_published():
+def test_build_without_published() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)

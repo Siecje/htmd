@@ -4,6 +4,8 @@ from pathlib import Path
 import sys
 
 import click
+from flask import Flask
+from flask_flatpages import FlatPages
 
 from .utils import (
     combine_and_minify_css,
@@ -16,7 +18,7 @@ from .utils import (
 
 @click.group()
 @click.version_option()
-def cli():
+def cli() -> None:
     pass  # pragma: no cover
 
 
@@ -27,7 +29,7 @@ def cli():
     default=False,
     help='Include all templates.',
 )
-def start(all_templates):
+def start(all_templates: bool) -> None:  # noqa: FBT001
     dir_templates = create_directory('templates/')
     if all_templates:
         copy_missing_templates()
@@ -49,7 +51,7 @@ def start(all_templates):
 
 
 @cli.command('verify', short_help='Verify posts formatting is correct.')
-def verify():
+def verify() -> None:
     # import is here to avoid looking for the config
     # which doesn't exist until you run start
     from . import site
@@ -91,7 +93,12 @@ def verify():
         sys.exit(1)
 
 
-def set_post_time(app, post, field, date_time):
+def set_post_time(
+    app: Flask,
+    post: FlatPages,
+    field: str,
+    date_time: datetime.datetime,
+) -> None:
     file_path = (
         Path(app.config['FLATPAGES_ROOT'])
         / (post.path + app.config['FLATPAGES_EXTENSION'])
@@ -113,7 +120,7 @@ def set_post_time(app, post, field, date_time):
             file.write(line)
 
 
-def set_posts_datetime(app, posts):
+def set_posts_datetime(app: Flask, posts: [FlatPages]) -> None:
     # Ensure each post has a published date
     # set time for correct date field
     for post in posts:
@@ -151,7 +158,11 @@ def set_posts_datetime(app, posts):
     default=True,
     help='If JavaScript should be minified',
 )
-def build(ctx, css_minify, js_minify):
+def build(
+    ctx: click.Context,
+    css_minify: bool,  # noqa: FBT001
+    js_minify: bool,  # noqa: FBT001
+) -> None:
     ctx.invoke(verify)
     # If verify fails sys.exit(1) will run
 
@@ -205,7 +216,13 @@ def build(ctx, css_minify, js_minify):
     default=True,
     help='If JavaScript should be minified',
 )
-def preview(_ctx, host, port, css_minify, js_minify):
+def preview(
+    _ctx: click.Context,
+    host: str,
+    port: int,
+    css_minify: bool,  # noqa: FBT001
+    js_minify: bool,  # noqa: FBT001
+) -> None:
     from . import site
     # reload for tests to refresh app.static_folder
     # otherwise app.static_folder will be from another test
@@ -222,7 +239,7 @@ def preview(_ctx, host, port, css_minify, js_minify):
 
 
 @cli.command('templates', short_help='Create any missing templates')
-def templates():
+def templates() -> None:
     try:
         copy_missing_templates()
     except FileNotFoundError:

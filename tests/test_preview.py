@@ -2,7 +2,7 @@ from click.testing import CliRunner
 from htmd.cli import preview, start
 
 
-def test_preview():
+def test_preview() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)

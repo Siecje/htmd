@@ -1,13 +1,14 @@
 from importlib.resources import as_file, files
 from pathlib import Path
 import shutil
+from typing import BinaryIO
 
 import click
 from csscompressor import compress
 from jsmin import jsmin
 
 
-def create_directory(name):
+def create_directory(name: str) -> Path:
     directory = Path(name)
     try:
         directory.mkdir()
@@ -19,7 +20,7 @@ def create_directory(name):
     return directory
 
 
-def combine_and_minify_css(static_folder):
+def combine_and_minify_css(static_folder: Path) -> None:
     # Combine and minify all .css files in the static folder
     css_files = sorted([
         f for f in static_folder.iterdir()
@@ -41,7 +42,7 @@ def combine_and_minify_css(static_folder):
         master.write(compress(combined))
 
 
-def combine_and_minify_js(static_folder):
+def combine_and_minify_js(static_folder: Path) -> None:
     # Combine and minify all .js files in the static folder
     js_files = sorted([
         f for f in static_folder.iterdir()
@@ -66,7 +67,7 @@ def combine_and_minify_js(static_folder):
         master.write(jsmin(combined))
 
 
-def copy_file(source, destination):
+def copy_file(source: BinaryIO, destination: Path) -> None:
     if destination.exists() is False:
         shutil.copyfile(source, destination)
         click.echo(click.style(f'{destination} was created.', fg='green'))
@@ -75,14 +76,14 @@ def copy_file(source, destination):
         click.echo(click.style(msg, fg='yellow'))
 
 
-def copy_missing_templates():
+def copy_missing_templates() -> None:
     template_dir = files('htmd.example_site') / 'templates'
     for template_file in sorted(template_dir.iterdir()):
         file_name = template_file.name
         copy_file(template_file, Path('templates') / file_name)
 
 
-def copy_site_file(directory, filename):
+def copy_site_file(directory: Path, filename: str) -> None:
     if directory.name == '':
         anchor = 'htmd.example_site'
     else:

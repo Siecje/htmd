@@ -6,7 +6,7 @@ from htmd.cli import start, verify
 from utils import remove_fields_from_example_post
 
 
-def test_verify():
+def test_verify() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -16,7 +16,7 @@ def test_verify():
     assert result.output == expected_output
 
 
-def test_verify_author_missing():
+def test_verify_author_missing() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -30,7 +30,7 @@ def test_verify_author_missing():
     assert result.output == expected_output
 
 
-def test_verify_title_missing():
+def test_verify_title_missing() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -44,7 +44,7 @@ def test_verify_title_missing():
     assert result.output == expected_output
 
 
-def test_verify_published_missing():
+def test_verify_published_missing() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -60,7 +60,7 @@ def test_verify_published_missing():
     assert result.exit_code == 0
 
 
-def test_verify_published_invalid_year():
+def test_verify_published_invalid_year() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -83,7 +83,7 @@ def test_verify_published_invalid_year():
     assert result.output == expected_output
 
 
-def test_verify_published_invalid_month():
+def test_verify_published_invalid_month() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -106,7 +106,7 @@ def test_verify_published_invalid_month():
     assert result.output == expected_output
 
 
-def test_verify_published_invalid_day():
+def test_verify_published_invalid_day() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
@@ -129,7 +129,7 @@ def test_verify_published_invalid_day():
     assert result.output == expected_output
 
 
-def test_verify_site_name_empty():
+def test_verify_site_name_empty() -> None:
     expected_output = (
         'All posts are correctly formatted.\n'
         '[site] name is not set in config.toml.\n'
@@ -156,7 +156,7 @@ def test_verify_site_name_empty():
     assert result.output == expected_output
 
 
-def test_verify_site_name_missing():
+def test_verify_site_name_missing() -> None:
     expected_output = (
         'All posts are correctly formatted.\n'
         '[site] name is not set in config.toml.\n'
@@ -178,7 +178,7 @@ def test_verify_site_name_missing():
     assert result.output == expected_output
 
 
-def test_verify_no_config():
+def test_verify_no_config() -> None:
     expected_output = 'Can not find config.toml\n'
     runner = CliRunner()
     with runner.isolated_filesystem():

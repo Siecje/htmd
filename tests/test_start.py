@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from htmd.cli import start
 
 
-def test_start():
+def test_start() -> None:
     runner = CliRunner()
     expected_output = (
         'templates/ was created.\n'
@@ -25,7 +25,7 @@ def test_start():
     assert result.output == expected_output
 
 
-def test_start_all_templates():
+def test_start_all_templates() -> None:
     runner = CliRunner()
     expected_output = (
         'templates/ was created.\n'
@@ -57,7 +57,7 @@ def test_start_all_templates():
     assert result.output == expected_output
 
 
-def test_start_with_existing_template():
+def test_start_with_existing_template() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         Path('templates').mkdir()

@@ -1,11 +1,13 @@
+from collections.abc import Iterator
 import os
 from pathlib import Path
 import sys
 import tomllib
+from typing import TypedDict
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
-from flask import abort, Blueprint, Flask, render_template, url_for
+from flask import abort, Blueprint, Flask, render_template, Response, url_for
 from flask_flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
@@ -15,7 +17,7 @@ from jinja2 import ChoiceLoader, FileSystemLoader, TemplateNotFound
 this_dir = Path(__file__).parent
 
 
-def get_project_dir():
+def get_project_dir() -> Path:
     current_directory = Path.cwd()
 
     while True:
@@ -103,7 +105,7 @@ for key in app.config:
     app.jinja_env.globals[key] = app.config[key]
 
 
-def truncate_post_html(post_html):
+def truncate_post_html(post_html: str) -> str:
     return BeautifulSoup(post_html[:255], 'html.parser').prettify()
 
 
@@ -139,7 +141,7 @@ pages = Blueprint(
 
 
 @app.after_request
-def format_html(response):
+def format_html(response: Response) -> Response:
     if response.mimetype == 'text/html':
         if app.config.get('PRETTY_HTML', False):
             response.data = BeautifulSoup(
@@ -152,7 +154,7 @@ def format_html(response):
 
 
 @pages.route('/<path:path>/')
-def page(path):
+def page(path: str) -> Response:
     try:
         return render_template(path + '.html', active=path)
     except TemplateNotFound:
@@ -164,18 +166,18 @@ app.register_blueprint(pages)
 
 # Will end up in the static directory
 @app.route('/static/pygments.css')
-def pygments_css():
+def pygments_css() -> Response:
     return pygments_style_defs('tango'), 200, {'Content-Type': 'text/css'}
 
 
 @app.route('/')
-def index():
+def index() -> Response:
     latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
     return render_template('index.html', active='home', posts=latest[:4])
 
 
 @app.route('/feed.atom')
-def feed():
+def feed() -> Response:
     name = app.config.get('SITE_NAME')
     subtitle = app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
     url = app.config.get('URL')
@@ -208,14 +210,14 @@ def feed():
 
 
 @app.route('/all/')
-def all_posts():
+def all_posts() -> Response:
     latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
     return render_template('all_posts.html', active='posts', posts=latest)
 
 
 # If month and day are ints then Flask removes leading zeros
 @app.route('/<year>/<month>/<day>/<path:path>/')
-def post(year, month, day, path):
+def post(year: str, month: str, day:str, path: str) -> Response:
     if len(year) != 4 or len(month) != 2 or len(day) != 2:  # noqa: PLR2004
         abort(404)
     post = posts.get_or_404(path)
@@ -225,11 +227,16 @@ def post(year, month, day, path):
     return render_template('post.html', post=post)
 
 
-def tag_in_list(list_of_tags, tag):
+class TagDict(TypedDict):
+    tag: str
+    count: int
+
+
+def tag_in_list(list_of_tags: [TagDict], tag: str) -> bool:
     return any(i['tag'] == tag for i in list_of_tags)
 
 
-def increment_tag_count(list_of_tags, tag):
+def increment_tag_count(list_of_tags: [TagDict], tag: str) -> [TagDict]:
     for i in list_of_tags:
         if i['tag'] == tag:
             i['count'] += 1
@@ -237,7 +244,7 @@ def increment_tag_count(list_of_tags, tag):
 
 
 @app.route('/tags/')
-def all_tags():
+def all_tags() -> Response:
     tags = []
     for post in posts:
         for tag in post.meta.get('tags', []):
@@ -249,7 +256,7 @@ def all_tags():
 
 
 @app.route('/tags/<string:tag>/')
-def tag(tag):
+def tag(tag: str) -> Response:
     tagged = [p for p in posts if tag in p.meta.get('tags', [])]
     sorted_posts = sorted(
         tagged,
@@ -260,7 +267,7 @@ def tag(tag):
 
 
 @app.route('/author/<author>/')
-def author(author):
+def author(author: str) -> Response:
     author_posts = [p for p in posts if author == p.meta.get('author', '')]
     sorted_posts = sorted(
         author_posts,
@@ -276,12 +283,12 @@ def author(author):
 
 
 @app.route('/404.html')
-def not_found():
+def not_found() -> Response:
     return render_template('404.html')
 
 
 @app.route('/<int:year>/')
-def year_view(year):
+def year_view(year: int) -> Response:
     year = str(year)
     if len(year) != len('YYYY'):
         abort(404)
@@ -299,7 +306,7 @@ def year_view(year):
 
 
 @app.route('/<year>/<month>/')
-def month_view(year, month):
+def month_view(year: str, month: str) -> Response:
     month_posts = [
         p for p in posts if year == p.meta.get('published').strftime('%Y')
         and month == p.meta.get('published').strftime('%m')
@@ -321,7 +328,7 @@ def month_view(year, month):
 
 
 @app.route('/<year>/<month>/<day>/')
-def day_view(year, month, day):
+def day_view(year: str, month: str, day: str) -> Response:
     day_posts = [
         p for p in posts if year == p.meta.get('published').strftime('%Y')
         and month == p.meta.get('published').strftime('%m')
@@ -340,13 +347,13 @@ def day_view(year, month, day):
 
 
 @app.errorhandler(404)
-def page_not_found(_e):
+def page_not_found(_e: Exception | int) -> Response:
     return render_template('404.html'), 404
 
 
 # Telling Frozen-Flask about routes that are not linked to in templates
 @freezer.register_generator
-def year_view():  # noqa: F811
+def year_view() -> Iterator[dict]:  # noqa: F811
     for post in posts:
         yield {
             'year': post.meta.get('published').year,
@@ -354,7 +361,7 @@ def year_view():  # noqa: F811
 
 
 @freezer.register_generator
-def month_view():  # noqa: F811
+def month_view() -> Iterator[dict]:  # noqa: F811
     for post in posts:
         yield {
             'month': post.meta.get('published').strftime('%m'),
@@ -363,7 +370,7 @@ def month_view():  # noqa: F811
 
 
 @freezer.register_generator
-def day_view():  # noqa: F811
+def day_view() -> Iterator[dict]:  # noqa: F811
     for post in posts:
         yield {
             'day': post.meta.get('published').strftime('%d'),

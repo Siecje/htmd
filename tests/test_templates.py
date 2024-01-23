@@ -2,7 +2,7 @@ from click.testing import CliRunner
 from htmd.cli import start, templates
 
 
-def test_templates():
+def test_templates() -> None:
     expected_output = (
         'templates/404.html was created.\n'
         'templates/_layout.html already exists and was not created.\n'
@@ -25,7 +25,7 @@ def test_templates():
     assert result.output == expected_output
 
 
-def test_templates_without_folder():
+def test_templates_without_folder() -> None:
     expected_output = 'templates/ directory not found.\n'
     runner = CliRunner()
     with runner.isolated_filesystem():
