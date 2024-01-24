@@ -8,6 +8,7 @@
 - tags sent to all_tags.html is now a dict
 ### Fixed
 - Atom feed URL
+- Using wheel without installing
 
 ## [3.0.0] - 2023-12-08
 ### Added

@@ -78,9 +78,10 @@ def copy_file(source: BinaryIO, destination: Path) -> None:
 
 def copy_missing_templates() -> None:
     template_dir = files('htmd.example_site') / 'templates'
-    for template_file in sorted(template_dir.iterdir()):
-        file_name = template_file.name
-        copy_file(template_file, Path('templates') / file_name)
+    with as_file(template_dir) as template_path:
+        for template_file in sorted(template_path.iterdir()):
+            file_name = template_file.name
+            copy_file(template_file, Path('templates') / file_name)
 
 
 def copy_site_file(directory: Path, filename: str) -> None:
