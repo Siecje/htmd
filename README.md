@@ -74,6 +74,14 @@ $ venv/bin/python -m pip install mypy
 $ venv/bin/python -m mypy htmd typehints
 ```
 
+### Running ruff
+
+```shell
+$ venv/bin/python -m pip install ruff
+$ venv/bin/python -m ruff check htmd
+```
+
+
 ### Running the tests
 
 ```shell
