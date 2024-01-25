@@ -11,6 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: chartboost/ruff-action@v1
+        with:
+          src: "./htmd"
   build:
     runs-on: ubuntu-latest
     strategy:

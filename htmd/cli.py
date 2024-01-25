@@ -5,7 +5,7 @@ import sys
 
 import click
 from flask import Flask
-from flask_flatpages import FlatPages
+from flask_flatpages import FlatPages, Page
 
 from .utils import (
     combine_and_minify_css,
@@ -95,7 +95,7 @@ def verify() -> None:
 
 def set_post_time(
     app: Flask,
-    post: FlatPages,
+    post: Page,
     field: str,
     date_time: datetime.datetime,
 ) -> None:
@@ -120,7 +120,7 @@ def set_post_time(
             file.write(line)
 
 
-def set_posts_datetime(app: Flask, posts: [FlatPages]) -> None:
+def set_posts_datetime(app: Flask, posts: FlatPages) -> None:
     # Ensure each post has a published date
     # set time for correct date field
     for post in posts:
@@ -170,9 +170,11 @@ def build(
     app = site.app
 
     if css_minify:
+        assert app.static_folder is not None
         combine_and_minify_css(Path(app.static_folder))
 
     if js_minify:
+        assert app.static_folder is not None
         combine_and_minify_js(Path(app.static_folder))
 
     if css_minify or js_minify:
@@ -230,9 +232,11 @@ def preview(
     app = site.app
 
     if css_minify:
+        assert app.static_folder is not None
         combine_and_minify_css(Path(app.static_folder))
 
     if js_minify:
+        assert app.static_folder is not None
         combine_and_minify_js(Path(app.static_folder))
 
     app.run(debug=True, host=host, port=port)

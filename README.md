@@ -67,6 +67,13 @@ $ ../venv/bin/htmd start
 $ ../venv/bin/htmd build
 ```
 
+### Running mypy
+
+```shell
+$ venv/bin/python -m pip install mypy
+$ venv/bin/python -m mypy htmd typehints
+```
+
 ### Running the tests
 
 ```shell

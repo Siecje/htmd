@@ -1,7 +1,6 @@
 from importlib.resources import as_file, files
 from pathlib import Path
 import shutil
-from typing import BinaryIO
 
 import click
 from csscompressor import compress
@@ -67,7 +66,7 @@ def combine_and_minify_js(static_folder: Path) -> None:
         master.write(jsmin(combined))
 
 
-def copy_file(source: BinaryIO, destination: Path) -> None:
+def copy_file(source: Path, destination: Path) -> None:
     if destination.exists() is False:
         shutil.copyfile(source, destination)
         click.echo(click.style(f'{destination} was created.', fg='green'))

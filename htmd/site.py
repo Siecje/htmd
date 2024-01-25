@@ -3,10 +3,12 @@ import os
 from pathlib import Path
 import sys
 import tomllib
+import typing
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
 from flask import abort, Blueprint, Flask, render_template, Response, url_for
+from flask.typing import ResponseReturnValue
 from flask_flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
@@ -56,41 +58,41 @@ except FileNotFoundError:
 # Flask configs are flat, config.toml is not
 # Define the configuration keys and their default values
 # 'Flask config': [section, key, default]
-config_keys = {
-    'SITE_NAME': ['site', 'name', ''],
-    'SITE_URL': ['site', 'url', ''],
-    'SITE_LOGO': ['site', 'logo', ''],
-    'SITE_DESCRIPTION': ['site', 'description', ''],
-    'SITE_TWITTER': ['site', 'twitter', ''],
-    'SITE_FACEBOOK': ['site', 'facebook', ''],
-    'FACEBOOK_APP_ID': ['site', 'facebook_app_id', ''],
-    'STATIC_FOLDER': ['folders', 'static', 'static'],
-    'POSTS_FOLDER': ['folders', 'posts', 'posts'],
-    'PAGES_FOLDER': ['folders', 'pages', 'pages'],
-    'BUILD_FOLDER': ['folders', 'build', 'build'],
-    'POSTS_EXTENSION': ['posts', 'extension', '.md'],
-    'PRETTY_HTML': ['html', 'pretty', False],
-    'MINIFY_HTML': ['html', 'minify', False],
-    'SHOW_AUTHOR': ['author', 'show', True],
-    'DEFAULT_AUTHOR': ['author', 'default_name', ''],
-    'DEFAULT_AUTHOR_TWITTER': ['author', 'default_twitter', ''],
-    'DEFAULT_AUTHOR_FACEBOOK': ['author', 'default_facebook', ''],
+config_keys : dict[str, tuple[str, str, typing.Any]] = {
+    'SITE_NAME': ('site', 'name', ''),
+    'SITE_URL': ('site', 'url', ''),
+    'SITE_LOGO': ('site', 'logo', ''),
+    'SITE_DESCRIPTION': ('site', 'description', ''),
+    'SITE_TWITTER': ('site', 'twitter', ''),
+    'SITE_FACEBOOK': ('site', 'facebook', ''),
+    'FACEBOOK_APP_ID': ('site', 'facebook_app_id', ''),
+    'STATIC_FOLDER': ('folders', 'static', 'static'),
+    'POSTS_FOLDER': ('folders', 'posts', 'posts'),
+    'PAGES_FOLDER': ('folders', 'pages', 'pages'),
+    'BUILD_FOLDER': ('folders', 'build', 'build'),
+    'POSTS_EXTENSION': ('posts', 'extension', '.md'),
+    'PRETTY_HTML': ('html', 'pretty', False),
+    'MINIFY_HTML': ('html', 'minify', False),
+    'SHOW_AUTHOR': ('author', 'show', True),
+    'DEFAULT_AUTHOR': ('author', 'default_name', ''),
+    'DEFAULT_AUTHOR_TWITTER': ('author', 'default_twitter', ''),
+    'DEFAULT_AUTHOR_FACEBOOK': ('author', 'default_facebook', ''),
 }
 
 # Update app.config using the configuration keys
 for flask_key, (table, key, default) in config_keys.items():
     app.config[flask_key] = htmd_config.get(table, {}).get(key, default)
-
+assert app.static_folder is not None
 
 # To avoid full paths in config.toml
 app.config['FLATPAGES_ROOT'] = (
-    project_dir / app.config.get('POSTS_FOLDER')
+    project_dir / app.config['POSTS_FOLDER']
 )
 app.config['FREEZER_DESTINATION'] = (
-    project_dir / app.config.get('BUILD_FOLDER')
+    project_dir / app.config['BUILD_FOLDER']
 )
 app.config['FREEZER_REMOVE_EXTRA_FILES'] = False
-app.config['FLATPAGES_EXTENSION'] = app.config.get('POSTS_EXTENSION')
+app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
 
 app.config['INCLUDE_CSS'] = 'combined.min.css' in os.listdir(app.static_folder)
 app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
@@ -112,9 +114,9 @@ app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 
 
 # Include current htmd site templates
-app.jinja_loader = ChoiceLoader([
+app.jinja_loader = ChoiceLoader([  # type: ignore[assignment]
     FileSystemLoader(project_dir / 'templates/'),
-    app.jinja_loader,
+    app.jinja_loader,  # type: ignore[list-item]
 ])
 
 MONTHS = {
@@ -135,12 +137,12 @@ MONTHS = {
 pages = Blueprint(
     'pages',
     __name__,
-    template_folder=project_dir / app.config.get('PAGES_FOLDER'),
+    template_folder=project_dir / app.config['PAGES_FOLDER'],
 )
 
 
 @app.after_request
-def format_html(response: Response) -> Response:
+def format_html(response: Response) -> ResponseReturnValue:
     if response.mimetype == 'text/html':
         if app.config.get('PRETTY_HTML', False):
             response.data = BeautifulSoup(
@@ -153,7 +155,7 @@ def format_html(response: Response) -> Response:
 
 
 @pages.route('/<path:path>/')
-def page(path: str) -> Response:
+def page(path: str) -> ResponseReturnValue:
     try:
         return render_template(path + '.html', active=path)
     except TemplateNotFound:
@@ -165,18 +167,18 @@ app.register_blueprint(pages)
 
 # Will end up in the static directory
 @app.route('/static/pygments.css')
-def pygments_css() -> Response:
+def pygments_css() -> ResponseReturnValue:
     return pygments_style_defs('tango'), 200, {'Content-Type': 'text/css'}
 
 
 @app.route('/')
-def index() -> Response:
+def index() -> ResponseReturnValue:
     latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
     return render_template('index.html', active='home', posts=latest[:4])
 
 
 @app.route('/feed.atom')
-def feed() -> Response:
+def feed() -> ResponseReturnValue:
     name = app.config.get('SITE_NAME')
     subtitle = app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
     url = app.config.get('URL')
@@ -209,14 +211,14 @@ def feed() -> Response:
 
 
 @app.route('/all/')
-def all_posts() -> Response:
+def all_posts() -> ResponseReturnValue:
     latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
     return render_template('all_posts.html', active='posts', posts=latest)
 
 
 # If month and day are ints then Flask removes leading zeros
 @app.route('/<year>/<month>/<day>/<path:path>/')
-def post(year: str, month: str, day:str, path: str) -> Response:
+def post(year: str, month: str, day:str, path: str) -> ResponseReturnValue:
     if len(year) != 4 or len(month) != 2 or len(day) != 2:  # noqa: PLR2004
         abort(404)
     post = posts.get_or_404(path)
@@ -227,8 +229,8 @@ def post(year: str, month: str, day:str, path: str) -> Response:
 
 
 @app.route('/tags/')
-def all_tags() -> Response:
-    tag_counts: {str: int} = {}
+def all_tags() -> ResponseReturnValue:
+    tag_counts: dict[str, int] = {}
     for post in posts:
         for tag in post.meta.get('tags', []):
             if tag not in tag_counts:
@@ -238,7 +240,7 @@ def all_tags() -> Response:
 
 
 @app.route('/tags/<string:tag>/')
-def tag(tag: str) -> Response:
+def tag(tag: str) -> ResponseReturnValue:
     tagged = [p for p in posts if tag in p.meta.get('tags', [])]
     sorted_posts = sorted(
         tagged,
@@ -249,7 +251,7 @@ def tag(tag: str) -> Response:
 
 
 @app.route('/author/<author>/')
-def author(author: str) -> Response:
+def author(author: str) -> ResponseReturnValue:
     author_posts = [p for p in posts if author == p.meta.get('author', '')]
     sorted_posts = sorted(
         author_posts,
@@ -265,17 +267,17 @@ def author(author: str) -> Response:
 
 
 @app.route('/404.html')
-def not_found() -> Response:
+def not_found() -> ResponseReturnValue:
     return render_template('404.html')
 
 
 @app.route('/<int:year>/')
-def year_view(year: int) -> Response:
-    year = str(year)
-    if len(year) != len('YYYY'):
+def year_view(year: int) -> ResponseReturnValue:
+    year_str = str(year)
+    if len(year_str) != len('YYYY'):
         abort(404)
     year_posts = [
-        p for p in posts if year == p.meta.get('published', []).strftime('%Y')
+        p for p in posts if year_str == p.meta.get('published', []).strftime('%Y')
     ]
     if not year_posts:
         abort(404)
@@ -284,11 +286,11 @@ def year_view(year: int) -> Response:
         reverse=False,
         key=lambda p: p.meta.get('published'),
     )
-    return render_template('year.html', year=year, posts=sorted_posts)
+    return render_template('year.html', year=year_str, posts=sorted_posts)
 
 
 @app.route('/<year>/<month>/')
-def month_view(year: str, month: str) -> Response:
+def month_view(year: str, month: str) -> ResponseReturnValue:
     month_posts = [
         p for p in posts if year == p.meta.get('published').strftime('%Y')
         and month == p.meta.get('published').strftime('%m')
@@ -310,7 +312,7 @@ def month_view(year: str, month: str) -> Response:
 
 
 @app.route('/<year>/<month>/<day>/')
-def day_view(year: str, month: str, day: str) -> Response:
+def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
     day_posts = [
         p for p in posts if year == p.meta.get('published').strftime('%Y')
         and month == p.meta.get('published').strftime('%m')
@@ -329,12 +331,12 @@ def day_view(year: str, month: str, day: str) -> Response:
 
 
 @app.errorhandler(404)
-def page_not_found(_e: Exception | int) -> Response:
+def page_not_found(_e: Exception | int) -> ResponseReturnValue:
     return render_template('404.html'), 404
 
 
 # Telling Frozen-Flask about routes that are not linked to in templates
-@freezer.register_generator
+@freezer.register_generator  # type: ignore[no-redef]
 def year_view() -> Iterator[dict]:  # noqa: F811
     for post in posts:
         yield {
@@ -342,7 +344,7 @@ def year_view() -> Iterator[dict]:  # noqa: F811
         }
 
 
-@freezer.register_generator
+@freezer.register_generator  # type: ignore[no-redef]
 def month_view() -> Iterator[dict]:  # noqa: F811
     for post in posts:
         yield {
@@ -351,7 +353,7 @@ def month_view() -> Iterator[dict]:  # noqa: F811
         }
 
 
-@freezer.register_generator
+@freezer.register_generator  # type: ignore[no-redef]
 def day_view() -> Iterator[dict]:  # noqa: F811
     for post in posts:
         yield {
