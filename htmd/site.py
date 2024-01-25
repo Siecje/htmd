@@ -218,12 +218,12 @@ def all_posts() -> ResponseReturnValue:
 
 # If month and day are ints then Flask removes leading zeros
 @app.route('/<year>/<month>/<day>/<path:path>/')
-def post(year: str, month: str, day:str, path: str) -> ResponseReturnValue:
+def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     if len(year) != 4 or len(month) != 2 or len(day) != 2:  # noqa: PLR2004
         abort(404)
     post = posts.get_or_404(path)
     date_str = f'{year}-{month}-{day}'
-    if str(post.meta.get('published')) != date_str:
+    if post.meta.get('published').strftime('%Y-%m-%d') != date_str:
         abort(404)
     return render_template('post.html', post=post)
 

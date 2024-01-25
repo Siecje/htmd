@@ -438,7 +438,8 @@ def test_build_feed_dot_atom() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         runner.invoke(start)
-        runner.invoke(build)
+        result = runner.invoke(build)
+        assert result.exit_code == 0
         current_directory = Path.cwd()
         assert (Path(current_directory) / 'build' / 'feed.atom').is_file
 
@@ -453,7 +454,8 @@ def test_build_updated_time_is_added() -> None:
         runner.invoke(start)
         with (Path('posts') / 'example.md').open('r') as post_file:
             b_lines = post_file.readlines()
-        runner.invoke(build)
+        result = runner.invoke(build)
+        assert result.exit_code == 0
         with (Path('posts') / 'example.md').open('r') as post_file:
             a_lines = post_file.readlines()
     for b_line, a_line in zip(b_lines, a_lines, strict=True):
@@ -503,7 +505,8 @@ def test_build_published_time_is_added() -> None:
         remove_fields_from_example_post(('updated',))
         with (Path('posts') / 'example.md').open('r') as post_file:
             b_lines = post_file.readlines()
-        runner.invoke(build)
+        result = runner.invoke(build)
+        assert result.exit_code == 0
         with (Path('posts') / 'example.md').open('r') as post_file:
             a_lines = post_file.readlines()
     for b_line, a_line in zip(b_lines, a_lines, strict=True):
@@ -548,9 +551,11 @@ def test_build_updated_is_added() -> None:
         # Remove updated from example post
         remove_fields_from_example_post(('updated',))
         # First build adds time to published
-        runner.invoke(build)
+        result = runner.invoke(build)
+        assert result.exit_code == 0
         # Second build adds updated with time
-        runner.invoke(build)
+        result2 = runner.invoke(build)
+        assert result2.exit_code == 0
         with (Path('posts') / 'example.md').open('r') as post_file:
             a_lines = post_file.readlines()
     for a_line in a_lines:
@@ -587,9 +592,11 @@ def test_build_updated_is_added_once() -> None:
             post_file.write('...\n')
 
         # First build adds published time
-        runner.invoke(build)
+        result = runner.invoke(build)
+        assert result.exit_code == 0
         # Second build adds updated
-        runner.invoke(build)
+        result2 = runner.invoke(build)
+        assert result2.exit_code == 0
         with (Path('posts') / 'example.md').open('r') as post_file:
             a_lines = post_file.readlines()
     count = 0
@@ -607,7 +614,8 @@ def test_build_without_published() -> None:
         remove_fields_from_example_post(('published', 'updated'))
 
         # First build adds published time
-        runner.invoke(build)
+        result = runner.invoke(build)
+        assert result.exit_code == 0
         with (Path('posts') / 'example.md').open('r') as post_file:
             a_lines = post_file.readlines()
     count = 0
