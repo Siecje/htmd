@@ -6,12 +6,13 @@
 ```shell
 git add -u
 git commit -m "Version X"
+git tag vX
 git push origin main
-# Remove __pycache__ directories
-cd ..
-rm -rf htmd
-git clone git@github.com:Siecje/htmd.git
-cd htmd
+git push origin vX
+rm -r dist
+rm -r venv
+rm -r htmd.egg-info
+find . -type d -name "__pycache__" -exec rm -r {} +
 python3 -m venv venv
 venv/bin/python -m pip install pip setuptools wheel --upgrade
 venv/bin/python -m pip install build --upgrade
@@ -20,3 +21,6 @@ venv/bin/python -m pip install twine
 venv/bin/twine check dist/*
 venv/bin/twine upload dist/*
 ```
+
+
+- Create new release in GitHub
