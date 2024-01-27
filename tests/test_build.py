@@ -197,3 +197,28 @@ def test_build_feed_dot_atom() -> None:
         current_directory = Path.cwd()
         assert (Path(current_directory) / 'build' / 'feed.atom').is_file
 
+
+def test_build_page_without_link() -> None:
+    page_lines = (
+        "{% extends '_layout.html' %}\n",
+        '\n',
+        '{% block title %}New{% endblock title %}\n',
+        '\n',
+        '{% block content %}\n',
+        '  <article>\n',
+        '    <h1>New</h1>\n',
+        '    <p>Totally new</p>\n',
+        '  </article>\n',
+        '{% endblock content %}\n',
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        # Create page that is doesn't have a link in the site
+        with (Path('pages') / 'new.html').open('w') as page_file:
+            for line in page_lines:
+                page_file.write(line)
+        result = runner.invoke(build)
+        assert result.exit_code == 0
+        with (Path('build') / 'new' / 'index.html').open('r') as page_file:
+            assert 'Totally new' in page_file.read()

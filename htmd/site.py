@@ -374,3 +374,12 @@ def post() -> Iterator[dict]:  # noqa: F811
             'year': post.meta.get('published').year,
             'path': post.path,
         }
+
+
+@freezer.register_generator  # type: ignore[no-redef]
+def page() -> Iterator[str]:  # noqa: F811
+    for page in (project_dir / 'pages').iterdir():
+        # Need to create for pages.page
+        # Since this route is in a different Blueprint
+        # URL works
+        yield f'/{page.stem}/'
