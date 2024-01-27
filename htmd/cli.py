@@ -16,6 +16,11 @@ from .utils import (
 )
 
 
+if not sys.warnoptions:
+    import warnings
+    warnings.simplefilter('ignore')
+
+
 @click.group()
 @click.version_option()
 def cli() -> None:
