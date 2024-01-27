@@ -48,15 +48,6 @@ def test_build_post_404_invalid_date_month() -> None:
         with (Path('posts') / 'example.md').open('r') as post_file:
             lines = post_file.readlines()
 
-        with (Path('posts') / 'about.html').open('w') as post_file:
-            for line in lines:
-                if 'published' in line:
-                    post_file.write('published: 2014-01-30')
-                elif 'updated' in line:
-                    post_file.write('updated: 2014-01-30')
-                else:
-                    post_file.write(line)
-
         with (Path('pages') / 'about.html').open('r') as about_file:
             lines = about_file.readlines()
 
@@ -86,15 +77,6 @@ def test_build_post_404_invalid_date_day() -> None:
 
         with (Path('posts') / 'example.md').open('r') as post_file:
             lines = post_file.readlines()
-
-        with (Path('posts') / 'about.html').open('w') as post_file:
-            for line in lines:
-                if 'published' in line:
-                    post_file.write('published: 2014-10-03')
-                elif 'updated' in line:
-                    post_file.write('updated: 2014-10-03')
-                else:
-                    post_file.write(line)
 
         with (Path('pages') / 'about.html').open('r') as about_file:
             lines = about_file.readlines()
