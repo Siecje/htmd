@@ -1,8 +1,8 @@
-beautifulsoup4==4.12.2
+beautifulsoup4==4.12.3
 click==8.1.7
 csscompressor==0.9.5
 feedwerk==1.1.0
-Flask==3.0.0
+Flask==3.0.1
 Flask-FlatPages==0.8.2
 Frozen-Flask==1.0.1
 htmlmin==0.1.12
