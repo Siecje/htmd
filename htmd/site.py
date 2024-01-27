@@ -99,6 +99,7 @@ app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
 
 
 posts = FlatPages(app)
+published_posts = [p for p in posts if not p.meta.get('draft', False)]
 freezer = Freezer(app)
 
 # Allow config settings (even new user created ones) to be used in templates
@@ -173,7 +174,7 @@ def pygments_css() -> ResponseReturnValue:
 
 @app.route('/')
 def index() -> ResponseReturnValue:
-    latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
+    latest = sorted(published_posts, reverse=True, key=lambda p: p.meta['published'])
     return render_template('index.html', active='home', posts=latest[:4])
 
 
@@ -188,7 +189,7 @@ def feed() -> ResponseReturnValue:
         title=name,
         url=url,
     )
-    for post in posts:
+    for post in published_posts:
         url = url_for(
             'post',
             year=post.meta.get('published').strftime('%Y'),
@@ -212,7 +213,7 @@ def feed() -> ResponseReturnValue:
 
 @app.route('/all/')
 def all_posts() -> ResponseReturnValue:
-    latest = sorted(posts, reverse=True, key=lambda p: p.meta.get('published'))
+    latest = sorted(published_posts, reverse=True, key=lambda p: p.meta['published'])
     return render_template('all_posts.html', active='posts', posts=latest)
 
 
@@ -231,7 +232,7 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
 @app.route('/tags/')
 def all_tags() -> ResponseReturnValue:
     tag_counts: dict[str, int] = {}
-    for post in posts:
+    for post in published_posts:
         for tag in post.meta.get('tags', []):
             if tag not in tag_counts:
                 tag_counts[tag] = 0
@@ -241,7 +242,7 @@ def all_tags() -> ResponseReturnValue:
 
 @app.route('/tags/<string:tag>/')
 def tag(tag: str) -> ResponseReturnValue:
-    tagged = [p for p in posts if tag in p.meta.get('tags', [])]
+    tagged = [p for p in published_posts if tag in p.meta.get('tags', [])]
     sorted_posts = sorted(
         tagged,
         reverse=True,
@@ -252,7 +253,7 @@ def tag(tag: str) -> ResponseReturnValue:
 
 @app.route('/author/<author>/')
 def author(author: str) -> ResponseReturnValue:
-    author_posts = [p for p in posts if author == p.meta.get('author', '')]
+    author_posts = [p for p in published_posts if author == p.meta.get('author', '')]
     sorted_posts = sorted(
         author_posts,
         reverse=True,
@@ -277,7 +278,7 @@ def year_view(year: int) -> ResponseReturnValue:
     if len(year_str) != len('YYYY'):
         abort(404)
     year_posts = [
-        p for p in posts if year_str == p.meta.get('published', []).strftime('%Y')
+        p for p in published_posts if year_str == p.meta['published'].strftime('%Y')
     ]
     if not year_posts:
         abort(404)
@@ -338,7 +339,7 @@ def page_not_found(_e: Exception | int) -> ResponseReturnValue:
 # Telling Frozen-Flask about routes that are not linked to in templates
 @freezer.register_generator  # type: ignore[no-redef]
 def year_view() -> Iterator[dict]:  # noqa: F811
-    for post in posts:
+    for post in published_posts:
         yield {
             'year': post.meta.get('published').year,
         }
@@ -346,7 +347,7 @@ def year_view() -> Iterator[dict]:  # noqa: F811
 
 @freezer.register_generator  # type: ignore[no-redef]
 def month_view() -> Iterator[dict]:  # noqa: F811
-    for post in posts:
+    for post in published_posts:
         yield {
             'month': post.meta.get('published').strftime('%m'),
             'year': post.meta.get('published').year,
@@ -355,9 +356,21 @@ def month_view() -> Iterator[dict]:  # noqa: F811
 
 @freezer.register_generator  # type: ignore[no-redef]
 def day_view() -> Iterator[dict]:  # noqa: F811
-    for post in posts:
+    for post in published_posts:
         yield {
             'day': post.meta.get('published').strftime('%d'),
             'month': post.meta.get('published').strftime('%m'),
             'year': post.meta.get('published').year,
+        }
+
+
+@freezer.register_generator  # type: ignore[no-redef]
+def post() -> Iterator[dict]:  # noqa: F811
+    draft_posts = [p for p in posts if p.meta.get('draft', False)]
+    for post in draft_posts:
+        yield {
+            'day': post.meta.get('published').strftime('%d'),
+            'month': post.meta.get('published').strftime('%m'),
+            'year': post.meta.get('published').year,
+            'path': post.path,
         }

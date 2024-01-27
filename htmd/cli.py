@@ -124,6 +124,8 @@ def set_posts_datetime(app: Flask, posts: FlatPages) -> None:
     # Ensure each post has a published date
     # set time for correct date field
     for post in posts:
+        if post.meta.get('draft', False):
+            continue
         if 'updated' not in post.meta:
             published = post.meta.get('published')
             if isinstance(published, datetime.datetime):
