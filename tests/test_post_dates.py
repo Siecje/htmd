@@ -414,3 +414,22 @@ def test_build_without_published() -> None:
             count += 1
 
     assert count == 1
+
+
+def test_build_with_post_in_each_month() -> None:
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(start)
+        post_path = Path('posts') / 'example.md'
+        with post_path.open('r') as post_file:
+            lines = post_file.readlines()
+        for month in range(1, 13):
+            with post_path.open('w') as post_file:
+                for line in lines:
+                    if 'published' in line:
+                        post_file.write(f'published: 2014-{month:02}-03\n')
+                    else:
+                        post_file.write(line)
+
+            result = runner.invoke(build)
+            assert result.exit_code == 0
