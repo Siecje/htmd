@@ -1,11 +1,14 @@
 # Change log
 
-## [4.0.0] - 2024-
+## [4.0.0] - 2024-01-27
 ### Added
 - Set post time on build
 - Add published or updated on build
+- Draft posts
+- Build all pages instead of just pages that are linked to from the site
 ### Changed
-- tags sent to all_tags.html is now a dict
+- `tags` sent to all_tags.html is now a dict
+- Hide Python warnings when using `htmd`
 ### Fixed
 - Atom feed URL
 - Using wheel without installing
