@@ -12,7 +12,7 @@ from flask.typing import ResponseReturnValue
 from flask_flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
-from jinja2 import ChoiceLoader, FileSystemLoader, TemplateNotFound
+from jinja2 import ChoiceLoader, FileSystemLoader
 
 
 this_dir = Path(__file__).parent
@@ -157,10 +157,14 @@ def format_html(response: Response) -> ResponseReturnValue:
 
 @pages.route('/<path:path>/')
 def page(path: str) -> ResponseReturnValue:
-    try:
-        return render_template(path + '.html', active=path)
-    except TemplateNotFound:
+    # ensure page is from pages directory
+    # otherwise this will load any templates in the template folder
+    for page_path in (project_dir / 'pages').iterdir():
+        if path == page_path.stem:
+            break
+    else:
         abort(404)
+    return render_template(path + '.html', active=path)
 
 
 app.register_blueprint(pages)
@@ -253,9 +257,12 @@ def tag(tag: str) -> ResponseReturnValue:
 
 @app.route('/author/<author>/')
 def author(author: str) -> ResponseReturnValue:
-    author_posts = [p for p in published_posts if author == p.meta.get('author', '')]
-    sorted_posts = sorted(
-        author_posts,
+    posts_author = [p for p in posts if author == p.meta.get('author', '')]
+    if not posts_author:
+        abort(404)
+    posts_author_published = [p for p in posts_author if not p.meta.get('draft', False)]
+    posts_sorted = sorted(
+        posts_author_published,
         reverse=True,
         key=lambda p: p.meta.get('published'),
     )
@@ -263,7 +270,7 @@ def author(author: str) -> ResponseReturnValue:
         'author.html',
         active='author',
         author=author,
-        posts=sorted_posts,
+        posts=posts_sorted,
     )
 
 
