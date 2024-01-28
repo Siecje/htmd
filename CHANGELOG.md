@@ -1,5 +1,14 @@
 # Change log
 
+## [4.0.1] -
+### Added
+- `python -m htmd` will now work
+### Changed
+- 
+### Fixed
+- `htmd preview` will only serve pages
+- `htmd preview` will show 404 for authors that don't exist
+
 ## [4.0.0] - 2024-01-27
 ### Added
 - Set post time on build
