@@ -33,7 +33,7 @@ def build_draft() -> Generator[None, None, None]:  # noqa: PT004
 
 
 def test_draft_is_built(build_draft: None) -> None:
-    post_path = (Path('build') / '2014' / '10' / '30' / 'example' / 'index.html')
+    post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
     with post_path.open('r') as post_page:
         assert 'Example Post' in post_page.read()
 

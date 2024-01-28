@@ -74,10 +74,11 @@ def test_build_css_minify_no_css_files(run_start: CliRunner) -> None:
 
 
 def test_build_html_pretty_true(run_start: CliRunner) -> None:
-    with Path('config.toml').open('r') as config_file:
+    config_path = Path('config.toml')
+    with config_path.open('r') as config_file:
         lines = config_file.readlines()
 
-    with Path('config.toml').open('w') as config_file:
+    with config_path.open('w') as config_file:
         for line in lines:
             if 'pretty =' in line:
                 config_file.write('pretty = true\n')
@@ -90,10 +91,11 @@ def test_build_html_pretty_true(run_start: CliRunner) -> None:
 
 
 def test_build_html_minify_true(run_start: CliRunner) -> None:
-    with Path('config.toml').open('r') as config_file:
+    config_path = Path('config.toml')
+    with config_path.open('r') as config_file:
         lines = config_file.readlines()
 
-    with Path('config.toml').open('w') as config_file:
+    with config_path.open('w') as config_file:
         for line in lines:
             if 'minify =' in line:
                 config_file.write('minify = true\n')
@@ -113,11 +115,12 @@ def test_build_page_404(run_start: CliRunner) -> None:
         'All posts are correctly formatted.\n'
         "Unexpected status '404 NOT FOUND' on URL /dne/\n"
     )
-    with (Path('pages') / 'about.html').open('r') as about_file:
+    about_path = Path('pages') / 'about.html'
+    with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
     new_line = '''<p><a href="{{ url_for('pages.page', path='dne') }}">DNE link</a></p>\n'''  # noqa: E501
-    with (Path('pages') / 'about.html').open('w') as about_file:
+    with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
                 about_file.write(new_line)

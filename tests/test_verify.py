@@ -46,9 +46,10 @@ def test_verify_published_missing(run_start: CliRunner) -> None:
 
 
 def test_verify_published_invalid_year(run_start: CliRunner) -> None:
-    with (Path('posts') / 'example.md').open('r') as post:
+    example_post_path = Path('posts') / 'example.md'
+    with example_post_path.open('r') as post:
         lines = post.readlines()
-    with (Path('posts') / 'example.md').open('w') as post:
+    with example_post_path.open('w') as post:
         for line in lines:
             if 'published' in line:
                 post.write('published: 14-10-30\n')
@@ -65,9 +66,10 @@ def test_verify_published_invalid_year(run_start: CliRunner) -> None:
 
 
 def test_verify_published_invalid_month(run_start: CliRunner) -> None:
-    with (Path('posts') / 'example.md').open('r') as post:
+    example_post_path = Path('posts') / 'example.md'
+    with example_post_path.open('r') as post:
         lines = post.readlines()
-    with (Path('posts') / 'example.md').open('w') as post:
+    with example_post_path.open('w') as post:
         for line in lines:
             if 'published' in line:
                 post.write('published: 2014-1-30\n')
@@ -84,9 +86,10 @@ def test_verify_published_invalid_month(run_start: CliRunner) -> None:
 
 
 def test_verify_published_invalid_day(run_start: CliRunner) -> None:
-    with (Path('posts') / 'example.md').open('r') as post:
+    example_post_path = Path('posts') / 'example.md'
+    with example_post_path.open('r') as post:
         lines = post.readlines()
-    with (Path('posts') / 'example.md').open('w') as post:
+    with example_post_path.open('w') as post:
         for line in lines:
             if 'published' in line:
                 post.write('published: 2014-01-3\n')
@@ -108,9 +111,10 @@ def test_verify_site_name_empty(run_start: CliRunner) -> None:
         '[site] name is not set in config.toml.\n'
     )
 
-    with Path('config.toml').open('r') as post:
+    config_path = Path('config.toml')
+    with config_path.open('r') as post:
         lines = post.readlines()
-    with Path('config.toml').open('w') as post:
+    with config_path.open('w') as post:
         seen = False
         for line in lines:
             if 'name' in line and not seen:
@@ -131,9 +135,10 @@ def test_verify_site_name_missing(run_start: CliRunner) -> None:
         'All posts are correctly formatted.\n'
         '[site] name is not set in config.toml.\n'
     )
-    with Path('config.toml').open('r') as post:
+    config_path = Path('config.toml')
+    with config_path.open('r') as post:
         lines = post.readlines()
-    with Path('config.toml').open('w') as post:
+    with config_path.open('w') as post:
         for line in lines:
             if 'name' not in line:
                 post.write(line)

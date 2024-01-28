@@ -61,10 +61,11 @@ def test_start_with_existing_template() -> None:
     runner = CliRunner()
     with runner.isolated_filesystem():
         Path('templates').mkdir()
-        with (Path('templates') / '_layout.html').open('w') as layout:
+        layout_path = Path('templates') / '_layout.html'
+        with layout_path.open('w') as layout:
             pass
         result = runner.invoke(start)
-        with (Path('templates') / '_layout.html').open('r') as layout:
+        with layout_path.open('r') as layout:
             # _layout.html was not replaced
             assert layout.read() == ''
     assert result.exit_code == 0

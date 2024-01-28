@@ -2,9 +2,10 @@ from pathlib import Path
 
 
 def remove_fields_from_example_post(field_names: tuple[str, ...]) -> None:
-    with (Path('posts') / 'example.md').open('r') as post:
+    example_post_path = Path('posts') / 'example.md'
+    with example_post_path.open('r') as post:
         lines = post.readlines()
-    with (Path('posts') / 'example.md').open('w') as post:
+    with example_post_path.open('w') as post:
         for line in lines:
             for field_name in field_names:
                 if field_name in line:

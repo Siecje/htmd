@@ -15,11 +15,12 @@ def test_build_post_404_invalid_date_year(run_start: CliRunner) -> None:
         "Unexpected status '404 NOT FOUND' on URL /14/10/30/example/\n"
     )
 
-    with (Path('pages') / 'about.html').open('r') as about_file:
+    about_path = Path('pages') / 'about.html'
+    with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
     new_line = '''<p><a href="{{ url_for('post', year=14, month='10', day='30', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
-    with (Path('pages') / 'about.html').open('w') as about_file:
+    with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
                 about_file.write(new_line)
@@ -39,14 +40,12 @@ def test_build_post_404_invalid_date_month(run_start: CliRunner) -> None:
         "Unexpected status '404 NOT FOUND' on URL /2014/1/30/example/\n"
     )
 
-    with (Path('posts') / 'example.md').open('r') as post_file:
-        lines = post_file.readlines()
-
-    with (Path('pages') / 'about.html').open('r') as about_file:
+    about_path = Path('pages') / 'about.html'
+    with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
     new_line = '''<p><a href="{{ url_for('post', year=2014, month='1', day='30', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
-    with (Path('pages') / 'about.html').open('w') as about_file:
+    with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
                 about_file.write(new_line)
@@ -65,14 +64,13 @@ def test_build_post_404_invalid_date_day(run_start: CliRunner) -> None:
         'All posts are correctly formatted.\n'
         "Unexpected status '404 NOT FOUND' on URL /2014/10/3/example/\n"
     )
-    with (Path('posts') / 'example.md').open('r') as post_file:
-        lines = post_file.readlines()
 
-    with (Path('pages') / 'about.html').open('r') as about_file:
+    about_path = Path('pages') / 'about.html'
+    with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
     new_line = '''<p><a href="{{ url_for('post', year=2014, month='10', day='3', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
-    with (Path('pages') / 'about.html').open('w') as about_file:
+    with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
                 about_file.write(new_line)
@@ -92,11 +90,12 @@ def test_build_post_404_different_date(run_start: CliRunner) -> None:
         'All posts are correctly formatted.\n'
         "Unexpected status '404 NOT FOUND' on URL /2014/10/29/example/\n"
     )
-    with (Path('pages') / 'about.html').open('r') as about_file:
+    about_path = Path('pages') / 'about.html'
+    with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
     new_line = '''<p><a href="{{ url_for('post', year=2014, month='10', day='29', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
-    with (Path('pages') / 'about.html').open('w') as about_file:
+    with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
                 about_file.write(new_line)
@@ -117,11 +116,12 @@ def test_build_year_404_incorrect(run_start: CliRunner) -> None:
         "Unexpected status '404 NOT FOUND' on URL /14/\n"
     )
 
-    with (Path('pages') / 'about.html').open('r') as about_file:
+    about_path = Path('pages') / 'about.html'
+    with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
     new_line = '''<p><a href="{{ url_for('year_view', year=14) }}">DNE link</a></p>\n'''
-    with (Path('pages') / 'about.html').open('w') as about_file:
+    with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
                 about_file.write(new_line)
@@ -141,11 +141,12 @@ def test_build_year_404_no_posts(run_start: CliRunner) -> None:
         'All posts are correctly formatted.\n'
         "Unexpected status '404 NOT FOUND' on URL /2013/\n"
     )
-    with (Path('pages') / 'about.html').open('r') as about_file:
+    about_path = Path('pages') / 'about.html'
+    with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
     new_line = '''<p><a href="{{ url_for('year_view', year=2013) }}">DNE link</a></p>\n'''  # noqa: E501
-    with (Path('pages') / 'about.html').open('w') as about_file:
+    with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
                 about_file.write(new_line)
@@ -166,11 +167,12 @@ def test_build_month_404_no_posts(run_start: CliRunner) -> None:
         "Unexpected status '404 NOT FOUND' on URL /2014/01/\n"
     )
 
-    with (Path('pages') / 'about.html').open('r') as about_file:
+    about_path = Path('pages') / 'about.html'
+    with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
     new_line = '''<p><a href="{{ url_for('month_view', year=2014, month='01') }}">DNE link</a></p>\n'''  # noqa: E501
-    with (Path('pages') / 'about.html').open('w') as about_file:
+    with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
                 about_file.write(new_line)
@@ -191,11 +193,12 @@ def test_build_day_404_no_posts(run_start: CliRunner) -> None:
         "Unexpected status '404 NOT FOUND' on URL /2014/10/29/\n"
     )
 
-    with (Path('pages') / 'about.html').open('r') as about_file:
+    about_path = Path('pages') / 'about.html'
+    with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
     new_line = '''<p><a href="{{ url_for('day_view', year=2014, month='10', day='29') }}">DNE link</a></p>\n'''  # noqa: E501
-    with (Path('pages') / 'about.html').open('w') as about_file:
+    with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
                 about_file.write(new_line)
@@ -212,11 +215,12 @@ def test_build_updated_time_is_added(run_start: CliRunner) -> None:
     # build will add it
     # verify that time is not there
     # ensure correct time is added
-    with (Path('posts') / 'example.md').open('r') as post_file:
+    example_path = Path('posts') / 'example.md'
+    with example_path.open('r') as post_file:
         b_lines = post_file.readlines()
     result = run_start.invoke(build)
     assert result.exit_code == 0
-    with (Path('posts') / 'example.md').open('r') as post_file:
+    with example_path.open('r') as post_file:
         a_lines = post_file.readlines()
     for b_line, a_line in zip(b_lines, a_lines, strict=True):
         if 'updated' in b_line:
@@ -260,11 +264,12 @@ def test_build_published_time_is_added(run_start: CliRunner) -> None:
     # verify that time is not there
     # ensure correct time is added
     remove_fields_from_example_post(('updated',))
-    with (Path('posts') / 'example.md').open('r') as post_file:
+    example_path = Path('posts') / 'example.md'
+    with example_path.open('r') as post_file:
         b_lines = post_file.readlines()
     result = run_start.invoke(build)
     assert result.exit_code == 0
-    with (Path('posts') / 'example.md').open('r') as post_file:
+    with example_path.open('r') as post_file:
         a_lines = post_file.readlines()
     for b_line, a_line in zip(b_lines, a_lines, strict=True):
         if 'published' in b_line:
@@ -313,7 +318,8 @@ def test_build_updated_is_added(run_start: CliRunner) -> None:
     # Second build adds updated with time
     result2 = run_start.invoke(build)
     assert result2.exit_code == 0
-    with (Path('posts') / 'example.md').open('r') as post_file:
+    example_path = Path('posts') / 'example.md'
+    with example_path.open('r') as post_file:
         a_lines = post_file.readlines()
     for a_line in a_lines:
         if 'updated' in a_line:
@@ -336,9 +342,10 @@ def test_build_updated_is_added(run_start: CliRunner) -> None:
 
 def test_build_updated_is_added_once(run_start: CliRunner) -> None:
     # Remove updated from example post
-    with (Path('posts') / 'example.md').open('r') as post_file:
+    example_path = Path('posts') / 'example.md'
+    with example_path.open('r') as post_file:
         b_lines = post_file.readlines()
-    with (Path('posts') / 'example.md').open('w') as post_file:
+    with example_path.open('w') as post_file:
         for line in b_lines:
             if 'updated' not in line:
                 post_file.write(line)
@@ -351,7 +358,7 @@ def test_build_updated_is_added_once(run_start: CliRunner) -> None:
     # Second build adds updated
     result2 = run_start.invoke(build)
     assert result2.exit_code == 0
-    with (Path('posts') / 'example.md').open('r') as post_file:
+    with example_path.open('r') as post_file:
         a_lines = post_file.readlines()
     count = 0
     for a_line in a_lines:
@@ -367,7 +374,8 @@ def test_build_without_published(run_start: CliRunner) -> None:
     # First build adds published time
     result = run_start.invoke(build)
     assert result.exit_code == 0
-    with (Path('posts') / 'example.md').open('r') as post_file:
+    example_path = Path('posts') / 'example.md'
+    with example_path.open('r') as post_file:
         a_lines = post_file.readlines()
     count = 0
     for a_line in a_lines:
