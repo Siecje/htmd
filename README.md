@@ -70,7 +70,7 @@ $ ../venv/bin/htmd build
 ### Running mypy
 
 ```shell
-$ venv/bin/python -m pip install mypy
+$ venv/bin/python -m pip install mypy types-Pygments types-beautifulsoup4
 $ venv/bin/python -m mypy htmd typehints
 ```
 
