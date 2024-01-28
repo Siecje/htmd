@@ -71,14 +71,14 @@ $ ../venv/bin/htmd build
 
 ```shell
 $ venv/bin/python -m pip install mypy types-Pygments types-beautifulsoup4
-$ venv/bin/python -m mypy htmd typehints
+$ venv/bin/python -m mypy .
 ```
 
 ### Running ruff
 
 ```shell
 $ venv/bin/python -m pip install ruff
-$ venv/bin/python -m ruff check htmd
+$ venv/bin/python -m ruff check --exclude typehints
 ```
 
 

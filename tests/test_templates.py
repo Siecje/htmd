@@ -1,8 +1,8 @@
 from click.testing import CliRunner
-from htmd.cli import start, templates
+from htmd.cli import templates
 
 
-def test_templates() -> None:
+def test_templates(run_start: CliRunner) -> None:
     expected_output = (
         'templates/404.html was created.\n'
         'templates/_layout.html already exists and was not created.\n'
@@ -17,10 +17,7 @@ def test_templates() -> None:
         'templates/tag.html was created.\n'
         'templates/year.html was created.\n'
     )
-    runner = CliRunner()
-    with runner.isolated_filesystem():
-        runner.invoke(start)
-        result = runner.invoke(templates)
+    result = run_start.invoke(templates)
     assert result.exit_code == 0
     assert result.output == expected_output
 

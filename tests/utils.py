@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def remove_fields_from_example_post(field_names: (str,)) -> None:
+def remove_fields_from_example_post(field_names: tuple[str, ...]) -> None:
     with (Path('posts') / 'example.md').open('r') as post:
         lines = post.readlines()
     with (Path('posts') / 'example.md').open('w') as post:
