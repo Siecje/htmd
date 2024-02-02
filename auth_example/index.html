@@ -32,7 +32,7 @@
         text-align: center;
         font-family: Courier Prime;
       }
-      #res{
+      #loginDiv{
         position: absolute;
         min-width: 400px;
         background: #40f2;
@@ -61,13 +61,15 @@
         margin-top: 6px;
         margin-bottom: 6px;
       }
-      .submitButton{
+      .buttons{
         border: none;
         padding: 10px;
         padding-top: 2px;
         padding-bottom: 4px;
         min-width: 100px;
         border-radius: 10px;
+      }
+      .submitButton{
         float: right;
       }
       .disabledButton{
@@ -81,19 +83,72 @@
         cursor: pointer;
       }
       #result{
-        width: 300px;
+        width: 250px;
         background: #40f4;
         float: left;
         border: 5px solid #40f8;
-        margin: 10px;
         display: none;
         text-align: center;
+      }
+      #appModal{
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 100;
+        background-color: #123;
+      }
+      #header{
+        height: 40px;
+        background: linear-gradient(#000, #123);
+        font-size: 24px;
+        color: #fff;
+      }
+      .avatar{
+        display: inline-block;
+        margin: 10px;
+        float: left;
+        font-size: 20px;
+      }
+      #logoutButton{
+        background: #084;
+        color: #afa;
+        margin: 10px;
+        float: left;
+        cursor: pointer;
+      }
+      #main{
+        padding: 10px;
+      }
+      .video{
+        max-width: 600px;
+        position: absolute;
+        top: 50vh;
+        left: 50vw;
+        transform: translate(-50%, -50%);
+        border-radius: 10px;
       }
     </style>
   </head>
   <body>
   
-    <div id="res">
+    <div id="appModal">
+      <div id="header">
+        <button onclick="setCookie(false)" id="logoutButton" class="buttons">logout</button>
+        <div class="avatar">
+          welcome, <span id="loggedinUserName"></span>
+        </div>
+      </div>
+      <div style="clear: both;"></div>
+      <div id="main">
+        Welcome to the app!
+        <video class="video" src="https://i.imgur.io/93ISTpi.mp4" muted autoplay controls></video>
+      </div>
+    </div>
+  
+    <div id="loginDiv">
       <div class="caption">&gt; login</div>
       <label for="username">
       <input
@@ -112,7 +167,7 @@
         onkeyup="doKeyDown(event)"
       ><br>
       <button
-        class="submitButton disabledButton"
+        class="buttons submitButton disabledButton"
         id="submit"
         onclick="submit()"
       >
@@ -124,33 +179,86 @@
     
     <script>
 
+      //globals
+
       validate = () => {
         valid = false
         let user = document.querySelector('#username').value
         let pass = document.querySelector('#password').value
         if(user && user.length>=3 && pass && pass.length>=3) valid = true
-        document.querySelector('#submit').className = 'submitButton ' + (valid ? 'enabledButton' : 'disabledButton')
+        document.querySelector('#submit').className = 'buttons submitButton ' + (valid ? 'enabledButton' : 'disabledButton')
         return valid
       }
       
-      doResult = res => {
+      // called when logging in or out
+      setCookie = (loggingIn, user, hash) => {  
+
+        let cookies = document.cookie
+        let expiry
+
+        // browsers auto-clear cookies which have expired
+        // setting the date in the past is one way to delete a cookie
+
+        if(loggingIn){
+          // +one year in microseconds
+          expiry = (new Date((Date.now()+3153600000000))).toUTCString()
+        } else {
+          // logging out
+          cookies.split(';').map(async function(cookie){
+            key = cookie.split('=')[0]
+            val = cookie.split('=')[1]
+            if(key == 'user') {
+              user = val
+              hash = ''
+            }
+          })
+          expiry = (new Date(0)).toUTCString()
+          setTimeout(()=>{location.reload()},0)
+        }
+        document.cookie = `user=${user}; expires=${expiry}; path=\/; domain=${location.hostname}`
+        document.cookie = `hash=${hash}; expires=${expiry}; path=\/; domain=${location.hostname}`
+      }
+      
+      showApp = user => {
+        let app   = document.querySelector('#appModal')
+        let login = document.querySelector('#loginDiv')
+        let userName = document.querySelector('#loggedinUserName')
+        userName.innerHTML = user
+        login.style.display = 'none'
+        app.style.display = 'block'
+      }
+      
+      doResult = (res, user, hash, showResult) => {
         let el;
-        (el = document.querySelector('#result')).style.display = 'block'
-        el.innerHTML = res ? '<span style="color: #0f0">success!</span>' : '<span style="color: #f88;">fail!</span>'
+        if(showResult){
+          (el = document.querySelector('#result')).style.display = 'block'
+          el.innerHTML = res ? '<span style="color: #0f0;">success!</span>' : '<span style="color: #f88;">fail!</span>'
+        }
+        if(res){
+          setCookie(true, user, hash)
+          showApp(user)
+        }
+      }
+
+      async function checkLogin(user, pass, hash='', showResult=true){
+        if(!user) return
+        let url = `logins.json`
+        let res = false
+        await fetch(url).then(res=>res.json()).then(data => {
+          let tgt = showResult ? CryptoJS.MD5(user+pass).toString() : hash
+          res = !!data['authorized users'].filter(auth=>{
+            return auth.user === user.toLowerCase() && auth.hash === tgt
+          }).length
+          hash = res ? tgt : ''
+          doResult(res, user, hash, showResult)
+        })
       }
     
       submit = () => {
         if(validate()){
           let user = document.querySelector('#username').value
           let pass = document.querySelector('#password').value
-          let url = `logins.json`
-          fetch(url).then(res=>res.json()).then(data => {
-            let tgt = CryptoJS.MD5(user+pass).toString()
-            let res = !!data['authorized users'].filter(auth=>{
-              return auth.user === user.toLowerCase() && auth.hash === tgt
-            }).length
-            doResult(res)
-          })
+          checkLogin(user, pass)
         }
       }
     
@@ -162,7 +270,21 @@
         }
         validate()
       }
+
+      checkCookie = () => {
+        let cookies = document.cookie
+        let user, hash
+        cookies.split(';').map(cookie => {
+          key = cookie.split('=')[0]
+          val = cookie.split('=')[1]
+          if(key == ' user') user = val
+          if(key == ' hash') hash = val
+        })
+        checkLogin(user, '', hash, false)
+      }
+
+      checkCookie()
+
     </script>
   </body>
 </html>
-
