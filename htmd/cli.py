@@ -2,6 +2,7 @@ import datetime
 import importlib
 from pathlib import Path
 import sys
+import warnings
 
 import click
 from flask import Flask
@@ -16,9 +17,7 @@ from .utils import (
 )
 
 
-if not sys.warnoptions:
-    import warnings
-    warnings.simplefilter('ignore')
+warnings.filterwarnings('ignore', '.*Nothing frozen for endpoints.*')
 
 
 @click.group()
