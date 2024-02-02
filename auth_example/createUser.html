@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/core.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/md5.js"></script>
+    <style>
+      /* latin-ext */
+      @font-face {
+        font-family: 'Courier Prime';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELaw9pWt_-.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'Courier Prime';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELawFpWg.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      body,html{
+        background: #000;
+        margin: 0;
+        height: 100vh;
+        overflow: auto;
+        color: #0fc;
+        font-size: 20px
+        text-align: center;
+        font-family: Courier Prime;
+        overflow: hidden;
+      }
+      #main{
+        position: absolute;
+        min-width: 400px;
+        background: #40f2;
+        border-radius: 10px;
+        padding: 25px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        left: 50%;
+        top: 45vh;
+        transform: translate(-50%, -50%);
+      }
+      .caption{
+        font-size: 1.5em;
+      }
+      .authField:focus{
+        outline: none;
+      }
+      .copyButton{
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background-image: url(clippy.svg);
+        cursor: pointer;
+        z-index: 500;
+        background-size: 90% 90%;
+        left: calc(50% + 180px);
+        background-position: center center;
+        background-repeat: no-repeat;
+        border: none;
+        background-color: #8fcc;
+        margin: 5px;
+        border-radius: 5px;
+        vertical-align: middle;
+      }
+      #copyConfirmation{
+        display: none;
+        position: absolute;
+        width: 100vw;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        background: #012d;
+        color: #8ff;
+        opacity: 1;
+        text-shadow: 0 0 5px #fff;
+        font-size: 46px;
+        text-align: center;
+        z-index: 1000;
+      }
+      #innerCopied{
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        z-index: 1020;
+        text-align: center;
+        transform: translate(0, -50%) scale(2.0, 1);
+      }
+      .authField{
+        border: none;
+        background: #000;
+        border-bottom: 1px solid #40f;
+        font-size: 20px;
+        min-width: 100%;
+        color: #0fa;
+        font-family: Courier Prime;
+        margin-top: 6px;
+        margin-bottom: 6px;
+      }
+      .buttons{
+        border: none;
+        padding: 10px;
+        padding-top: 2px;
+        padding-bottom: 4px;
+        min-width: 100px;
+        border-radius: 10px;
+      }
+      .submitButton{
+        float: right;
+      }
+      .disabledButton{
+        background: #444;
+        color: #888;
+        cursor: unset;
+      }
+      .enabledButton{
+        background: #286;
+        color: #8fa;
+        cursor: pointer;
+      }
+      #result{
+        margin-top: 50px;
+        width: 100%
+        background: #40f4;
+        float: left;
+        border: 5px solid #40f8;
+        display: none;
+        text-align: center;
+      }
+      #userObj{
+        word-break: break-all;
+        max-width: 300px;
+        display: inline-block;
+        margin: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="copyConfirmation"><div id="innerCopied">COPIED!</div></div>
+    <div id="main">
+      <div class="caption">&gt; create user</div>
+      <label for="username">
+      <input
+        type="text"
+        id="username"
+        class="authField"
+        placeholder="user name"
+        autofocus
+        onkeydown="doKeyDown(event)"
+      ><br>
+      <input
+        type="password"
+        id="password"
+        class="authField"
+        placeholder="password"
+        onkeyup="doKeyDown(event)"
+      ><br>
+      <button
+        class="buttons submitButton disabledButton"
+        id="submit"
+        onclick="submit()"
+      >
+        generate
+      </button>
+      </label>
+      <div id="result"></div>
+    </div>
+    <script>
+
+      validate = () => {
+        valid = false
+        let user = document.querySelector('#username').value
+        let pass = document.querySelector('#password').value
+        if(user && user.length>=3 && pass && pass.length>=3) valid = true
+        document.querySelector('#submit').className = 'buttons submitButton ' + (valid ? 'enabledButton' : 'disabledButton')
+        return valid
+      }
+      
+      generate = (user, pass) => {
+        user = user.toLowerCase()
+        let hash = CryptoJS.MD5(user+pass).toString()
+        if(hash){
+          let userObj = {
+            "user": user,
+            "hash": hash
+          }
+          let res = document.querySelector('#result')
+          res.innerHTML = '<span style="color: #fff">copy the below JSON, and add it to the logins.json file</span><br>'
+          copyButton = document.createElement('button')
+          copyButton.title = "copy link to clipboard"
+          copyButton.className = 'copyButton'
+          copyButton.onclick = () => { copy() }
+          res.appendChild(copyButton)
+          let div = document.createElement('div')
+          div.id = 'userObj'
+          div.innerHTML = JSON.stringify(userObj)
+          res.appendChild(div)
+          res.style.display = 'inline-block'
+        }
+      }
+      
+      submit = () => {
+        if(validate()){
+          let user = document.querySelector('#username').value
+          let pass = document.querySelector('#password').value
+          generate(user, pass)
+        }
+      }
+
+      doKeyDown = e => {
+        switch(e.keyCode){
+          case 13:
+            submit()
+          break
+        }
+        validate()
+      }
+
+      copy = () => {
+        var range = document.createRange()
+        range.selectNode(document.querySelectorAll('#userObj')[0])
+        window.getSelection().removeAllRanges()
+        window.getSelection().addRange(range)
+        document.execCommand("copy")
+        window.getSelection().removeAllRanges()
+        let el = document.querySelector('#copyConfirmation')
+        el.style.display = 'block';
+        el.style.opacity = 1
+        reduceOpacity = () => {
+          if(+el.style.opacity > 0){
+            el.style.opacity -= .08
+            if(+el.style.opacity<.1){
+              el.style.opacity = 1
+              el.style.display = 'none'
+            }else{
+              setTimeout(()=>{
+                reduceOpacity()
+              }, 10)
+            }
+          }
+        }
+        setTimeout(()=>{reduceOpacity()}, 250)
+      }
+
+    </script>
+  </body>
+</html>
