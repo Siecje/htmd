@@ -98,7 +98,7 @@ $ venv/bin/python -m pytest .
 
 ```shell
 $ venv/bin/python -m pip install coverage
-$ venv/bin/coverage run -m pytest .
+$ venv/bin/coverage run --branch -m pytest .
 $ venv/bin/coverage html --omit='/private/*'
 $ open htmlcov/index.html
 ```
