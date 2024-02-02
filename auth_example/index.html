@@ -33,6 +33,7 @@
         font-family: Courier Prime;
       }
       #loginDiv{
+        display: none;
         position: absolute;
         min-width: 400px;
         background: #40f2;
@@ -237,11 +238,15 @@
         if(res){
           setCookie(true, user, hash)
           showApp(user)
+        }else{
+          document.querySelector('#loginDiv').style.display = 'block'
         }
       }
 
       async function checkLogin(user, pass, hash='', showResult=true){
-        if(!user) return
+        if(!user) {
+          document.querySelector('#loginDiv').style.display = 'block'
+        }
         let url = `logins.json`
         let res = false
         await fetch(url).then(res=>res.json()).then(data => {
