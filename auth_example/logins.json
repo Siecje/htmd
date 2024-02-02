@@ -1,0 +1,12 @@
+{
+  "authorized users": [
+    {
+      "user": "foo",
+      "hash": "71439b30e7436f8b019e9c50baae2936"
+    },
+    {
+      "user": "cantelope",
+      "hash": "474148b5b5b1214eb20a86bbf361e897"
+    }
+  ]
+}
