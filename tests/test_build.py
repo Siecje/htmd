@@ -73,6 +73,12 @@ def test_build_css_minify_no_css_files(run_start: CliRunner) -> None:
     assert re.search(SUCCESS_REGEX, result.output)
 
 
+def test_build_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
+    result = run_start.invoke(build, ['--no-css-minify', '--no-js-minify'])
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+
 def test_build_html_pretty_true(run_start: CliRunner) -> None:
     config_path = Path('config.toml')
     with config_path.open('r') as config_file:
