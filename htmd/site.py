@@ -21,22 +21,15 @@ this_dir = Path(__file__).parent
 def get_project_dir() -> Path:
     current_directory = Path.cwd()
 
-    while True:
-        file_path = current_directory / 'config.toml'
-
-        if file_path.is_file():
-            return current_directory
-
-        # Move to the parent directory
+    while not (current_directory / 'config.toml').is_file():
         parent_directory = current_directory.parent
 
-        # If the current and parent directories are the same, break the loop
         if current_directory == parent_directory:
-            break
+            return Path.cwd()
 
         current_directory = parent_directory
 
-    return Path.cwd()
+    return current_directory
 
 
 project_dir = get_project_dir()
