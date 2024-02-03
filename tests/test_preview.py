@@ -128,3 +128,66 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
         for status, url in urls:
             response = requests.get(url, timeout=0.01)
             assert response.status_code == status
+
+
+def test_preview_reload_css(run_start: CliRunner) -> None:  # noqa: ARG001
+    url = 'http://localhost:9090/static/combined.min.css'
+    new_style = 'p {color: red;}'
+    expected = new_style.replace(' ', '').replace(';', '')
+    with run_preview():
+        response = requests.get(url, timeout=0.01)
+        before = response.text
+        assert expected not in before
+        css_path = Path('static') / 'style.css'
+        with css_path.open('a') as css_file:
+            css_file.write('\n' + new_style + '\n')
+
+        # Ensure new style is available after reload
+        read_timeout = False
+        after = before
+        while after == before:
+            try:
+                response = requests.get(url, timeout=0.1)
+            except requests.exceptions.ReadTimeout:
+                # happens during restart
+                read_timeout = True
+            else:
+                after = response.text
+
+        assert read_timeout
+        assert before != after
+        assert expected in after
+
+
+def test_preview_reload_js(run_start: CliRunner) -> None:  # noqa: ARG001
+    url = 'http://localhost:9090/static/combined.min.js'
+    new_js = 'document.getElementByTagName("body");'
+    expected = new_js
+    # Need to create before running preview since no .js files exist
+    js_path = Path('static') / 'script.js'
+    with js_path.open('w') as js_file:
+        js_file.write('document.getElementByTagName("div");')
+
+    with run_preview():
+        response = requests.get(url, timeout=0.01)
+        before = response.text
+        assert expected not in before
+
+        with js_path.open('w') as js_file:
+            js_file.write('\n' + new_js + '\n')
+
+        # Ensure new style is available after reload
+        read_timeout = False
+        after = before
+        while after == before:
+            try:
+                response = requests.get(url, timeout=0.1)
+            except requests.exceptions.ReadTimeout:
+                # happens during restart
+                read_timeout = True
+            else:
+                after = response.text
+
+        assert read_timeout
+        assert before != after
+        assert expected in after
