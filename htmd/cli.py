@@ -245,7 +245,13 @@ def preview(
         assert app.static_folder is not None
         combine_and_minify_js(Path(app.static_folder))
 
-    app.run(debug=True, host=host, port=port)
+    # reload when static files change
+    # werkzeug will re-run the terminal command
+    # Which causes the above combine_and_minify_*() to run
+    # and recreate combined.min.css/combined.min.js files
+    static_path = site.project_dir / 'static'
+    extra_files = static_path.iterdir()
+    app.run(debug=True, host=host, port=port, extra_files=extra_files)
 
 
 @cli.command('templates', short_help='Create any missing templates')
