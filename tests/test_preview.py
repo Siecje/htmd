@@ -148,7 +148,10 @@ def test_preview_reload_css(run_start: CliRunner) -> None:  # noqa: ARG001
         while after == before:
             try:
                 response = requests.get(url, timeout=0.1)
-            except requests.exceptions.ReadTimeout:
+            except (
+                requests.exceptions.ReadTimeout,
+                requests.exceptions.ConnectionError,
+            ):
                 # happens during restart
                 read_timeout = True
             else:
@@ -182,7 +185,10 @@ def test_preview_reload_js(run_start: CliRunner) -> None:  # noqa: ARG001
         while after == before:
             try:
                 response = requests.get(url, timeout=0.1)
-            except requests.exceptions.ReadTimeout:
+            except (
+                requests.exceptions.ReadTimeout,
+                requests.exceptions.ConnectionError,
+            ):
                 # happens during restart
                 read_timeout = True
             else:
