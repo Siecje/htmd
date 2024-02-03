@@ -1,6 +1,12 @@
 from pathlib import Path
 
 
+SUCCESS_REGEX = (
+    'All posts are correctly formatted.\n'
+    r'Static site was created in [\w\/\\]*build\n'
+)
+
+
 def remove_fields_from_example_post(field_names: tuple[str, ...]) -> None:
     example_post_path = Path('posts') / 'example.md'
     with example_post_path.open('r') as post:

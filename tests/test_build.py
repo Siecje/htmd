@@ -6,13 +6,7 @@ import shutil
 from click.testing import CliRunner
 from htmd.cli import build
 
-from utils import remove_fields_from_example_post
-
-
-SUCCESS_REGEX = (
-    'All posts are correctly formatted.\n'
-    r'Static site was created in [\w\/\\]*build\n'
-)
+from utils import remove_fields_from_example_post, SUCCESS_REGEX
 
 
 def test_build(run_start: CliRunner) -> None:

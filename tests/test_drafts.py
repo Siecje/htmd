@@ -1,11 +1,12 @@
 from collections.abc import Generator
 from pathlib import Path
+import re
 
 from click.testing import CliRunner
 from htmd.cli import build, start
 import pytest
 
-from utils import remove_fields_from_example_post
+from utils import remove_fields_from_example_post, SUCCESS_REGEX
 
 
 def set_example_as_draft() -> None:
@@ -83,3 +84,12 @@ def test_no_drafts_for_month(build_draft: None) -> None:
 def test_no_drafts_for_day(build_draft: None) -> None:
     # folder exists becaues of URL for post
     assert (Path('build') / '2014' / '10' / '30' / 'index.html').exists() is False
+
+
+def test_draft_without_published(run_start: CliRunner):
+    expected_output = ''
+    set_example_as_draft()
+    remove_fields_from_example_post(('published', 'updated'))
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
