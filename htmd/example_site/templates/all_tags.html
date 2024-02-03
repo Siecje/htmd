@@ -9,7 +9,7 @@
   {% for tag, count in tags.items() %}
   <div class="post-preview">
       <a href="{{ url_for('tag', tag=tag) }}">
-          <h2 class="post-title" style="font-size: {{1+0.1*count}}em">
+          <h2 class="post-title" style="font-size: {{ 1+0.1*count }}em">
               {{ tag }}
           </h2>
       </a>
