@@ -206,7 +206,7 @@
           cookies.split(';').map(async function(cookie){
             key = cookie.split('=')[0]
             val = cookie.split('=')[1]
-            if(key == 'user') {
+            if(key.trim() == 'user') {
               user = val
               hash = ''
             }
