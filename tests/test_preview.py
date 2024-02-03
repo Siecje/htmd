@@ -1,6 +1,7 @@
 from pathlib import Path
 import time
 from types import TracebackType
+import urllib3
 
 from click.testing import CliRunner
 from htmd.cli import preview
@@ -182,12 +183,43 @@ def test_preview_reload_js(run_start: CliRunner) -> None:  # noqa: ARG001
         while after == before:
             try:
                 response = requests.get(url, timeout=0.1)
-            except requests.exceptions.ReadTimeout:
+            except (requests.exceptions.ReadTimeout, urllib3.exceptions.IncompleteRead):
                 # happens during restart
                 read_timeout = True
             else:
                 after = response.text
 
         assert read_timeout
+        assert before != after
+        assert expected in after
+
+
+def test_preview_reload_js_new_file(run_start: CliRunner) -> None:  # noqa: ARG001
+    url = 'http://localhost:9090/static/combined.min.js'
+    new_js = 'document.getElementByTagName("body");'
+    expected = new_js
+
+    with run_preview():
+        response = requests.get(url, timeout=0.01)
+        assert response.status_code == 404
+        before = response.text
+        # Need to create before running preview since no .js files exist
+        js_path = Path('static') / 'script.js'
+        with js_path.open('w') as js_file:
+            js_file.write(new_js)
+
+        # Ensure new style is available after reload
+        read_timeout = False
+        after = before
+        while after == before:
+            try:
+                response = requests.get(url, timeout=0.1)
+            except requests.exceptions.ReadTimeout:
+                # happens during restart
+                read_timeout = True
+            else:
+                after = response.text
+
+        assert read_timeout is False
         assert before != after
         assert expected in after
