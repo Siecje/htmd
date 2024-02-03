@@ -280,8 +280,8 @@
         cookies.split(';').map(cookie => {
           key = cookie.split('=')[0]
           val = cookie.split('=')[1]
-          if(key == ' user') user = val
-          if(key == ' hash') hash = val
+          if(key == 'user') user = val
+          if(key == 'hash') hash = val
         })
         checkLogin(user, '', hash, false)
       }
