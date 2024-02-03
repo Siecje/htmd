@@ -250,7 +250,7 @@
         await fetch(url).then(res=>res.json()).then(data => {
           let tgt = showResult ? CryptoJS.MD5(user+pass).toString() : hash
           res = !!data['authorized users'].filter(auth=>{
-            return auth.user === user.toLowerCase() && auth.hash === tgt
+            return auth.user === user && auth.hash === tgt
           }).length
           hash = res ? tgt : ''
           doResult(res, user, hash, showResult)
@@ -259,7 +259,7 @@
     
       submit = () => {
         if(validate()){
-          let user = document.querySelector('#username').value
+          let user = document.querySelector('#username').value.toLowerCase()
           let pass = document.querySelector('#password').value
           checkLogin(user, pass)
         }
