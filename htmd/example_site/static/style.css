@@ -54,20 +54,10 @@ p {
 }
 
 body {
-  -webkit-hyphens: auto;
-  -epub-hyphens: auto;
-  -moz-hyphens: auto;
-  -ms-hyphens: auto;
-  -o-hyphens: auto;
   hyphens: auto;
 }
 
 code {
-  -webkit-hyphens: none;
-  -epub-hyphens: auto;
-  -moz-hyphens: none;
-  -ms-hyphens: none;
-  -o-hyphens: none;
   hyphens: none;
 }
 
