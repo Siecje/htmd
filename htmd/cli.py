@@ -2,11 +2,14 @@ import datetime
 import importlib
 from pathlib import Path
 import sys
+import threading
 import warnings
 
 import click
 from flask import Flask
 from flask_flatpages import FlatPages, Page
+from watchdog.observers import Observer
+from watchdog.events import DirModifiedEvent, FileModifiedEvent, FileSystemEventHandler
 
 from .utils import (
     combine_and_minify_css,
@@ -202,6 +205,24 @@ def build(
     click.echo(click.style(msg, fg='green'))
 
 
+class StaticHandler(FileSystemEventHandler):
+    def __init__(self, static_directory: Path) -> None:
+        super().__init__()
+        self.static_directory = static_directory
+
+    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
+        dst_css = 'combined.min.css'
+        dst_js = 'combined.min.js'
+        if event.is_directory or dst_css in event.src_path or dst_js in event.src_path:
+            return
+        if event.event_type == 'modified' and event.src_path.endswith('.css'):
+            click.echo(f'Changes detected in {event.src_path}. Recreating {dst_css}...')
+            combine_and_minify_css(self.static_directory)
+        elif event.event_type == 'modified' and event.src_path.endswith('.js'):
+            click.echo(f'Changes detected in {event.src_path}. Recreating {dst_js}...')
+            combine_and_minify_js(self.static_directory)
+
+
 @cli.command('preview', short_help='Serve files to preview site.')
 @click.pass_context
 @click.option(
@@ -245,13 +266,34 @@ def preview(
         assert app.static_folder is not None
         combine_and_minify_js(Path(app.static_folder))
 
+    def watch_static() -> None:
+        static_directory = Path(app.static_folder)
+
+        event_handler = StaticHandler(static_directory)
+        observer = Observer()
+        observer.schedule(event_handler, path=static_directory, recursive=True)
+        observer.start()
+
+        try:
+            while not exit_event.is_set():
+                observer.join(1)
+        finally:
+            observer.stop()
+            observer.join()
+
+    watch_thread = threading.Thread(target=watch_static)
+    watch_thread.start()
+
     # reload when static files change
     # werkzeug will re-run the terminal command
     # Which causes the above combine_and_minify_*() to run
     # and recreate combined.min.css/combined.min.js files
     static_path = site.project_dir / 'static'
     extra_files = static_path.iterdir()
+    exit_event = threading.Event()
     app.run(debug=True, host=host, port=port, extra_files=extra_files)
+    # After Flask has been stopped stop watchdog
+    exit_event.set()
 
 
 @cli.command('templates', short_help='Create any missing templates')
