@@ -21,10 +21,12 @@
       <meta name="twitter:site" content="{{ SITE_TWITTER }}">
     {% endif %}
   {% endblock meta_tags %}
-  {% if INCLUDE_CSS %}
-    <link href="{{ url_for('static', filename='combined.min.css') }}" rel="stylesheet" type="text/css">
-  {% endif %}
-  <link href="{{ url_for('pygments_css') }}" rel="stylesheet">
+  {% block styles %}
+    {% if INCLUDE_CSS %}
+      <link href="{{ url_for('static', filename='combined.min.css') }}" rel="stylesheet" type="text/css">
+    {% endif %}
+    <link href="{{ url_for('pygments_css') }}" rel="stylesheet">
+  {% endblock styles %}
   <link href="{{ url_for('feed') }}" rel="alternate" title="{{ SITE_NAME }}" type="application/atom+xml">
 </head>
 <body>
@@ -55,8 +57,10 @@
       {% endblock footer %}
     </footer>
   </div>
-  {% if INCLUDE_JS %}
-    <script src="{{ url_for('static', filename='combined.min.js') }}"></script>
-  {% endif %}
+  {% block scripts %}
+    {% if INCLUDE_JS %}
+      <script src="{{ url_for('static', filename='combined.min.js') }}"></script>
+    {% endif %}
+  {% endblock scripts %}
 </body>
 </html>
