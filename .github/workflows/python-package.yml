@@ -34,4 +34,11 @@ jobs:
     - name: Tests
       run: |
         coverage run --branch -m pytest
+        coverage html --omit='/tmp/*'
         coverage report --omit='/tmp/*' --fail-under=100
+    - name: Archive code coverage results
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage-report-${{ matrix.python-version }}
+        path: htmlcov/
