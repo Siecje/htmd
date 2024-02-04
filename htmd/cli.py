@@ -198,12 +198,19 @@ def build(
     default=True,
     help='If JavaScript should be minified',
 )
+@click.option(
+    '--drafts',
+    default=False,
+    help='Show draft posts in the preview.',
+    is_flag=True,
+)
 def preview(
     _ctx: click.Context,
     host: str,
     port: int,
     css_minify: bool,  # noqa: FBT001
     js_minify: bool,  # noqa: FBT001
+    drafts: bool,  # noqa: FBT001
 ) -> None:
     from . import site
     # reload for tests to refresh app.static_folder
@@ -218,6 +225,9 @@ def preview(
     if js_minify:
         assert app.static_folder is not None
         combine_and_minify_js(Path(app.static_folder))
+
+    if drafts:
+        site.preview_drafts()
 
     # reload when static files change
     # werkzeug will re-run the terminal command

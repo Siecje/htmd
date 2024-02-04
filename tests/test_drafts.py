@@ -6,19 +6,12 @@ from click.testing import CliRunner
 from htmd.cli import build, start
 import pytest
 
-from utils import remove_fields_from_post, SUCCESS_REGEX
-
-
-def set_example_as_draft() -> None:
-    remove_fields_from_post('example', ('draft',))
-    post_path = Path('posts') / 'example.md'
-    with post_path.open('r') as post_file:
-        lines = post_file.readlines()
-    with post_path.open('w') as post_file:
-        for line in lines:
-            if line == '...\n':
-                post_file.write('draft: true\n')
-            post_file.write(line)
+from utils import (
+  remove_fields_from_post,
+  set_example_to_draft,
+  set_example_to_draft_build,
+  SUCCESS_REGEX,
+)
 
 
 def copy_example_as_draft_build() -> None:
@@ -48,7 +41,7 @@ def build_draft() -> Generator[CliRunner, None, None]:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
-        set_example_as_draft()
+        set_example_to_draft()
         copy_example_as_draft_build()
         result = runner.invoke(build)
         assert result.exit_code == 0
@@ -122,14 +115,11 @@ def test_no_drafts_for_day(build_draft: CliRunner) -> None:
 
 
 def test_draft_without_published(run_start: CliRunner) -> None:
-    set_example_as_draft()
-    copy_example_as_draft_build()
-    example_path = Path('posts') / 'example.md'
-    example_path.unlink()
-    remove_fields_from_post('copy', ('published', 'updated'))
+    set_example_to_draft_build()
+    remove_fields_from_post('example', ('published', 'updated'))
     result = run_start.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
-    draft_uuid = get_draft_uuid('copy')
+    draft_uuid = get_draft_uuid('example')
     draft_path = Path('build') / 'draft' / draft_uuid / 'index.html'
     assert draft_path.is_file() is True
