@@ -14,7 +14,7 @@
   </a>
   <p class="post-meta">Posted
     {% if SHOW_AUTHOR %}
-    by <a href="{{ url_for('author', author=post.author or DEFAULT_AUTHOR)}}">{{ post.author }}</a>
+    by <a href="{{ url_for('author', author=post.author or DEFAULT_AUTHOR) }}">{{ post.author }}</a>
     {% endif %}
     on {{ post.published }}.
   </p>

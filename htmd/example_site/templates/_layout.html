@@ -35,10 +35,10 @@
       <nav role="navigation">
         <ul>
           {% block menu %}
-          <li {{'class=active' if active == 'home' }}><a href="{{ url_for('index') }}">Home</a></li>
-          <li {{'class=active' if active == 'posts' }}><a href="{{ url_for('all_posts') }}">Posts</a></li>
-          <li {{'class=active' if active == 'tags' }}><a href="{{ url_for('all_tags') }}">Tags</a></li>
-          <li {{'class=active' if active == 'about' }}><a href="{{ url_for('pages.page', path='about') }}">About</a></li>
+          <li {{ 'class=active' if active == 'home' }}><a href="{{ url_for('index') }}">Home</a></li>
+          <li {{ 'class=active' if active == 'posts' }}><a href="{{ url_for('all_posts') }}">Posts</a></li>
+          <li {{ 'class=active' if active == 'tags' }}><a href="{{ url_for('all_tags') }}">Tags</a></li>
+          <li {{ 'class=active' if active == 'about' }}><a href="{{ url_for('pages.page', path='about') }}">About</a></li>
           {% endblock menu %}
         </ul>
       </nav>

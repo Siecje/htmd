@@ -4,7 +4,7 @@
 
 {% block content %}
   <article>
-  <h1>Posts from {{ month_string }} {{year}}</h1>
+  <h1>Posts from {{ month_string }} {{ year }}</h1>
   <hr class="small">
   {% for post in posts %}
     {% with show_text=False %}

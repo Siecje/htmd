@@ -8,7 +8,7 @@
     <meta name="description" content="{{ post.description }}">
   {% endif %}
   {% if post.tags %}
-    <meta name="keywords" content="{{ post.tags}}">
+    <meta name="keywords" content="{{ post.tags }}">
   {% endif %}
 
   {# Open Graph Tags #}
@@ -16,10 +16,10 @@
   {% if 'draft' not in post.meta %}
     <meta property="og:url" content="{{ url_for('post', year=post.meta['published'].year, month=post.meta['published'].strftime('%m'), day=post.meta['published'].strftime('%d'), path=post.path, _external=True) }}">
   {% endif %}
-  <meta property="og:title" content="{{post.title}}">
-  <meta property="og:description" content="{{post.description}}">
+  <meta property="og:title" content="{{ post.title }}">
+  <meta property="og:description" content="{{ post.description }}">
   {% if post.image or SITE_LOGO %}
-    <meta property="og:image" content="{{ url_for('static', filename=post.image or SITE_LOGO, _external=True )}}">
+    <meta property="og:image" content="{{ url_for('static', filename=post.image or SITE_LOGO, _external=True) }}">
   {% endif %}
 
   {% if post.facebook_url or DEFAULT_AUTHOR_FACEBOOK %}
@@ -28,7 +28,7 @@
 
   {# Twitter Specific Tags #}
   {% if post.twitter_username or DEFAULT_AUTHOR_TWITTER %}
-    <meta name="twitter:creator" content="{{post.twitter_username or DEFAULT_AUTHOR_TWITTER}}">
+    <meta name="twitter:creator" content="{{ post.twitter_username or DEFAULT_AUTHOR_TWITTER }}">
   {% endif %}
 {% endblock meta_tags %}
 
@@ -40,14 +40,14 @@
       <h2 class="subheading">{{ post.subtitle }}</h2>
     {% endif %}
     {% if SHOW_AUTHOR %}
-        <span class="meta">Posted by <a href="{{ url_for('author', author = post.author or DEFAULT_AUTHOR)}}">{{ post.author}} </a> on {{ post.date }}</span>
+        <span class="meta">Posted by <a href="{{ url_for('author', author = post.author or DEFAULT_AUTHOR) }}">{{ post.author }} </a> on {{ post.date }}</span>
     {% endif %}
     {{ post.html|safe }}
 
     <hr class="small">
     <p><strong>Tags</strong></p>
     {% for tag in post.meta.get('tags') %}
-      <a class="tag" href="{{ url_for('tag', tag=tag) }}">{{tag}}</a>
+      <a class="tag" href="{{ url_for('tag', tag=tag) }}">{{ tag }}</a>
     {% endfor %}
   </article>
 {% endblock content %}
