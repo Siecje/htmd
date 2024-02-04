@@ -6,7 +6,7 @@ import shutil
 from click.testing import CliRunner
 from htmd.cli import build
 
-from utils import remove_fields_from_example_post, SUCCESS_REGEX
+from utils import remove_fields_from_post, SUCCESS_REGEX
 
 
 def test_build(run_start: CliRunner) -> None:
@@ -17,7 +17,7 @@ def test_build(run_start: CliRunner) -> None:
 
 def test_build_verify_fails(run_start: CliRunner) -> None:
     expected_output = 'Post "example" does not have field title.\n'
-    remove_fields_from_example_post(('title',))
+    remove_fields_from_post('example', ('title',))
     result = run_start.invoke(build)
     assert result.exit_code == 1
     assert result.output == expected_output

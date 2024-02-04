@@ -237,7 +237,7 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
 @app.route('/draft/<post_uuid>/')
 def draft(post_uuid: str) -> ResponseReturnValue:
     for post in posts:
-        if str(post.meta.get('draft', '')) == post_uuid:
+        if str(post.meta.get('draft', '')).replace('build|', '') == post_uuid:
             return render_template('post.html', post=post)
     abort(404)  # noqa: RET503
 
@@ -382,13 +382,16 @@ def day_view() -> Iterator[dict]:  # noqa: F811
 
 @freezer.register_generator  # type: ignore[no-redef]
 def draft() -> Iterator[dict]:  # noqa: F811
-    draft_posts = [p for p in posts if p.meta.get('draft', False)]
+    draft_posts = [
+        p for p in posts
+        if 'draft' in p.meta and 'build' in str(p.meta['draft'])
+    ]
     for post in draft_posts:
-        if not valid_uuid(str(post.meta['draft'])):
-            post.meta['draft'] = uuid.uuid4()
+        if not valid_uuid(post.meta['draft'].replace('build|', '')):
+            post.meta['draft'] = 'build|' + str(uuid.uuid4())
             set_post_metadata(app, post, 'draft', post.meta['draft'])
         yield {
-            'post_uuid': str(post.meta['draft']),
+            'post_uuid': post.meta['draft'].replace('build|', ''),
         }
 
 

@@ -7,8 +7,8 @@ SUCCESS_REGEX = (
 )
 
 
-def remove_fields_from_example_post(field_names: tuple[str, ...]) -> None:
-    example_post_path = Path('posts') / 'example.md'
+def remove_fields_from_post(path: str, field_names: tuple[str, ...]) -> None:
+    example_post_path = Path('posts') / f'{path}.md'
     with example_post_path.open('r') as post:
         lines = post.readlines()
     with example_post_path.open('w') as post:
