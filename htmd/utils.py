@@ -1,9 +1,12 @@
 from importlib.resources import as_file, files
 from pathlib import Path
 import shutil
+import uuid
 
 import click
 from csscompressor import compress
+from flask import Flask
+from flask_flatpages import Page
 from jsmin import jsmin
 
 
@@ -93,3 +96,39 @@ def copy_site_file(directory: Path, filename: str) -> None:
 
     with as_file(source_path) as file:
         copy_file(file, destination_path)
+
+
+def set_post_metadata(
+    app: Flask,
+    post: Page,
+    field: str,
+    value: str,
+) -> None:
+    file_path = (
+        Path(app.config['FLATPAGES_ROOT'])
+        / (post.path + app.config['FLATPAGES_EXTENSION'])
+    )
+    with file_path.open('r') as file:
+        lines = file.readlines()
+
+    found = False
+    with file_path.open('w') as file:
+        for line in lines:
+            if not found and field in line:
+                # Update datetime value
+                line = f'{field}: {value}\n'  # noqa: PLW2901
+                found = True
+            elif not found and '...' in line:
+                # Write field and value before '...'
+                file.write(f'{field}: {value}\n')
+                found = True
+            file.write(line)
+
+
+def valid_uuid(string: str) -> bool:
+    try:
+        uuid.UUID(string, version=4)
+    except ValueError:
+        return False
+    else:
+        return True
