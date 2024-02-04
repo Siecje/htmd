@@ -9,6 +9,8 @@ import requests
 import subprocess
 import sys
 
+from utils import set_example_to_draft, set_example_to_draft_build
+
 
 def invoke_preview(run_start: CliRunner, args: list[str]) -> None:
     """
@@ -149,8 +151,9 @@ def test_preview_reload_css(run_start: CliRunner) -> None:  # noqa: ARG001
             try:
                 response = requests.get(url, timeout=0.1)
             except (
-                requests.exceptions.ReadTimeout,
+                requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
+                requests.exceptions.ReadTimeout,
             ):
                 # happens during restart
                 read_timeout = True
@@ -186,8 +189,9 @@ def test_preview_reload_js(run_start: CliRunner) -> None:  # noqa: ARG001
             try:
                 response = requests.get(url, timeout=0.1)
             except (
-                requests.exceptions.ReadTimeout,
+                requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
+                requests.exceptions.ReadTimeout,
             ):
                 # happens during restart
                 read_timeout = True
@@ -197,3 +201,67 @@ def test_preview_reload_js(run_start: CliRunner) -> None:  # noqa: ARG001
         assert read_timeout
         assert before != after
         assert expected in after
+
+
+def test_preview_drafts(run_start: CliRunner) -> None:
+    args = ['--drafts']
+    invoke_preview(run_start, args)
+    set_example_to_draft()
+    success = 200
+
+    urls = (
+        (404, '/2014/'),
+        (404, '/2014/10/'),
+        (404, '/2014/10/30/'),
+        (404, '/2014/10/30/example/'),
+        (404, '/tags/first/'),
+        (404, '/author/Taylor/'),
+    )
+    not_in = (
+        '/',
+        '/all/',
+    )
+    # drafts should not appear
+    with run_preview():
+        for status, url in urls:
+            response = requests.get('http://localhost:9090' + url, timeout=1)
+            assert response.status_code == status
+
+        for url in not_in:
+            response = requests.get('http://localhost:9090' + url, timeout=0.01)
+            assert response.status_code == success
+            assert 'Example Post' not in response.text
+
+    # drafts should appear
+    with run_preview(args):
+        for _status, url in urls:
+            response = requests.get('http://localhost:9090' + url, timeout=1)
+            assert response.status_code == success
+
+        for url in not_in:
+            response = requests.get('http://localhost:9090' + url, timeout=0.01)
+            assert response.status_code == success
+            assert 'Example Post' in response.text
+
+    set_example_to_draft_build()
+    urls = (
+        (404, '/2014/'),
+        (404, '/2014/10/'),
+        (404, '/2014/10/30/'),
+        (200, '/2014/10/30/example/'),
+        (200, '/tags/first/'),
+        (200, '/author/Taylor/'),
+    )
+    not_in = (
+        '/',
+        '/all/',
+    )
+    with run_preview():
+        for status, url in urls:
+            response = requests.get('http://localhost:9090' + url, timeout=1)
+            assert response.status_code == status
+
+        for url in not_in:
+            response = requests.get('http://localhost:9090' + url, timeout=0.01)
+            assert response.status_code == success
+            assert 'Example Post' not in response.text

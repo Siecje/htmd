@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
 from flask import abort, Blueprint, Flask, render_template, Response, url_for
 from flask.typing import ResponseReturnValue
-from flask_flatpages import FlatPages, pygments_style_defs
+from flask_flatpages import FlatPages, Page, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
 from jinja2 import ChoiceLoader, FileSystemLoader
@@ -99,6 +99,13 @@ app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
 posts = FlatPages(app)
 published_posts = [p for p in posts if not p.meta.get('draft', False)]
 freezer = Freezer(app)
+
+
+SHOW_DRAFTS = False
+def preview_drafts() -> None:
+    global published_posts, SHOW_DRAFTS  # noqa: PLW0603
+    SHOW_DRAFTS = True
+    published_posts = [p for p in posts if 'published' in p.meta]
 
 
 # Allow config settings (even new user created ones) to be used in templates
@@ -222,12 +229,19 @@ def all_posts() -> ResponseReturnValue:
     return render_template('all_posts.html', active='posts', posts=latest)
 
 
+def draft_and_not_shown(post: Page) -> bool:
+    is_draft = 'draft' in post.meta
+    return is_draft and not SHOW_DRAFTS and 'build' not in str(post.meta['draft'])
+
+
 # If month and day are ints then Flask removes leading zeros
 @app.route('/<year>/<month>/<day>/<path:path>/')
 def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     if len(year) != 4 or len(month) != 2 or len(day) != 2:  # noqa: PLR2004
         abort(404)
     post = posts.get_or_404(path)
+    if draft_and_not_shown(post):
+        abort(404)
     date_str = f'{year}-{month}-{day}'
     if post.meta.get('published').strftime('%Y-%m-%d') != date_str:
         abort(404)
@@ -253,11 +267,25 @@ def all_tags() -> ResponseReturnValue:
     return render_template('all_tags.html', active='tags', tags=tag_counts)
 
 
+def no_posts_shown(post_list: list[Page]) -> bool:
+    return all(
+        'draft' in p.meta and 'build' not in str(p.meta['draft'])
+        for p in post_list
+    )
+
 @app.route('/tags/<string:tag>/')
 def tag(tag: str) -> ResponseReturnValue:
-    tagged = [p for p in published_posts if tag in p.meta.get('tags', [])]
+    tagged = [p for p in posts if tag in p.meta.get('tags', [])]
+    if not tagged:
+        abort(404)
+    if not SHOW_DRAFTS and no_posts_shown(tagged):
+        abort(404)
+    if SHOW_DRAFTS:
+        tagged_published = tagged
+    else:
+        tagged_published = [p for p in tagged if 'draft' not in p.meta]
     sorted_posts = sorted(
-        tagged,
+        tagged_published,
         reverse=True,
         key=lambda p: p.meta.get('published'),
     )
@@ -266,10 +294,21 @@ def tag(tag: str) -> ResponseReturnValue:
 
 @app.route('/author/<author>/')
 def author(author: str) -> ResponseReturnValue:
+    # if the author has a draft build
+    # page is served without displaying posts
+    # so no 404 when for the link from the draft
     posts_author = [p for p in posts if author == p.meta.get('author', '')]
+
     if not posts_author:
         abort(404)
-    posts_author_published = [p for p in posts_author if not p.meta.get('draft', False)]
+
+    if not SHOW_DRAFTS and no_posts_shown(posts_author):
+        abort(404)
+    if SHOW_DRAFTS:
+        posts_author_published = posts_author
+    else:
+        posts_author_published = [p for p in posts_author if 'draft' not in p.meta]
+
     posts_sorted = sorted(
         posts_author_published,
         reverse=True,
@@ -309,7 +348,7 @@ def year_view(year: int) -> ResponseReturnValue:
 @app.route('/<year>/<month>/')
 def month_view(year: str, month: str) -> ResponseReturnValue:
     month_posts = [
-        p for p in posts if year == p.meta.get('published').strftime('%Y')
+        p for p in published_posts if year == p.meta.get('published').strftime('%Y')
         and month == p.meta.get('published').strftime('%m')
     ]
     if not month_posts:
@@ -331,7 +370,7 @@ def month_view(year: str, month: str) -> ResponseReturnValue:
 @app.route('/<year>/<month>/<day>/')
 def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
     day_posts = [
-        p for p in posts if year == p.meta.get('published').strftime('%Y')
+        p for p in published_posts if year == p.meta.get('published').strftime('%Y')
         and month == p.meta.get('published').strftime('%m')
         and day == p.meta.get('published').strftime('%d')
     ]
