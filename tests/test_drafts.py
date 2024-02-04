@@ -6,11 +6,11 @@ from click.testing import CliRunner
 from htmd.cli import build, start
 import pytest
 
-from utils import remove_fields_from_example_post, SUCCESS_REGEX
+from utils import remove_fields_from_post, SUCCESS_REGEX
 
 
 def set_example_as_draft() -> None:
-    remove_fields_from_example_post(('draft',))
+    remove_fields_from_post('example', ('draft',))
     post_path = Path('posts') / 'example.md'
     with post_path.open('r') as post_file:
         lines = post_file.readlines()
@@ -21,13 +21,26 @@ def set_example_as_draft() -> None:
             post_file.write(line)
 
 
-def get_example_draft_uuid() -> str:
-    draft_path = Path('posts') / 'example.md'
-    with draft_path.open('r') as draft_file:  # pragma: no branch
-        for line in draft_file.readlines():  # pragma: no branch
+def copy_example_as_draft_build() -> None:
+    post_path = Path('posts') / 'example.md'
+    copy_path = Path('posts') / 'copy.md'
+    with post_path.open('r') as post_file:
+        lines = post_file.readlines()
+    with copy_path.open('w') as copy_file:
+        for line in lines:
             if 'draft' in line:
-                return line.replace('draft:', '').strip()
-    return ''  # pragma: no cover
+                copy_file.write('draft: build\n')
+            else:
+                copy_file.write(line)
+
+
+def get_draft_uuid(path: str) -> str:
+    draft_path = Path('posts') / f'{path}.md'
+    with draft_path.open('r') as draft_file:
+        for line in draft_file.readlines():
+            if 'draft: build' in line:
+                return line.replace('draft: build|', '').strip()
+    return ''
 
 
 @pytest.fixture(scope='module')
@@ -36,17 +49,21 @@ def build_draft() -> Generator[CliRunner, None, None]:
     with runner.isolated_filesystem():
         result = runner.invoke(start)
         set_example_as_draft()
+        copy_example_as_draft_build()
         result = runner.invoke(build)
         assert result.exit_code == 0
+        assert re.search(SUCCESS_REGEX, result.output)
         # Tests code is run here
         yield runner
 
 
-def test_draft_is_built(build_draft: CliRunner) -> None:
+def test_draft_only_draft_build_is_in_build(build_draft: CliRunner) -> None:
     post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
     assert post_path.exists() is False
 
-    draft_uuid = get_example_draft_uuid()
+    example_uuid = get_draft_uuid('example')
+    assert example_uuid == ''
+    draft_uuid = get_draft_uuid('copy')
     draft_path = Path('build') / 'draft' / draft_uuid / 'index.html'
     assert draft_path.is_file() is True
 
@@ -54,6 +71,7 @@ def test_draft_is_built(build_draft: CliRunner) -> None:
     result = build_draft.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
+    assert draft_path.is_file() is True
 
 
 def test_no_drafts_home(build_draft: CliRunner) -> None:
@@ -105,10 +123,13 @@ def test_no_drafts_for_day(build_draft: CliRunner) -> None:
 
 def test_draft_without_published(run_start: CliRunner) -> None:
     set_example_as_draft()
-    remove_fields_from_example_post(('published', 'updated'))
+    copy_example_as_draft_build()
+    example_path = Path('posts') / 'example.md'
+    example_path.unlink()
+    remove_fields_from_post('copy', ('published', 'updated'))
     result = run_start.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
-    draft_uuid = get_example_draft_uuid()
+    draft_uuid = get_draft_uuid('copy')
     draft_path = Path('build') / 'draft' / draft_uuid / 'index.html'
     assert draft_path.is_file() is True

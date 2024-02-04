@@ -4,7 +4,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from htmd.cli import build
 
-from utils import remove_fields_from_example_post
+from utils import remove_fields_from_post
 
 
 def test_build_post_404_invalid_date_year(run_start: CliRunner) -> None:
@@ -263,7 +263,7 @@ def test_build_published_time_is_added(run_start: CliRunner) -> None:
     # build will add it
     # verify that time is not there
     # ensure correct time is added
-    remove_fields_from_example_post(('updated',))
+    remove_fields_from_post('example', ('updated',))
     example_path = Path('posts') / 'example.md'
     with example_path.open('r') as post_file:
         b_lines = post_file.readlines()
@@ -311,7 +311,7 @@ def test_build_updated_is_added(run_start: CliRunner) -> None:
     then build will add updated with time.
     """
     # Remove updated from example post
-    remove_fields_from_example_post(('updated',))
+    remove_fields_from_post('example', ('updated',))
     # First build adds time to published
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -369,7 +369,7 @@ def test_build_updated_is_added_once(run_start: CliRunner) -> None:
 
 
 def test_build_without_published(run_start: CliRunner) -> None:
-    remove_fields_from_example_post(('published', 'updated'))
+    remove_fields_from_post('example', ('published', 'updated'))
 
     # First build adds published time
     result = run_start.invoke(build)

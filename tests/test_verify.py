@@ -3,7 +3,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from htmd.cli import verify
 
-from utils import remove_fields_from_example_post
+from utils import remove_fields_from_post
 
 
 def test_verify(run_start: CliRunner) -> None:
@@ -15,7 +15,7 @@ def test_verify(run_start: CliRunner) -> None:
 
 def test_verify_author_missing(run_start: CliRunner) -> None:
     # Remove author from example post
-    remove_fields_from_example_post(('author',))
+    remove_fields_from_post('example', ('author',))
 
     result = run_start.invoke(verify)
     assert result.exit_code == 1
@@ -25,7 +25,7 @@ def test_verify_author_missing(run_start: CliRunner) -> None:
 
 def test_verify_title_missing(run_start: CliRunner) -> None:
     # Remove title from example post
-    remove_fields_from_example_post(('title',))
+    remove_fields_from_post('example', ('title',))
 
     result = run_start.invoke(verify)
     assert result.exit_code == 1
@@ -35,7 +35,7 @@ def test_verify_title_missing(run_start: CliRunner) -> None:
 
 def test_verify_published_missing(run_start: CliRunner) -> None:
     # Remove published from example post
-    remove_fields_from_example_post(('published',))
+    remove_fields_from_post('example', ('published',))
 
     result = run_start.invoke(verify)
     # verify doesn't check for published
