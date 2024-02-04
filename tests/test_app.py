@@ -43,3 +43,11 @@ def test_page_does_not_exist(client: FlaskClient) -> None:
     # before this change pages.page was serving templates
     response = client.get('/author/')
     assert response.status_code == 404  # noqa: PLR2004
+
+
+def test_draft_does_not_exist(client: FlaskClient) -> None:
+    # Ensure htmd preview matches build
+    # Only pages will be served
+    # before this change pages.page was serving templates
+    response = client.get('/draft/dne/')
+    assert response.status_code == 404  # noqa: PLR2004

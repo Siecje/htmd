@@ -6,7 +6,7 @@ import warnings
 
 import click
 from flask import Flask
-from flask_flatpages import FlatPages, Page
+from flask_flatpages import FlatPages
 
 from .utils import (
     combine_and_minify_css,
@@ -14,6 +14,7 @@ from .utils import (
     copy_missing_templates,
     copy_site_file,
     create_directory,
+    set_post_metadata,
 )
 
 
@@ -97,37 +98,12 @@ def verify() -> None:
         sys.exit(1)
 
 
-def set_post_time(
-    app: Flask,
-    post: Page,
-    field: str,
-    date_time: datetime.datetime,
-) -> None:
-    file_path = (
-        Path(app.config['FLATPAGES_ROOT'])
-        / (post.path + app.config['FLATPAGES_EXTENSION'])
-    )
-    with file_path.open('r') as file:
-        lines = file.readlines()
-
-    found = False
-    with file_path.open('w') as file:
-        for line in lines:
-            if not found and field in line:
-                # Update datetime value
-                line = f'{field}: {date_time.isoformat()}\n'  # noqa: PLW2901
-                found = True
-            elif not found and '...' in line:
-                # Write field and value before '...'
-                file.write(f'{field}: {date_time.isoformat()}\n')
-                found = True
-            file.write(line)
-
-
 def set_posts_datetime(app: Flask, posts: FlatPages) -> None:
     # Ensure each post has a published date
     # set time for correct date field
     for post in posts:
+        if post.meta.get('draft', False):
+            continue
         if 'updated' not in post.meta:
             published = post.meta.get('published')
             if isinstance(published, datetime.datetime):
@@ -147,7 +123,7 @@ def set_posts_datetime(app: Flask, posts: FlatPages) -> None:
         else:
             post_datetime = now
         post.meta[field] = post_datetime
-        set_post_time(app, post, field, post_datetime)
+        set_post_metadata(app, post, field, post_datetime.isoformat())
 
 
 @cli.command('build', short_help='Create static version of the site.')

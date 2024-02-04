@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import tomllib
 import typing
+import uuid
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
@@ -13,6 +14,8 @@ from flask_flatpages import FlatPages, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
 from jinja2 import ChoiceLoader, FileSystemLoader
+
+from .utils import set_post_metadata, valid_uuid
 
 
 this_dir = Path(__file__).parent
@@ -34,6 +37,7 @@ def get_project_dir() -> Path:
 
 project_dir = get_project_dir()
 
+
 app = Flask(
     __name__,
     static_folder=project_dir / 'static',
@@ -47,6 +51,7 @@ try:
 except FileNotFoundError:
     msg = 'Can not find config.toml'
     sys.exit(msg)
+
 
 # Flask configs are flat, config.toml is not
 # Define the configuration keys and their default values
@@ -71,11 +76,11 @@ config_keys : dict[str, tuple[str, str, typing.Any]] = {
     'DEFAULT_AUTHOR_TWITTER': ('author', 'default_twitter', ''),
     'DEFAULT_AUTHOR_FACEBOOK': ('author', 'default_facebook', ''),
 }
-
 # Update app.config using the configuration keys
 for flask_key, (table, key, default) in config_keys.items():
     app.config[flask_key] = htmd_config.get(table, {}).get(key, default)
 assert app.static_folder is not None
+
 
 # To avoid full paths in config.toml
 app.config['FLATPAGES_ROOT'] = (
@@ -95,6 +100,7 @@ posts = FlatPages(app)
 published_posts = [p for p in posts if not p.meta.get('draft', False)]
 freezer = Freezer(app)
 
+
 # Allow config settings (even new user created ones) to be used in templates
 for key in app.config:
     app.jinja_env.globals[key] = app.config[key]
@@ -113,6 +119,7 @@ app.jinja_loader = ChoiceLoader([  # type: ignore[assignment]
     app.jinja_loader,  # type: ignore[list-item]
 ])
 
+
 MONTHS = {
     '01': 'January',
     '02': 'February',
@@ -127,6 +134,7 @@ MONTHS = {
     '11': 'November',
     '12': 'December',
 }
+
 
 pages = Blueprint(
     'pages',
@@ -224,6 +232,14 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     if post.meta.get('published').strftime('%Y-%m-%d') != date_str:
         abort(404)
     return render_template('post.html', post=post)
+
+
+@app.route('/draft/<post_uuid>/')
+def draft(post_uuid: str) -> ResponseReturnValue:
+    for post in posts:
+        if str(post.meta.get('draft', '')) == post_uuid:
+            return render_template('post.html', post=post)
+    abort(404)  # noqa: RET503
 
 
 @app.route('/tags/')
@@ -365,14 +381,14 @@ def day_view() -> Iterator[dict]:  # noqa: F811
 
 
 @freezer.register_generator  # type: ignore[no-redef]
-def post() -> Iterator[dict]:  # noqa: F811
+def draft() -> Iterator[dict]:  # noqa: F811
     draft_posts = [p for p in posts if p.meta.get('draft', False)]
     for post in draft_posts:
+        if not valid_uuid(str(post.meta['draft'])):
+            post.meta['draft'] = uuid.uuid4()
+            set_post_metadata(app, post, 'draft', post.meta['draft'])
         yield {
-            'day': post.meta.get('published').strftime('%d'),
-            'month': post.meta.get('published').strftime('%m'),
-            'year': post.meta.get('published').year,
-            'path': post.path,
+            'post_uuid': str(post.meta['draft']),
         }
 
 
