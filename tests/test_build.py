@@ -6,7 +6,7 @@ import shutil
 from click.testing import CliRunner
 from htmd.cli import build
 
-from utils import remove_fields_from_post, SUCCESS_REGEX
+from utils import remove_fields_from_post, set_example_to_draft, SUCCESS_REGEX
 
 
 def test_build(run_start: CliRunner) -> None:
@@ -234,3 +234,37 @@ def test_build_without_templates(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
+
+
+def test_build_drafts_removed_from_build(run_start: CliRunner) -> None:
+    path_list = [
+        Path('build') / '2014' / 'index.html',
+        Path('build') / '2014' / '10' / 'index.html',
+        Path('build') / '2014' / '10' / '30' / 'index.html',
+        Path('build') / '2014' / '10' / '30' / 'example' / 'index.html',
+    ]
+    # create example post in build
+    run_start.invoke(build)
+    for path in path_list:
+        assert path.is_file()
+
+    set_example_to_draft()
+    run_start.invoke(build)
+    for path in path_list:
+        assert path.is_file() is False
+
+
+def test_build_vcs_repo(run_start: CliRunner) -> None:
+    path_list = [
+        Path('build') / '.git',
+        Path('build') / '.hg',
+    ]
+    run_start.invoke(build)
+    for path in path_list:
+        path.mkdir()
+        with (path / 'keep').open('w') as keep_file:
+            keep_file.write('keep')
+
+    run_start.invoke(build)
+    for path in path_list:
+        assert path.is_dir()

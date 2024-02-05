@@ -92,7 +92,9 @@ app.config['FLATPAGES_ROOT'] = (
 app.config['FREEZER_DESTINATION'] = (
     project_dir / app.config['BUILD_FOLDER']
 )
-app.config['FREEZER_REMOVE_EXTRA_FILES'] = False
+app.config['FREEZER_REMOVE_EXTRA_FILES'] = True
+# Allow build to be version controlled
+app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', '.hg*']
 app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
 
 if Path(app.static_folder).is_dir():
