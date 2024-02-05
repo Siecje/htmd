@@ -8,18 +8,18 @@ Yes it is another static site generator.
 I admit I didn't try them [all](https://staticsitegenerators.net/).
 I tried several static site generators written in Python, but I found them complicated.
 Some static site generators I tried created a template website with content on the home page but the index.html file had no content.
-I think it should be obvious where the content is coming from.
+It should be obvious where to find the content.
 
-- I didn't like starting with a lot of folders and files
+- I don't like starting with a lot of folders and files
 - I want all blog posts in the same folder because it is easier to work with.
 I want the URL structure for each post to include the date (/2015/01/31/post-title), without having to create a folder for each year and month.
-- I didn't want to include all of the templates being used, only overwrite the ones I modified.
-- I wanted it to be obvious where the content was coming from.
-- I want it be obvious how to set a value to use in multiple templates.
+- I don't want to include all of the templates being used, only overwrite the ones I modified.
+- I want it to be obvious where to find the content.
+- I want it to be obvious how to set a value to use in multiple templates.
 - If you made changes to one of your templates and ran build you wouldn't update existing files unless you deleted your build folder everytime.
 
 I believe the reason there are so many static site generators is people are picky about their workflow and that's okay.
-This is also a learning experience creating a Python package with a cli.
+This is also a great way to stay up to date with Packaging in Python.
 
 ## What is the difference between posts and pages?
 
@@ -33,6 +33,15 @@ This a [Jinja 2](http://jinja.pocoo.org/docs/dev/templates/#template-inheritance
 You can add a link to CSS file that you have created in `static/`.
 To change other pages you will need to override the page template by creating a file with the same name in the `templates/` folder.
 The complete list of templates can be found [here](https://github.com/Siecje/htmd/tree/main/htmd/example_site/templates).
+
+## How do drafts work?
+
+A post will be a draft if `draft: true` is set in the metadata and will not appear in the build folder.
+If `draft: build` is set then the post page will be in the build but the post will not appear in any list pages. When a draft is built the metadata value will contain a UUID of where the post is available.
+
+For example, if the draft metadata is `draft: build|f47d4d98-9d66-448a-9e08-7b5c2032e558` then the post will served at `/draft/f47d4d98-9d66-448a-9e08-7b5c2032e558/index.html`.
+
+To view the site as if all drafts were published run `htmd preview --drafts`. 
 
 ## Getting Started
 
