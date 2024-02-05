@@ -13,10 +13,11 @@ url = ""
 
 # Where to look for files
 [folders]
-static = "static"
-posts = "posts"
-pages = "pages"
 build = "build"
+pages = "pages"
+posts = "posts"
+static = "static"
+templates = "templates"
 
 [posts]
 extension = ".md"

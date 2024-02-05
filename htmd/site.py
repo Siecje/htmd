@@ -38,13 +38,6 @@ def get_project_dir() -> Path:
 project_dir = get_project_dir()
 
 
-app = Flask(
-    __name__,
-    static_folder=project_dir / 'static',
-    template_folder=this_dir / 'example_site' / 'templates',
-)
-
-
 try:
     with (project_dir / 'config.toml').open('rb') as config_file:
         htmd_config = tomllib.load(config_file)
@@ -64,23 +57,33 @@ config_keys : dict[str, tuple[str, str, typing.Any]] = {
     'SITE_TWITTER': ('site', 'twitter', ''),
     'SITE_FACEBOOK': ('site', 'facebook', ''),
     'FACEBOOK_APP_ID': ('site', 'facebook_app_id', ''),
-    'STATIC_FOLDER': ('folders', 'static', 'static'),
-    'POSTS_FOLDER': ('folders', 'posts', 'posts'),
-    'PAGES_FOLDER': ('folders', 'pages', 'pages'),
+
     'BUILD_FOLDER': ('folders', 'build', 'build'),
+    'PAGES_FOLDER': ('folders', 'pages', 'pages'),
+    'POSTS_FOLDER': ('folders', 'posts', 'posts'),
+    'STATIC_FOLDER': ('folders', 'static', 'static'),
+    'TEMPLATE_FOLDER': ('folders', 'templates', 'templates'),
+
     'POSTS_EXTENSION': ('posts', 'extension', '.md'),
+
     'PRETTY_HTML': ('html', 'pretty', False),
     'MINIFY_HTML': ('html', 'minify', False),
+
     'SHOW_AUTHOR': ('author', 'show', True),
     'DEFAULT_AUTHOR': ('author', 'default_name', ''),
     'DEFAULT_AUTHOR_TWITTER': ('author', 'default_twitter', ''),
     'DEFAULT_AUTHOR_FACEBOOK': ('author', 'default_facebook', ''),
 }
+app = Flask(
+    __name__,
+    # default templates
+    template_folder=this_dir / 'example_site' / 'templates',
+)
 # Update app.config using the configuration keys
 for flask_key, (table, key, default) in config_keys.items():
     app.config[flask_key] = htmd_config.get(table, {}).get(key, default)
+app.static_folder = project_dir / app.config['STATIC_FOLDER']
 assert app.static_folder is not None
-
 
 # To avoid full paths in config.toml
 app.config['FLATPAGES_ROOT'] = (
@@ -92,8 +95,9 @@ app.config['FREEZER_DESTINATION'] = (
 app.config['FREEZER_REMOVE_EXTRA_FILES'] = False
 app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
 
-app.config['INCLUDE_CSS'] = 'combined.min.css' in os.listdir(app.static_folder)
-app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
+if Path(app.static_folder).is_dir():
+    app.config['INCLUDE_CSS'] = 'combined.min.css' in os.listdir(app.static_folder)
+    app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
 
 
 posts = FlatPages(app)
@@ -122,7 +126,7 @@ app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 
 # Include current htmd site templates
 app.jinja_loader = ChoiceLoader([  # type: ignore[assignment]
-    FileSystemLoader(project_dir / 'templates/'),
+    FileSystemLoader(project_dir / app.config['TEMPLATE_FOLDER']),
     app.jinja_loader,  # type: ignore[list-item]
 ])
 
@@ -167,7 +171,10 @@ def format_html(response: Response) -> ResponseReturnValue:
 def page(path: str) -> ResponseReturnValue:
     # ensure page is from pages directory
     # otherwise this will load any templates in the template folder
-    for page_path in (project_dir / 'pages').iterdir():
+    pages_folder = project_dir / app.config['PAGES_FOLDER']
+    if not pages_folder.is_dir():
+        abort(404)
+    for page_path in pages_folder.iterdir():
         if path == page_path.stem:
             break
     else:
@@ -436,8 +443,11 @@ def draft() -> Iterator[dict]:  # noqa: F811
 
 @freezer.register_generator  # type: ignore[no-redef]
 def page() -> Iterator[str]:  # noqa: F811
-    for page in (project_dir / 'pages').iterdir():
+    pages_folder = project_dir / app.config['PAGES_FOLDER']
+    if not pages_folder.is_dir():
+        return
+    for page in pages_folder.iterdir():
         # Need to create for pages.page
         # Since this route is in a different Blueprint
-        # URL works
+        # Using the URL works
         yield f'/{page.stem}/'
