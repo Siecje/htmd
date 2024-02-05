@@ -3,11 +3,19 @@
 ## [4.0.1] -
 ### Added
 - `python -m htmd` will now work
+- `styles` block in `_layout.html` template
+- `scripts` block in `_layout.html` template
+- draft: build to add draft to build
+- `preview --drafts` to view site as if all drafts are published
 ### Changed
-- 
+- Ignore Frozen-Flask MissingURLGeneratorWarning
+- `htmd preview` will reload when static files change
+- Drafts will be served with /draft/ URL prefix
 ### Fixed
 - `htmd preview` will only serve pages
 - `htmd preview` will show 404 for authors that don't exist
+- build draft without published
+- errors when a config folder did not exist
 
 ## [4.0.0] - 2024-01-27
 ### Added
