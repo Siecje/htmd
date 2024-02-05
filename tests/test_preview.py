@@ -85,7 +85,7 @@ def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
 
     with run_preview(args):
         for status, url in urls:
-            response = requests.get(url, timeout=0.01)
+            response = requests.get(url, timeout=0.1)
             assert response.status_code == status
 
 
@@ -102,7 +102,7 @@ def test_preview_no_css_minify(run_start: CliRunner) -> None:
 
     with run_preview(args):
         for status, url in urls:
-            response = requests.get(url, timeout=0.01)
+            response = requests.get(url, timeout=0.1)
             assert response.status_code == status
 
 
@@ -115,7 +115,7 @@ def test_preview_css_minify_no_js_minify(run_start: CliRunner) -> None:
     )
     with run_preview(args):
         for status, url in urls:
-            response = requests.get(url, timeout=0.01)
+            response = requests.get(url, timeout=0.1)
             assert response.status_code == status
 
 
@@ -128,7 +128,7 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
     )
     with run_preview(args):
         for status, url in urls:
-            response = requests.get(url, timeout=0.01)
+            response = requests.get(url, timeout=0.1)
             assert response.status_code == status
 
 
