@@ -149,18 +149,21 @@ def build(
     from . import site
     app = site.app
 
-    if css_minify:
-        assert app.static_folder is not None
-        combine_and_minify_css(Path(app.static_folder))
+    assert app.static_folder is not None
+    static_path = Path(app.static_folder)
+    if static_path.is_dir():
+        if css_minify:
+            assert app.static_folder is not None
+            combine_and_minify_css(static_path)
 
-    if js_minify:
-        assert app.static_folder is not None
-        combine_and_minify_js(Path(app.static_folder))
+        if js_minify:
+            assert app.static_folder is not None
+            combine_and_minify_js(static_path)
 
-    if css_minify or js_minify:
-        # reload to set app.config['INCLUDE_CSS'] and app.config['INCLUDE_JS']
-        # setting them here doesn't work
-        importlib.reload(site)
+        if css_minify or js_minify:
+            # reload to set app.config['INCLUDE_CSS'] and app.config['INCLUDE_JS']
+            # setting them here doesn't work
+            importlib.reload(site)
 
     set_posts_datetime(site.app, site.posts)
 

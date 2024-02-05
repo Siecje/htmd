@@ -178,3 +178,59 @@ def test_build_page_without_link(run_start: CliRunner) -> None:
     assert result.exit_code == 0
     with (Path('build') / 'new' / 'index.html').open('r') as page_file:
         assert 'Totally new' in page_file.read()
+
+
+def test_build_empty_directory() -> None:
+    expected = 'Can not find config.toml\n'
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(build)
+        assert result.exit_code == 1
+        assert result.output == expected
+
+
+def test_build_without_static(run_start: CliRunner) -> None:
+    path = Path('static')
+    shutil.rmtree(path)
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+
+def test_build_without_posts(run_start: CliRunner) -> None:
+    path = Path('posts')
+    shutil.rmtree(path)
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+
+def test_build_without_pages(run_start: CliRunner) -> None:
+    path = Path('pages')
+    shutil.rmtree(path)
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 1
+    assert "Unexpected status '404 NOT FOUND' on URL /about/" in result.output
+
+    # Remove link from _layout.html
+    layout_path = Path('templates') / '_layout.html'
+    with layout_path.open('r') as layout_file:
+        lines = layout_file.readlines()
+    with layout_path.open('w') as layout_file:
+        for line in lines:
+            if 'about' in line:
+                continue
+            layout_file.write(line)
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+
+def test_build_without_templates(run_start: CliRunner) -> None:
+    path = Path('templates')
+    shutil.rmtree(path)
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
