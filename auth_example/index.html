@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/core.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/md5.js"></script>
+    <style>
+      /* latin-ext */
+      @font-face {
+        font-family: 'Courier Prime';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELaw9pWt_-.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'Courier Prime';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELawFpWg.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      body,html{
+        background: #000;
+        margin: 0;
+        height: 100vh;
+        overflow: auto;
+        color: #0fc;
+        font-size: 20px
+        text-align: center;
+        font-family: Courier Prime;
+      }
+      #loginDiv{
+        display: none;
+        position: absolute;
+        min-width: 400px;
+        background: #40f2;
+        border-radius: 10px;
+        padding: 25px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        left: 50%;
+        top: 45vh;
+        transform: translate(-50%, -50%);
+      }
+      .caption{
+        font-size: 1.5em;
+      }
+      .authField:focus{
+        outline: none;
+      }
+      .authField{
+        border: none;
+        background: #000;
+        border-bottom: 1px solid #40f;
+        font-size: 20px;
+        min-width: 100%;
+        color: #0fa;
+        font-family: Courier Prime;
+        margin-top: 6px;
+        margin-bottom: 6px;
+      }
+      .buttons{
+        border: none;
+        padding: 10px;
+        padding-top: 2px;
+        padding-bottom: 4px;
+        min-width: 100px;
+        border-radius: 10px;
+      }
+      .submitButton{
+        float: right;
+      }
+      .disabledButton{
+        background: #444;
+        color: #888;
+        cursor: unset;
+      }
+      .enabledButton{
+        background: #286;
+        color: #8fa;
+        cursor: pointer;
+      }
+      #result{
+        width: 250px;
+        background: #40f4;
+        float: left;
+        border: 5px solid #40f8;
+        display: none;
+        text-align: center;
+      }
+      #appModal{
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 100;
+        background-color: #123;
+      }
+      #header{
+        height: 40px;
+        background: linear-gradient(#000, #123);
+        font-size: 24px;
+        color: #fff;
+      }
+      .avatar{
+        display: inline-block;
+        margin: 10px;
+        float: left;
+        font-size: 20px;
+      }
+      #logoutButton{
+        background: #084;
+        color: #afa;
+        margin: 10px;
+        float: left;
+        cursor: pointer;
+      }
+      #main{
+        padding: 10px;
+      }
+      .video{
+        max-width: 600px;
+        position: absolute;
+        top: 50vh;
+        left: 50vw;
+        transform: translate(-50%, -50%);
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body>
+  
+    <div id="appModal">
+      <div id="header">
+        <button onclick="setCookie(false)" id="logoutButton" class="buttons">logout</button>
+        <div class="avatar">
+          welcome, <span id="loggedinUserName"></span>
+        </div>
+      </div>
+      <div style="clear: both;"></div>
+      <div id="main">
+        Welcome to the app!
+        <video class="video" src="https://i.imgur.io/93ISTpi.mp4" muted autoplay controls></video>
+      </div>
+    </div>
+  
+    <div id="loginDiv">
+      <div class="caption">&gt; login</div>
+      <label for="username">
+      <input
+        type="text"
+        id="username"
+        class="authField"
+        placeholder="user name"
+        autofocus
+        onkeydown="doKeyDown(event)"
+      ><br>
+      <input
+        type="password"
+        id="password"
+        class="authField"
+        placeholder="password"
+        onkeyup="doKeyDown(event)"
+      ><br>
+      <button
+        class="buttons submitButton disabledButton"
+        id="submit"
+        onclick="submit()"
+      >
+        go
+      </button>
+      </label>
+      <div id="result"></div>
+    </div>
+    
+    <script>
+
+      validate = () => {
+        valid = false
+        let user = document.querySelector('#username').value
+        let pass = document.querySelector('#password').value
+        if(user && user.length>=3 && pass && pass.length>=3) valid = true
+        document.querySelector('#submit').className = 'buttons submitButton ' + (valid ? 'enabledButton' : 'disabledButton')
+        return valid
+      }
+      
+      // called when logging in or out
+      setCookie = (loggingIn, user, hash) => {  
+
+        let cookies = document.cookie
+        let expiry
+
+        // browsers auto-clear cookies which have expired
+        // setting the date in the past is one way to delete a cookie
+
+        if(loggingIn){
+          // +one year in microseconds
+          expiry = (new Date((Date.now()+3153600000000))).toUTCString()
+        } else {
+          // logging out
+          cookies.split(';').map(async function(cookie){
+            key = cookie.split('=')[0]
+            val = cookie.split('=')[1]
+            if(key.trim() == 'user') {
+              user = val
+              hash = ''
+            }
+          })
+          expiry = (new Date(0)).toUTCString()
+          setTimeout(()=>{location.reload()},0)
+        }
+        document.cookie = `user=${user}; expires=${expiry}; path=\/; domain=${location.hostname}`
+        document.cookie = `hash=${hash}; expires=${expiry}; path=\/; domain=${location.hostname}`
+      }
+      
+      showApp = user => {
+        let app   = document.querySelector('#appModal')
+        let login = document.querySelector('#loginDiv')
+        let userName = document.querySelector('#loggedinUserName')
+        userName.innerHTML = user
+        login.style.display = 'none'
+        app.style.display = 'block'
+      }
+      
+      doResult = (res, user, hash, showResult) => {
+        let el;
+        if(showResult){
+          (el = document.querySelector('#result')).style.display = 'block'
+          el.innerHTML = res ? '<span style="color: #0f0;">success!</span>' : '<span style="color: #f88;">fail!</span>'
+        }
+        if(res){
+          setCookie(true, user, hash)
+          showApp(user)
+        }else{
+          document.querySelector('#loginDiv').style.display = 'block'
+        }
+      }
+
+      async function checkLogin(user, pass, hash='', showResult=true){
+        if(!user) {
+          document.querySelector('#loginDiv').style.display = 'block'
+        }
+        let url = `logins.json`
+        let res = false
+        await fetch(url).then(res=>res.json()).then(data => {
+          let tgt = showResult ? CryptoJS.MD5(user+pass).toString() : hash
+          res = !!data['authorized users'].filter(auth=>{
+            return auth.user === user && auth.hash === tgt
+          }).length
+          hash = res ? tgt : ''
+          doResult(res, user, hash, showResult)
+        })
+      }
+    
+      submit = () => {
+        if(validate()){
+          let user = document.querySelector('#username').value.toLowerCase()
+          let pass = document.querySelector('#password').value
+          checkLogin(user, pass)
+        }
+      }
+    
+      doKeyDown = e => {
+        switch(e.keyCode){
+          case 13:
+            submit()
+          break
+        }
+        validate()
+      }
+
+      checkCookie = () => {
+        let cookies = document.cookie
+        let user, hash
+        cookies.split(';').map(cookie => {
+          key = cookie.split('=')[0]
+          val = cookie.split('=')[1]
+          if(key.trim() == 'user') user = val
+          if(key.trim() == 'hash') hash = val
+        })
+        checkLogin(user, '', hash, false)
+      }
+
+      checkCookie()
+
+    </script>
+  </body>
+</html>
