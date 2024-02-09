@@ -1,6 +1,6 @@
 # Change log
 
-## [4.0.1] -
+## [5.0.0] - 2024-02-09
 ### Added
 - `python -m htmd` will now work
 - `styles` block in `_layout.html` template
