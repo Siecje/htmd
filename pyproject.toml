@@ -42,6 +42,9 @@ Homepage = "https://github.com/siecje/htmd"
 Issues = "https://github.com/siecje/htmd/issues"
 Repository = "https://github.com/siecje/htmd.git"
 
+[tool.ruff]
+src = [".", "tests"]
+
 [tool.ruff.lint]
 ignore = [
   "D100", "D101", "D103", "D104", "D105", "D107", "D203", "D211", "D212", "D213",
@@ -67,13 +70,8 @@ order-by-type = false
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.per-file-ignores]
-"htmd/utils.py" = ["I001"]
-"tests/test_app.py" = ["I001", "ARG001"]
-"tests/test_build.py" = ["I001"]
-"tests/test_drafts.py" = ["ARG001", "I001"]
-"tests/test_post_dates.py" = ["I001"]
-"tests/test_preview.py" = ["I001"]
-"tests/test_verify.py" = ["I001"]
+"tests/test_app.py" = ["ARG001"]
+"tests/test_drafts.py" = ["ARG001"]
 
 [tool.setuptools]
 include-package-data = true

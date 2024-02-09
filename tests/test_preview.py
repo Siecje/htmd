@@ -1,4 +1,6 @@
 from pathlib import Path
+import subprocess
+import sys
 import time
 from types import TracebackType
 
@@ -6,8 +8,6 @@ from click.testing import CliRunner
 from htmd.cli import preview
 import pytest
 import requests
-import subprocess
-import sys
 
 from utils import set_example_to_draft, set_example_to_draft_build
 
