@@ -124,10 +124,12 @@ def truncate_post_html(post_html: str) -> str:
 app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 
 
-# Include current htmd site templates
-app.jinja_loader = ChoiceLoader([  # type: ignore[assignment]
+# Use templates in user set template folder
+# but fallback to app.template_folder (example_site/templates/)
+assert app.jinja_loader is not None
+app.jinja_loader = ChoiceLoader([
     FileSystemLoader(project_dir / app.config['TEMPLATE_FOLDER']),
-    app.jinja_loader,  # type: ignore[list-item]
+    app.jinja_loader,
 ])
 
 
