@@ -21,7 +21,7 @@ def run_start() -> Generator[CliRunner, None, None]:
 
 
 @pytest.fixture()
-def flask_app(run_start: CliRunner) -> Flask:
+def flask_app(run_start: CliRunner) -> Flask:  # noqa: ARG001
     from htmd.site import app
     app.config.update({
         'TESTING': True,

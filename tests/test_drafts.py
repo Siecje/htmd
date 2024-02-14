@@ -67,49 +67,49 @@ def test_draft_only_draft_build_is_in_build(build_draft: CliRunner) -> None:
     assert draft_path.is_file() is True
 
 
-def test_no_drafts_home(build_draft: CliRunner) -> None:
+def test_no_drafts_home(build_draft: CliRunner) -> None:  # noqa: ARG001
     with (Path('build') / 'index.html').open('r') as home_page:
         assert 'Example Post' not in home_page.read()
 
 
-def test_no_drafts_atom_feed(build_draft: CliRunner) -> None:
+def test_no_drafts_atom_feed(build_draft: CliRunner) -> None:  # noqa: ARG001
     with (Path('build') / 'feed.atom').open('r') as feed_page:
         assert 'Example Post' not in feed_page.read()
 
 
-def test_no_drafts_all_posts(build_draft: CliRunner) -> None:
+def test_no_drafts_all_posts(build_draft: CliRunner) -> None:  # noqa: ARG001
     with (Path('build') / 'all' / 'index.html').open('r') as web_page:
         assert 'Example Post' not in web_page.read()
 
 
-def test_no_drafts_all_tags(build_draft: CliRunner) -> None:
+def test_no_drafts_all_tags(build_draft: CliRunner) -> None:  # noqa: ARG001
     with (Path('build') / 'tags' / 'index.html').open('r') as web_page:
         assert 'first' not in web_page.read()
 
 
-def test_no_drafts_in_tag(build_draft: CliRunner) -> None:
+def test_no_drafts_in_tag(build_draft: CliRunner) -> None:  # noqa: ARG001
     # tag page exists because the draft links to it
     with (Path('build') / 'tags' / 'first' / 'index.html').open('r') as web_page:
         assert 'Example Post' not in web_page.read()
 
 
-def test_no_drafts_for_author(build_draft: CliRunner) -> None:
+def test_no_drafts_for_author(build_draft: CliRunner) -> None:  # noqa: ARG001
     # author page exists because the draft links to it
     with (Path('build') / 'author' / 'Taylor' / 'index.html').open('r') as web_page:
         assert 'Example Post' not in web_page.read()
 
 
-def test_no_drafts_for_year(build_draft: CliRunner) -> None:
+def test_no_drafts_for_year(build_draft: CliRunner) -> None:  # noqa: ARG001
     # folder exists becaues of URL for post
     assert (Path('build') / '2014' / 'index.html').exists() is False
 
 
-def test_no_drafts_for_month(build_draft: CliRunner) -> None:
+def test_no_drafts_for_month(build_draft: CliRunner) -> None:  # noqa: ARG001
     # folder exists becaues of URL for post
     assert (Path('build') / '2014' / '10' / 'index.html').exists() is False
 
 
-def test_no_drafts_for_day(build_draft: CliRunner) -> None:
+def test_no_drafts_for_day(build_draft: CliRunner) -> None:  # noqa: ARG001
     # folder exists becaues of URL for post
     assert (Path('build') / '2014' / '10' / '30' / 'index.html').exists() is False
 

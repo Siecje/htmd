@@ -69,10 +69,6 @@ lines-after-imports = 2
 order-by-type = false
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/test_app.py" = ["ARG001"]
-"tests/test_drafts.py" = ["ARG001"]
-
 [tool.setuptools]
 include-package-data = true
 
