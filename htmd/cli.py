@@ -63,9 +63,13 @@ def verify() -> None:
     # reload is needed for testing when the directory changes
     # FlatPages has already been loaded so the pages do not reload
     importlib.reload(site)
+    app = site.app
 
     correct = True
-    required_fields = ('author', 'title')
+    required_fields = ['title']
+    # Only check author if there is no default
+    if not app.config.get('DEFAULT_AUTHOR'):
+        required_fields.append('author')
     for post in site.posts:
         for field in required_fields:
             if field not in post.meta:
@@ -87,7 +91,6 @@ def verify() -> None:
         click.echo(click.style(msg, fg='green'))
 
     # Check if SITE_NAME exists
-    app = site.app
     site_name = app.config.get('SITE_NAME')
     if not site_name:
         # SITE_NAME is not required

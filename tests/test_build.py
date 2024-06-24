@@ -268,3 +268,22 @@ def test_build_vcs_repo(run_start: CliRunner) -> None:
     run_start.invoke(build)
     for path in path_list:
         assert path.is_dir()
+
+
+def test_build_with_default_author(run_start: CliRunner) -> None:
+    config_path = Path('config.toml')
+    with config_path.open('r') as config_file:
+        lines = config_file.readlines()
+
+    with config_path.open('w') as config_file:
+        for line in lines:
+            if 'default_name' in line:
+                config_file.write('default_name = "Taylor"\n')
+            else:
+                config_file.write(line)
+
+    remove_fields_from_post('example', ('draft',))
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
