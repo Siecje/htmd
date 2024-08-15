@@ -85,7 +85,6 @@ $ venv/bin/python -m mypy .
 ### Running ruff
 
 ```shell
-$ venv/bin/python -m pip install ruff
 $ venv/bin/python -m ruff check --exclude typehints
 ```
 
