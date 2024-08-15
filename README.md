@@ -65,8 +65,8 @@ Commands:
 ```shell
 $ git clone https://github.com/Siecje/htmd.git
 $ python3 -m venv venv
-$ venv/bin/python -m pip install pip setuptools wheel --upgrade
-$ venv/bin/python -m pip install -e htmd/
+$ venv/bin/python -m pip install pip setuptools --upgrade
+$ venv/bin/python -m pip install -e htmd/[dev]
 # You can now make changes inside htmd/ without having to re-install
 $ mkdir my_site
 $ cd my_site
@@ -79,7 +79,6 @@ $ ../venv/bin/htmd build
 ### Running mypy
 
 ```shell
-$ venv/bin/python -m pip install mypy types-Pygments types-beautifulsoup4
 $ venv/bin/python -m mypy .
 ```
 
@@ -97,16 +96,14 @@ $ venv/bin/python -m ruff check --exclude typehints
 $ git clone https://github.com/Siecje/htmd.git
 $ cd htmd
 $ python3 -m venv venv
-$ venv/bin/python -m pip install pip setuptools wheel --upgrade
-$ venv/bin/python -m pip install -e .
-$ venv/bin/python -m pip install pytest
+$ venv/bin/python -m pip install pip setuptools --upgrade
+$ venv/bin/python -m pip install -e .[dev]
 $ venv/bin/python -m pytest .
 ```
 
 #### Running the tests with coverage.py
 
 ```shell
-$ venv/bin/python -m pip install coverage
 $ venv/bin/coverage run --branch -m pytest .
 $ venv/bin/coverage html --omit='/private/*'
 $ open htmlcov/index.html

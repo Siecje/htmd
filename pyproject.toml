@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools"]
 
 [project]
 authors = [
@@ -21,7 +21,6 @@ dependencies = [
   "htmlmin",
   "jsmin",
   "Pygments",
-  "requests",
 ]
 description = "Write Markdown and Jinja2 templates to create a website"
 maintainers = [
@@ -31,6 +30,17 @@ name = "htmd"
 readme = "README.md"
 requires-python = ">=3.11"
 version = "5.0.0"
+
+[project.optional-dependencies]
+dev = [
+  "coverage",
+  "mypy",
+  "pytest",
+  "requests",
+  "ruff",
+  "types-Pygments",
+  "types-beautifulsoup4",
+]
 
 [project.scripts]
 htmd = "htmd.cli:cli"

@@ -1,5 +1,9 @@
 # Change log
 
+## [] - 
+### Added
+- `pip install htmd[dev]` to install development dependencies
+
 ## [5.0.0] - 2024-02-09
 ### Added
 - `python -m htmd` will now work
