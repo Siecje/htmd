@@ -18,7 +18,7 @@ dependencies = [
   "Flask",
   "Flask-FlatPages",
   "Frozen-Flask",
-  "htmlmin",
+  "htmlmin2",
   "jsmin",
   "Pygments",
 ]

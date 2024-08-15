@@ -5,6 +5,6 @@ feedwerk==1.2.0
 Flask==3.0.3
 Flask-FlatPages==0.8.2
 Frozen-Flask==1.0.2
-htmlmin==0.1.12
+htmlmin2==0.1.13
 jsmin==3.0.1
 Pygments==2.18.0
