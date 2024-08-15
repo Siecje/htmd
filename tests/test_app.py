@@ -20,7 +20,7 @@ def run_start() -> Generator[CliRunner, None, None]:
         yield runner
 
 
-@pytest.fixture()
+@pytest.fixture
 def flask_app(run_start: CliRunner) -> Flask:  # noqa: ARG001
     from htmd.site import app
     app.config.update({
@@ -29,7 +29,7 @@ def flask_app(run_start: CliRunner) -> Flask:  # noqa: ARG001
     return app
 
 
-@pytest.fixture()
+@pytest.fixture
 def client(flask_app: Flask) -> FlaskClient:
     return flask_app.test_client()
 
