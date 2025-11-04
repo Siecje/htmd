@@ -2,7 +2,11 @@
 
 ## [] - 
 ### Added
+
+## [5.1.0] - 2024-02-09
+### Added
 - `pip install htmd[dev]` to install development dependencies
+- Support Python 3.13 and 3.14
 
 ## [5.0.0] - 2024-02-09
 ### Added
