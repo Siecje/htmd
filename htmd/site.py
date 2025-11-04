@@ -97,8 +97,8 @@ app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', '.hg*']
 app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
 
 if Path(app.static_folder).is_dir():
-    app.config['INCLUDE_CSS'] = (app.static_folder / 'combined.min.css').exists()
-    app.config['INCLUDE_JS'] = (app.static_folder / 'combined.min.js').exists()
+    app.config['INCLUDE_CSS'] = (Path(app.static_folder) / 'combined.min.css').exists()
+    app.config['INCLUDE_JS'] = (Path(app.static_folder) / 'combined.min.js').exists()
 
 
 posts = FlatPages(app)
