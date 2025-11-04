@@ -258,12 +258,12 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     return render_template('post.html', post=post)
 
 
-@app.route('/draft/<post_uuid>/')
+@app.route('/draft/<post_uuid>/')  # noqa: RET503
 def draft(post_uuid: str) -> ResponseReturnValue:
     for post in posts:
         if str(post.meta.get('draft', '')).replace('build|', '') == post_uuid:
             return render_template('post.html', post=post)
-    abort(404)  # noqa: RET503
+    abort(404)
 
 
 @app.route('/tags/')
