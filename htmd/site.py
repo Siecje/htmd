@@ -1,5 +1,4 @@
 from collections.abc import Iterator
-import os
 from pathlib import Path
 import sys
 import tomllib
@@ -98,8 +97,8 @@ app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', '.hg*']
 app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
 
 if Path(app.static_folder).is_dir():
-    app.config['INCLUDE_CSS'] = 'combined.min.css' in os.listdir(app.static_folder)
-    app.config['INCLUDE_JS'] = 'combined.min.js' in os.listdir(app.static_folder)
+    app.config['INCLUDE_CSS'] = (app.static_folder / 'combined.min.css').exists()
+    app.config['INCLUDE_JS'] = (app.static_folder / 'combined.min.js').exists()
 
 
 posts = FlatPages(app)
