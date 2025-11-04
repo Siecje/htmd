@@ -66,7 +66,7 @@ Commands:
 $ git clone https://github.com/Siecje/htmd.git
 $ python3 -m venv venv
 $ venv/bin/python -m pip install pip setuptools --upgrade
-$ venv/bin/python -m pip install -e htmd/[dev]
+$ venv/bin/python -m pip install -e "htmd/[dev]"
 # You can now make changes inside htmd/ without having to re-install
 $ mkdir my_site
 $ cd my_site
