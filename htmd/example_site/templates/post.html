@@ -45,9 +45,11 @@
     {{ post.html|safe }}
 
     <hr class="small">
-    <p><strong>Tags</strong></p>
-    {% for tag in post.meta.get('tags') %}
-      <a class="tag" href="{{ url_for('tag', tag=tag) }}">{{ tag }}</a>
-    {% endfor %}
+    {% if post.tags %}
+      <p><strong>Tags</strong></p>
+      {% for tag in post.meta.get('tags') %}
+        <a class="tag" href="{{ url_for('tag', tag=tag) }}">{{ tag }}</a>
+      {% endfor %}
+    {% endif %}
   </article>
 {% endblock content %}
