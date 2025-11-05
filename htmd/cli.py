@@ -1,5 +1,6 @@
 import datetime
 import importlib
+import itertools
 from pathlib import Path
 import sys
 import warnings
@@ -236,11 +237,14 @@ def preview(
         site.preview_drafts()
 
     # reload when static files change
-    # werkzeug will re-run the terminal command
     # Which causes the above combine_and_minify_*() to run
     # and recreate combined.min.css/combined.min.js files
-    static_path = site.project_dir / 'static'
-    extra_files = static_path.iterdir()
+    # because on reload the thread running flask will be re-created
+    extra_files = itertools.chain(
+        Path(app.config['PAGES_FOLDER']).iterdir(),
+        Path(app.config['POSTS_FOLDER']).iterdir(),
+        Path(app.config['STATIC_FOLDER']).iterdir(),
+    )
     app.run(debug=True, host=host, port=port, extra_files=extra_files)
 
 

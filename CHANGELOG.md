@@ -7,6 +7,9 @@
 ### Added
 - `pip install htmd[dev]` to install development dependencies
 - Support Python 3.13 and 3.14
+- `htmd preview` will reload when posts and pages are modified
+### Fixed
+- Fix `htmd preview` when static directory is not the default
 
 ## [5.0.0] - 2024-02-09
 ### Added
