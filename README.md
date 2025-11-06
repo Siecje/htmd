@@ -19,7 +19,7 @@ I want the URL structure for each post to include the date (/2015/01/31/post-tit
 - If you made changes to one of your templates and ran build you wouldn't update existing files unless you deleted your build folder everytime.
 
 I believe the reason there are so many static site generators is people are picky about their workflow and that's okay.
-This is also a great way to stay up to date with Packaging in Python.
+This is also a great way to stay up to date with packaging in Python.
 
 ## What is the difference between posts and pages?
 
@@ -30,7 +30,7 @@ Pages are other webpages on the site, for example the About page.
 
 Edit the `templates/_layout.html` file that was created when running `htmd start`.
 This a [Jinja 2](http://jinja.pocoo.org/docs/dev/templates/#template-inheritance) template that all other pages will use by default.
-You can add a link to CSS file that you have created in `static/`.
+You can add a link to CSS files that you have created in `static/`.
 To change other pages you will need to override the page template by creating a file with the same name in the `templates/` folder.
 The complete list of templates can be found [here](https://github.com/Siecje/htmd/tree/main/htmd/example_site/templates).
 
@@ -46,7 +46,7 @@ To view the site as if all drafts were published run `htmd preview --drafts`.
 ## Getting Started
 
 ```shell
-$ pip install htmd
+pip install htmd
 ```
 
 ```shell
@@ -63,47 +63,47 @@ Commands:
 ### Running the development version locally
 
 ```shell
-$ git clone https://github.com/Siecje/htmd.git
-$ python3 -m venv venv
-$ venv/bin/python -m pip install pip setuptools --upgrade
-$ venv/bin/python -m pip install -e "htmd/[dev]"
+git clone https://github.com/Siecje/htmd.git
+python3 -m venv venv
+venv/bin/python -m pip install pip setuptools --upgrade
+venv/bin/python -m pip install -e "htmd/[dev]"
 # You can now make changes inside htmd/ without having to re-install
-$ mkdir my_site
-$ cd my_site
-$ ../venv/bin/htmd start
+mkdir my_site
+cd my_site
+../venv/bin/htmd start
 # You can also create a symlink to htmd
 # somewhere on your $PATH and just use `htmd start`
-$ ../venv/bin/htmd build
+../venv/bin/htmd build
 ```
 
 ### Running mypy
 
 ```shell
-$ venv/bin/python -m mypy .
+venv/bin/python -m mypy .
 ```
 
 ### Running ruff
 
 ```shell
-$ venv/bin/python -m ruff check --exclude typehints
+venv/bin/python -m ruff check --exclude typehints
 ```
 
 
 ### Running the tests
 
 ```shell
-$ git clone https://github.com/Siecje/htmd.git
-$ cd htmd
-$ python3 -m venv venv
-$ venv/bin/python -m pip install pip setuptools --upgrade
-$ venv/bin/python -m pip install -e .[dev]
-$ venv/bin/python -m pytest .
+git clone https://github.com/Siecje/htmd.git
+cd htmd
+python3 -m venv venv
+venv/bin/python -m pip install pip setuptools --upgrade
+venv/bin/python -m pip install -e .[dev]
+venv/bin/python -m pytest .
 ```
 
 #### Running the tests with coverage.py
 
 ```shell
-$ venv/bin/coverage run --branch -m pytest .
-$ venv/bin/coverage html --omit='/private/*'
-$ open htmlcov/index.html
+venv/bin/coverage run --branch -m pytest .
+venv/bin/coverage html --omit='/private/*'
+open htmlcov/index.html
 ```
