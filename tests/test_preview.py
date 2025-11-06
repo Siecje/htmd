@@ -13,7 +13,7 @@ import requests
 from utils import set_example_to_draft, set_example_to_draft_build
 
 
-def invoke_preview(run_start: CliRunner, args: list[str]) -> None:
+def invoke_preview(run_start: CliRunner, args: list[str] | None = None) -> None:
     """
     run_start.invoke(preview) fails but it is used to track test coverage.
 
@@ -454,7 +454,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
             assert 'Example Post' not in response.text
 
 
-def test_preview_when_static_folder_does_not_exist(run_start: CliRunner) -> None:  # noqa: ARG001
+def test_preview_when_static_folder_does_not_exist(run_start: CliRunner) -> None:
     static_path = Path('static')
     for file_in_dir in static_path.iterdir():
         file_in_dir.unlink()
@@ -463,9 +463,12 @@ def test_preview_when_static_folder_does_not_exist(run_start: CliRunner) -> None
 
     assert static_path.exists() is False
 
+    # invoke_preview is only used for test coverage
+    invoke_preview(run_start)
+
     url = 'http://localhost:9090/'
     success = 200
     with run_preview():
-        response = requests.get(url, timeout=0.01)
         assert static_path.exists() is False
+        response = requests.get(url, timeout=0.01)
         assert response.status_code == success
