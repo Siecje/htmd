@@ -236,15 +236,16 @@ def preview(
     if drafts:
         site.preview_drafts()
 
-    # reload when static files change
+    extra_files = itertools.chain(
+        app.config['FLATPAGES_ROOT'].iterdir(),
+    )
+    # reload when static files
     # Which causes the above combine_and_minify_*() to run
     # and recreate combined.min.css/combined.min.js files
     # because on reload the thread running flask will be re-created
-    extra_files = itertools.chain(
-        Path(app.config['PAGES_FOLDER']).iterdir(),
-        Path(app.config['POSTS_FOLDER']).iterdir(),
-        Path(app.config['STATIC_FOLDER']).iterdir(),
-    )
+    assert app.static_folder is not None
+    if Path(app.static_folder).exists():
+        extra_files = itertools.chain(extra_files, Path(app.static_folder).iterdir())
     app.run(debug=True, host=host, port=port, extra_files=extra_files)
 
 

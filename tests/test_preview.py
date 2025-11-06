@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -132,7 +133,31 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
             assert response.status_code == status
 
 
-def test_preview_reload_css(run_start: CliRunner) -> None:  # noqa: ARG001
+@pytest.mark.parametrize('static_dir', [
+    'static',
+    'foo',
+])
+def test_preview_reload_css(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
+    if static_dir != 'static':
+        # Change static directory in config.toml
+        config_path = Path('config.toml')
+        with config_path.open('r') as config_file:
+            lines = config_file.readlines()
+
+        with config_path.open('w') as config_file:
+            for line in lines:
+                if 'static = ' in line:
+                    config_file.write(f'static = "{static_dir}"\n')
+                else:
+                    config_file.write(line)
+
+        # Ensure directory exists
+        Path(static_dir).mkdir(exist_ok=True)
+
+        css_path = Path(static_dir) / 'style.css'
+        with css_path.open('w') as css_file:
+            css_file.write('')
+
     url = 'http://localhost:9090/static/combined.min.css'
     new_style = 'p {color: red;}'
     expected = new_style.replace(' ', '').replace(';', '')
@@ -140,14 +165,17 @@ def test_preview_reload_css(run_start: CliRunner) -> None:  # noqa: ARG001
         response = requests.get(url, timeout=0.01)
         before = response.text
         assert expected not in before
-        css_path = Path('static') / 'style.css'
+
+        css_path = Path(static_dir) / 'style.css'
         with css_path.open('a') as css_file:
             css_file.write('\n' + new_style + '\n')
 
         # Ensure new style is available after reload
         read_timeout = False
         after = before
-        while after == before:
+        max_attempts = 50_000
+        attempts = 1
+        while after == before and attempts < max_attempts:
             try:
                 response = requests.get(url, timeout=0.1)
             except (
@@ -160,17 +188,38 @@ def test_preview_reload_css(run_start: CliRunner) -> None:  # noqa: ARG001
             else:
                 after = response.text
 
-        assert read_timeout
+            attempts += 1
+
+        assert read_timeout, 'Preview did not reload.'
         assert before != after
         assert expected in after
 
 
-def test_preview_reload_js(run_start: CliRunner) -> None:  # noqa: ARG001
+@pytest.mark.parametrize('static_dir', [
+    'static',
+    'foo',
+])
+def test_preview_reload_js(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
+    # Change static directory in config.toml
+    config_path = Path('config.toml')
+    with config_path.open('r') as config_file:
+        lines = config_file.readlines()
+
+    with config_path.open('w') as config_file:
+        for line in lines:
+            if 'static = ' in line:
+                config_file.write(f'static = "{static_dir}"\n')
+            else:
+                config_file.write(line)
+
+    # Ensure directory exists
+    Path(static_dir).mkdir(exist_ok=True)
+
     url = 'http://localhost:9090/static/combined.min.js'
     new_js = 'document.getElementByTagName("body");'
     expected = new_js
     # Need to create before running preview since no .js files exist
-    js_path = Path('static') / 'script.js'
+    js_path = Path(static_dir) / 'script.js'
     with js_path.open('w') as js_file:
         js_file.write('document.getElementByTagName("div");')
 
@@ -182,10 +231,12 @@ def test_preview_reload_js(run_start: CliRunner) -> None:  # noqa: ARG001
         with js_path.open('w') as js_file:
             js_file.write('\n' + new_js + '\n')
 
-        # Ensure new style is available after reload
+        # Ensure new script is available after reload
         read_timeout = False
         after = before
-        while after == before:
+        max_attempts = 50_000
+        attempts = 1
+        while after == before and attempts < max_attempts:
             try:
                 response = requests.get(url, timeout=0.1)
             except (
@@ -198,7 +249,143 @@ def test_preview_reload_js(run_start: CliRunner) -> None:  # noqa: ARG001
             else:
                 after = response.text
 
-        assert read_timeout
+            attempts += 1
+
+        assert read_timeout, 'Preview did not reload.'
+        assert before != after
+        assert expected in after
+
+
+@pytest.mark.parametrize('posts_dir', [
+    'posts',
+    'bar',
+])
+def test_preview_reload_when_posts_change(run_start: CliRunner, posts_dir: str) -> None:  # noqa: ARG001
+    if posts_dir != 'posts':
+        # Change static directory in config.toml
+        config_path = Path('config.toml')
+        with config_path.open('r') as config_file:
+            lines = config_file.readlines()
+
+        with config_path.open('w') as config_file:
+            for line in lines:
+                if 'posts = ' in line:
+                    config_file.write(f'posts = "{posts_dir}"\n')
+                else:
+                    config_file.write(line)
+
+        # Ensure directory exists
+        Path(posts_dir).mkdir(exist_ok=True)
+        # Move example post into new posts folder
+        shutil.copy(Path('posts') / 'example.md', Path(posts_dir))
+
+    url = 'http://localhost:9090/'
+    expected = 'This is a new post.'
+    with run_preview():
+        response = requests.get(url, timeout=0.01)
+        before = response.text
+        assert expected not in before
+
+        post_path = Path(posts_dir) / 'example.md'
+        with post_path.open('w') as post_file:
+            post_file.write('---\n')
+            post_file.write('title: New\n')
+            post_file.write('published: 2025-11-05\n')
+            post_file.write('...\n')
+            post_file.write(f'{expected}\n')
+
+        # Ensure new sentence is available after reload
+        read_timeout = False
+        after = before
+        max_attempts = 50_000
+        attempts = 1
+        while after == before and attempts < max_attempts:
+            try:
+                response = requests.get(url, timeout=0.1)
+            except (
+                requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.ReadTimeout,
+            ):
+                # happens during restart
+                read_timeout = True
+            else:
+                after = response.text
+
+            attempts += 1
+
+        assert read_timeout, 'Preview did not reload.'
+        assert before != after
+        assert expected in after
+
+
+@pytest.mark.parametrize('pages_dir', [
+    'pages',
+    'bar',
+])
+def test_preview_shows_pages_change_without_reload(
+    run_start: CliRunner,  # noqa: ARG001
+    pages_dir: str,
+) -> None:
+    if pages_dir != 'pages':
+        # Change static directory in config.toml
+        config_path = Path('config.toml')
+        with config_path.open('r') as config_file:
+            lines = config_file.readlines()
+
+        with config_path.open('w') as config_file:
+            for line in lines:
+                if 'pages = ' in line:
+                    config_file.write(f'pages = "{pages_dir}"\n')
+                else:
+                    config_file.write(line)
+
+        # Ensure directory exists
+        Path(pages_dir).mkdir(exist_ok=True)
+        # Move example post into new posts folder
+        shutil.copy(Path('pages') / 'about.html', Path(pages_dir))
+
+    url = 'http://localhost:9090/about/'
+    expected = 'This is new.'
+    page_path = Path(pages_dir) / 'about.html'
+    with page_path.open('r') as page_file:
+        contents = page_file.read()
+
+    contents = contents.replace(
+        '</p>',
+        f' {expected}</p>',
+    )
+    with run_preview():
+        response = requests.get(url, timeout=0.01)
+        before = response.text
+        assert expected not in before
+
+        with page_path.open('w') as page_file:
+            page_file.write(contents)
+
+        # Ensure new sentence is available after change
+        read_timeout = False
+        after = before
+        max_attempts = 50_000
+        attempts = 1
+
+        # Since HTML changes can be seen without reloading
+        while before == after and attempts < max_attempts:
+            try:
+                response = requests.get(url, timeout=0.1)
+            except (
+                requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.ReadTimeout,
+            ):  # pragma: no cover
+                # happens during restart
+                read_timeout = True  # pragma: no cover
+            else:
+                after = response.text
+
+            attempts += 1
+
+        assert read_timeout is False, 'Preview did reload.'
         assert before != after
         assert expected in after
 
@@ -265,3 +452,20 @@ def test_preview_drafts(run_start: CliRunner) -> None:
             response = requests.get('http://localhost:9090' + url, timeout=0.01)
             assert response.status_code == success
             assert 'Example Post' not in response.text
+
+
+def test_preview_when_static_folder_does_not_exist(run_start: CliRunner) -> None:  # noqa: ARG001
+    static_path = Path('static')
+    for file_in_dir in static_path.iterdir():
+        file_in_dir.unlink()
+
+    static_path.rmdir()
+
+    assert static_path.exists() is False
+
+    url = 'http://localhost:9090/'
+    success = 200
+    with run_preview():
+        response = requests.get(url, timeout=0.01)
+        assert static_path.exists() is False
+        assert response.status_code == success

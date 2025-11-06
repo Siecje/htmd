@@ -24,10 +24,15 @@ def create_directory(name: str) -> Path:
 
 def combine_and_minify_css(static_folder: Path) -> None:
     # Combine and minify all .css files in the static folder
-    css_files = sorted([
-        f for f in static_folder.iterdir()
-        if f.name.endswith('.css') and f.name != 'combined.min.css'
-    ])
+    try:
+        css_files = sorted([
+            f for f in static_folder.iterdir()
+            if f.name.endswith('.css') and f.name != 'combined.min.css'
+        ])
+    except FileNotFoundError:
+        # static folder does not exist
+        return
+
     if not css_files:
         # There are no .css files in the static folder
         return
@@ -46,11 +51,16 @@ def combine_and_minify_css(static_folder: Path) -> None:
 
 def combine_and_minify_js(static_folder: Path) -> None:
     # Combine and minify all .js files in the static folder
-    js_files = sorted([
-        f for f in static_folder.iterdir()
-        if f.name.endswith('.js')
-        and f.name != 'combined.min.js'
-    ])
+    try:
+        js_files = sorted([
+            f for f in static_folder.iterdir()
+            if f.name.endswith('.js')
+            and f.name != 'combined.min.js'
+        ])
+    except FileNotFoundError:
+        # static folder does not exist
+        return
+
     if not js_files:
         # There are no .js files in the static folder
         return
