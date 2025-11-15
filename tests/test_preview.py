@@ -61,6 +61,10 @@ class run_preview:  # noqa: N801
         traceback: TracebackType | None,
     ) -> None:
         self.task.terminate()
+        try:
+            self.task.wait(10)
+        except subprocess.TimeoutExpired:
+            self.task.kill()
 
 
 def test_preview(run_start: CliRunner) -> None:  # noqa: ARG001
@@ -137,7 +141,7 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
     'static',
     'foo',
 ])
-def test_preview_reload_css(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
+def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
     if static_dir != 'static':
         # Change static directory in config.toml
         config_path = Path('config.toml')
@@ -154,10 +158,6 @@ def test_preview_reload_css(run_start: CliRunner, static_dir: str) -> None:  # n
         # Ensure directory exists
         Path(static_dir).mkdir(exist_ok=True)
 
-        css_path = Path(static_dir) / 'style.css'
-        with css_path.open('w') as css_file:
-            css_file.write('')
-
     url = 'http://localhost:9090/static/combined.min.css'
     new_style = 'p {color: red;}'
     expected = new_style.replace(' ', '').replace(';', '')
@@ -167,14 +167,20 @@ def test_preview_reload_css(run_start: CliRunner, static_dir: str) -> None:  # n
         assert expected not in before
 
         css_path = Path(static_dir) / 'style.css'
-        with css_path.open('a') as css_file:
-            css_file.write('\n' + new_style + '\n')
+        # When static_dir != 'static' this will be a new file
+        if static_dir != 'static':
+            assert css_path.exists() is False
 
-        # Ensure new style is available after reload
+        with css_path.open('a') as css_file:
+            css_file.write('\n' + expected + '\n')
+
+        # Ensure new style is served
         read_timeout = False
         after = before
         max_attempts = 50_000
         attempts = 1
+        
+        # CSS changes can be seen without stopping webserver
         while after == before and attempts < max_attempts:
             try:
                 response = requests.get(url, timeout=0.1)
@@ -182,15 +188,18 @@ def test_preview_reload_css(run_start: CliRunner, static_dir: str) -> None:  # n
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.ReadTimeout,
-            ):
+            ):  # pragma: no cover
                 # happens during restart
-                read_timeout = True
+                print(url)
+                read_timeout = True  # pragma: no cover
             else:
                 after = response.text
 
             attempts += 1
 
-        assert read_timeout, 'Preview did not reload.'
+        print(attempts)
+        print(after)
+        assert read_timeout is False, 'Preview did reload.'
         assert before != after
         assert expected in after
 
@@ -199,43 +208,50 @@ def test_preview_reload_css(run_start: CliRunner, static_dir: str) -> None:  # n
     'static',
     'foo',
 ])
-def test_preview_reload_js(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
-    # Change static directory in config.toml
-    config_path = Path('config.toml')
-    with config_path.open('r') as config_file:
-        lines = config_file.readlines()
+def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
+    js_path = Path(static_dir) / 'script.js'
+    if static_dir != 'static':
+        # Change static directory in config.toml
+        config_path = Path('config.toml')
+        with config_path.open('r') as config_file:
+            lines = config_file.readlines()
 
-    with config_path.open('w') as config_file:
-        for line in lines:
-            if 'static = ' in line:
-                config_file.write(f'static = "{static_dir}"\n')
-            else:
-                config_file.write(line)
+        with config_path.open('w') as config_file:
+            for line in lines:
+                if 'static = ' in line:
+                    config_file.write(f'static = "{static_dir}"\n')
+                else:
+                    config_file.write(line)
 
-    # Ensure directory exists
-    Path(static_dir).mkdir(exist_ok=True)
+        # Ensure directory exists
+        Path(static_dir).mkdir(exist_ok=True)
+        
+        # Create file to test modified files update
+        with js_path.open('w') as js_file:
+            js_file.write('document.getElementByTagName("div")')
 
     url = 'http://localhost:9090/static/combined.min.js'
-    new_js = 'document.getElementByTagName("body");'
+    new_js = 'document.getElementByTagName("body")'
     expected = new_js
-    # Need to create before running preview since no .js files exist
-    js_path = Path(static_dir) / 'script.js'
-    with js_path.open('w') as js_file:
-        js_file.write('document.getElementByTagName("div");')
 
     with run_preview():
         response = requests.get(url, timeout=0.01)
         before = response.text
         assert expected not in before
 
-        with js_path.open('w') as js_file:
-            js_file.write('\n' + new_js + '\n')
+        if static_dir != 'static':
+            assert js_path.exists()
 
-        # Ensure new script is available after reload
+        with js_path.open('w') as js_file:
+            js_file.write(expected)
+
+        # Ensure new script is served
         read_timeout = False
         after = before
         max_attempts = 50_000
         attempts = 1
+
+        # JS changes can be seen without stopping webserver
         while after == before and attempts < max_attempts:
             try:
                 response = requests.get(url, timeout=0.1)
@@ -243,15 +259,15 @@ def test_preview_reload_js(run_start: CliRunner, static_dir: str) -> None:  # no
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.ReadTimeout,
-            ):
+            ):  # pragma: no cover
                 # happens during restart
-                read_timeout = True
+                read_timeout = True  # pragma: no cover
             else:
                 after = response.text
 
             attempts += 1
 
-        assert read_timeout, 'Preview did not reload.'
+        assert read_timeout is False, 'Preview did reload.'
         assert before != after
         assert expected in after
 

@@ -2,12 +2,16 @@ import datetime
 import importlib
 import itertools
 from pathlib import Path
+import signal
 import sys
+import threading
 import warnings
 
 import click
 from flask import Flask
 from flask_flatpages import FlatPages
+from watchdog.observers import Observer
+from watchdog.events import DirModifiedEvent, FileModifiedEvent, FileSystemEventHandler
 
 from .utils import (
     combine_and_minify_css,
@@ -183,6 +187,24 @@ def build(
     click.echo(click.style(msg, fg='green'))
 
 
+class StaticHandler(FileSystemEventHandler):
+    def __init__(self, static_directory: Path) -> None:
+        super().__init__()
+        self.static_directory = static_directory
+
+    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
+        dst_css = 'combined.min.css'
+        dst_js = 'combined.min.js'
+        if event.is_directory or dst_css in event.src_path or dst_js in event.src_path:
+            return
+        if event.event_type == 'modified' and event.src_path.endswith('.css'):
+            click.echo(f'Changes detected in {event.src_path}. Recreating {dst_css}...')
+            combine_and_minify_css(self.static_directory)
+        elif event.event_type == 'modified' and event.src_path.endswith('.js'):
+            click.echo(f'Changes detected in {event.src_path}. Recreating {dst_js}...')
+            combine_and_minify_js(self.static_directory)
+
+
 @cli.command('preview', short_help='Serve files to preview site.')
 @click.pass_context
 @click.option(
@@ -236,6 +258,33 @@ def preview(
     if drafts:
         site.preview_drafts()
 
+    stop_event = threading.Event()
+    def handle_sigterm(signum, frame):
+        stop_event.set()
+
+    # Register the signal handler
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
+    def watch_static(exit_event: threading.Event) -> None:
+        breakpoint
+        static_directory = Path(app.static_folder)
+
+        event_handler = StaticHandler(static_directory)
+        observer = Observer()
+        observer.schedule(event_handler, path=static_directory, recursive=True)
+        observer.start()
+
+        try:
+            while not exit_event.is_set():
+                observer.join(1)
+        finally:
+            observer.stop()
+            observer.join()
+
+    watch_thread = threading.Thread(target=watch_static, args=(stop_event,))
+    watch_thread.start()
+
+    # TODO: test with new post
     # Reload when posts change
     extra_files = itertools.chain(
         app.config['FLATPAGES_ROOT'].iterdir(),
@@ -244,10 +293,17 @@ def preview(
     # Which causes the above combine_and_minify_*() to run
     # and recreate combined.min.css/combined.min.js files
     # because on reload the thread running flask will be re-created
-    assert app.static_folder is not None
-    if Path(app.static_folder).exists():
-        extra_files = itertools.chain(extra_files, Path(app.static_folder).iterdir())
+    # assert app.static_folder is not None
+    # if Path(app.static_folder).exists():
+    #     extra_files = itertools.chain(extra_files, Path(app.static_folder).iterdir())
+    # TODO: remove above
+    # TODO: write failing test for main
+    # TODO: ensure it passes with these changes
+    # TODO: clean up where the thread function and class are?
+
     app.run(debug=True, host=host, port=port, extra_files=extra_files)
+    # After Flask has been stopped stop watchdog
+    stop_event.set()
 
 
 @cli.command('templates', short_help='Create any missing templates')
