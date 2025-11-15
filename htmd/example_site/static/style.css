@@ -2,6 +2,19 @@
   box-sizing: border-box;
 }
 
+/* Re-apply defaults after reset */
+strong {
+  font-weight: bold;
+}
+
+em {
+  font-style: italic;
+}
+
+pre, code {
+  font-family: monospace;
+}
+
 /* Not using body in case something like background image is needed to cover the entire screen  */
 #fullpage {
   max-width: 63em;
@@ -71,47 +84,45 @@ h1, h2, h3, h4, h5, h6, p {
 }
 
 nav ul {
+  display: flex;
+  flex-direction: column;
   list-style-type: none;
   padding: 0;
+  width: 100%;
+  margin: 0 auto;
 }
 
-nav li {
+nav ul li {
   border: 1px solid #666;
   background-color: #eee;
+  flex-grow: 1;
   text-align: center;
 }
 
-nav li a {
+nav ul li a {
   display: block;
   text-decoration: none;
   font-size: 1.2em;
   padding: 10px 1em;
 }
 
-nav:after {
-  content: "";
-  display: table;
-  clear: both;
-}
+/* < 30 : One column menu */
 
-nav ul {
-  width: 100%;
-  margin: 0 auto;
-}
-
-@media only screen and (min-width: 44em) {
-  nav li {
-    display: block;
-    float: left;
-    width: 20%;
+/* 30 <= x < 44 : Two column menu */
+@media only screen and (min-width: 30em) and (max-width: 44em) {
+  nav ul {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  nav ul li {
+    flex-basis: 50%;
   }
 }
-/* 30 - 44  Two column menu*/
-@media only screen and (min-width: 30em) and (max-width: 44em) {
-  nav li {
-    display: inline;
-    float: left;
-    width: 50%;
+
+/* >= 44 : One Row menu */
+@media only screen and (min-width: 44em) {
+  nav ul {
+    flex-direction: row;
   }
 }
 
@@ -121,47 +132,37 @@ footer {
 }
 
 footer ul {
+  display: flex;
+  flex-direction: column;
   list-style-type: none;
   padding: 0;
   margin: 25px 0 0;
 }
 
-footer li {
+footer ul li {
   border-top: 1px solid #666;
   padding: 10px 1em;
   margin: 3px 0 0;
   text-align: center;
 }
 
-footer li a {
+footer ul li a {
   text-decoration: none;
 }
 
 @media only screen and (min-width: 50em) {
-  footer li {
-    display: inline-block;
-    width: 33%;
-    border-top: none;
-    padding: 0em;
-    margin: 0em;
-  }
-
   footer ul {
     margin: 0em;
+    flex-direction: row; 
+    flex-wrap: wrap;
+    justify-content: center;
   }
-}
-
-/* Re-apply defaults after reset */
-strong {
-  font-weight: bold;
-}
-
-em {
-  font-style: italic;
-}
-
-pre, code {
-  font-family: monospace;
+  footer ul li {
+      flex-grow: 1;
+      border-top: none;
+      margin: 0em;
+      padding: 0em;
+    }
 }
 
 .post-preview-link {
