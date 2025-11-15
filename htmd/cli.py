@@ -1,6 +1,7 @@
 import datetime
 import importlib
 import itertools
+import multiprocessing
 from pathlib import Path
 import signal
 import sys
@@ -205,6 +206,22 @@ class StaticHandler(FileSystemEventHandler):
             combine_and_minify_js(self.static_directory)
 
 
+def watch_static(static_folder, exit_event) -> None:
+    static_directory = Path(static_folder)
+
+    event_handler = StaticHandler(static_directory)
+    observer = Observer()
+    observer.schedule(event_handler, path=static_directory, recursive=True)
+    observer.start()
+
+    try:
+        while not exit_event.is_set():
+            observer.join(1)
+    finally:
+        observer.stop()
+        observer.join()
+
+
 @cli.command('preview', short_help='Serve files to preview site.')
 @click.pass_context
 @click.option(
@@ -258,31 +275,19 @@ def preview(
     if drafts:
         site.preview_drafts()
 
-    stop_event = threading.Event()
-    def handle_sigterm(signum, frame):
-        stop_event.set()
+    stop_event = multiprocessing.Event()
+
+    # def handle_sigterm(signum, frame):
+    #     stop_event.set()
 
     # Register the signal handler
-    signal.signal(signal.SIGTERM, handle_sigterm)
+    # signal.signal(signal.SIGTERM, handle_sigterm)
 
-    def watch_static(exit_event: threading.Event) -> None:
-        breakpoint
-        static_directory = Path(app.static_folder)
+    # def watch_static(exit_event: multiprocessing.Event) -> None:
 
-        event_handler = StaticHandler(static_directory)
-        observer = Observer()
-        observer.schedule(event_handler, path=static_directory, recursive=True)
-        observer.start()
-
-        try:
-            while not exit_event.is_set():
-                observer.join(1)
-        finally:
-            observer.stop()
-            observer.join()
-
-    watch_thread = threading.Thread(target=watch_static, args=(stop_event,))
-    watch_thread.start()
+    # watch_proc = multiprocessing.Process(target=watch_static, args=(stop_event,))
+    watch_proc = multiprocessing.Process(target=watch_static, args=(app.static_folder, stop_event))
+    watch_proc.start()
 
     # TODO: test with new post
     # Reload when posts change
@@ -303,7 +308,8 @@ def preview(
 
     app.run(debug=True, host=host, port=port, extra_files=extra_files)
     # After Flask has been stopped stop watchdog
-    stop_event.set()
+    # stop_event.set()
+    watch_proc.terminate()
 
 
 @cli.command('templates', short_help='Create any missing templates')
