@@ -22,7 +22,7 @@ def create_directory(name: str) -> Path:
     return directory
 
 
-def combine_and_minify_css(static_folder: Path) -> None:
+def combine_and_minify_css(static_folder: Path) -> bool:
     # Combine and minify all .css files in the static folder
     try:
         css_files = sorted([
@@ -31,25 +31,35 @@ def combine_and_minify_css(static_folder: Path) -> None:
         ])
     except FileNotFoundError:
         # static folder does not exist
-        return
+        return False
 
     if not css_files:
         # There are no .css files in the static folder
-        return
+        return False
 
-    with (static_folder / 'combined.min.css').open('w') as master:
-        for f in css_files:
-            with (static_folder / f).open('r') as css_file:
-                # combine all .css files into one
-                master.write(css_file.read())
+    # combine all .css files into one string
+    file_contents = []
+    for f in css_files:
+        with f.open('r') as css_file:
+            file_contents.append(css_file.read())
+    combined_str = '\n'.join(file_contents)
 
-    with (static_folder / 'combined.min.css').open('r') as master:
-        combined = master.read()
-    with (static_folder / 'combined.min.css').open('w') as master:
-        master.write(compress(combined))
+    try:
+        with (static_folder / 'combined.min.css').open('r') as combined_file:
+            current_combined = combined_file.read()
+    except FileNotFoundError:
+        current_combined = ''
+
+    new_combined = compress(combined_str)
+    if new_combined == current_combined:
+        return False
+
+    with (static_folder / 'combined.min.css').open('w') as combined_file:
+        combined_file.write(new_combined)
+    return True
 
 
-def combine_and_minify_js(static_folder: Path) -> None:
+def combine_and_minify_js(static_folder: Path) -> bool:
     # Combine and minify all .js files in the static folder
     try:
         js_files = sorted([
@@ -59,24 +69,32 @@ def combine_and_minify_js(static_folder: Path) -> None:
         ])
     except FileNotFoundError:
         # static folder does not exist
-        return
+        return False
 
     if not js_files:
         # There are no .js files in the static folder
-        return
+        return False
 
-    with (static_folder / 'combined.min.js').open('w') as master:
-        for f in js_files:
-            with (static_folder / f).open('r') as js_file:
-                # combine all .js files into one
-                master.write(js_file.read())
+    # combine all .js files into one string
+    file_contents = []
+    for f in js_files:
+        with f.open('r') as js_file:
+            file_contents.append(js_file.read())
+    combined_str = '\n'.join(file_contents)
 
-    # minify should be done after combined to avoid duplicate identifiers
-    # minifying each file will use 'a' for the first identifier
-    with (static_folder / 'combined.min.js').open('r') as master:
-        combined = master.read()
-    with (static_folder / 'combined.min.js').open('w') as master:
-        master.write(jsmin(combined))
+    try:
+        with (static_folder / 'combined.min.js').open('r') as combined_file:
+            current_combined = combined_file.read()
+    except FileNotFoundError:
+        current_combined = ''
+
+    new_combined = jsmin(combined_str)
+    if new_combined == current_combined:
+        return False
+
+    with (static_folder / 'combined.min.js').open('w') as combined_file:
+        combined_file.write(new_combined)
+    return True
 
 
 def copy_file(source: Path, destination: Path) -> None:

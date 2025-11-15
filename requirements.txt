@@ -1,5 +1,5 @@
 beautifulsoup4==4.14.2
-click==8.3.0
+click==8.3.1
 csscompressor==0.9.5
 feedwerk==1.2.0
 Flask==3.1.2
@@ -8,3 +8,4 @@ Frozen-Flask==1.0.2
 htmlmin2==0.1.13
 jsmin==3.0.1
 Pygments==2.19.2
+watchdog==6.0.0

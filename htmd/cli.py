@@ -2,12 +2,17 @@ import datetime
 import importlib
 import itertools
 from pathlib import Path
+import signal
 import sys
+import threading
+import types
 import warnings
 
 import click
 from flask import Flask
 from flask_flatpages import FlatPages
+from watchdog.events import DirModifiedEvent, FileModifiedEvent, FileSystemEventHandler
+from watchdog.observers import Observer
 
 from .utils import (
     combine_and_minify_css,
@@ -156,15 +161,17 @@ def build(
     assert app.static_folder is not None
     static_path = Path(app.static_folder)
     if static_path.is_dir():
+        css_changed = None
         if css_minify:
             assert app.static_folder is not None
-            combine_and_minify_css(static_path)
+            css_changed = combine_and_minify_css(static_path)
 
+        js_changed = None
         if js_minify:
             assert app.static_folder is not None
-            combine_and_minify_js(static_path)
+            js_changed = combine_and_minify_js(static_path)
 
-        if css_minify or js_minify:
+        if css_changed or js_changed:
             # reload to set app.config['INCLUDE_CSS'] and app.config['INCLUDE_JS']
             # setting them here doesn't work
             importlib.reload(site)
@@ -181,6 +188,48 @@ def build(
     build_dir = app.config.get('FREEZER_DESTINATION')
     msg = f'Static site was created in {build_dir}'
     click.echo(click.style(msg, fg='green'))
+
+
+class StaticHandler(FileSystemEventHandler):
+    def __init__(self, static_directory: Path) -> None:
+        super().__init__()
+        self.static_directory = static_directory
+
+    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
+        if event.is_directory:
+            return
+        src_path = event.src_path
+        if isinstance(src_path, bytes):
+            src_path = src_path.decode('utf-8')
+        dst_css = 'combined.min.css'
+        dst_js = 'combined.min.js'
+        if dst_css in src_path or dst_js in src_path or '.swp' in src_path:
+            return
+
+        if src_path.endswith('.css') and combine_and_minify_css(self.static_directory):
+            click.echo(f'Changes in {src_path}. Recreating {dst_css}...')
+        elif src_path.endswith('.js') and combine_and_minify_js(self.static_directory):
+            click.echo(f'Changes in {src_path}. Recreating {dst_js}...')
+
+
+def watch_static(static_folder: str, exit_event: threading.Event) -> None:
+    static_directory = Path(static_folder)
+
+    event_handler = StaticHandler(static_directory)
+    observer = Observer()
+    observer.schedule(
+        event_handler,
+        path=str(static_directory),
+        recursive=True,
+    )
+    observer.start()
+
+    try:
+        while not exit_event.is_set():
+            observer.join(1)
+    finally:
+        observer.stop()
+        observer.join()
 
 
 @cli.command('preview', short_help='Serve files to preview site.')
@@ -223,31 +272,51 @@ def preview(
     # reload for tests to refresh app.static_folder
     # otherwise app.static_folder will be from another test
     importlib.reload(site)
-    app = site.app
 
+    css_changed = None
     if css_minify:
-        assert app.static_folder is not None
-        combine_and_minify_css(Path(app.static_folder))
+        assert site.app.static_folder is not None
+        css_changed = combine_and_minify_css(Path(site.app.static_folder))
 
+    js_changed = None
     if js_minify:
-        assert app.static_folder is not None
-        combine_and_minify_js(Path(app.static_folder))
+        assert site.app.static_folder is not None
+        js_changed = combine_and_minify_js(Path(site.app.static_folder))
+
+    if css_changed or js_changed:
+        importlib.reload(site)
 
     if drafts:
         site.preview_drafts()
 
+    stop_event = threading.Event()
+
+    def handle_sigterm(
+        _signum: int,
+        _frame: types.FrameType | None,
+    ) -> None:  # pragma: no cover
+        stop_event.set()
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
+    signal.signal(signal.SIGINT, handle_sigterm)
+
+    watch_thread = threading.Thread(
+        target=watch_static,
+        args=(site.app.static_folder, stop_event),
+    )
+    watch_thread.start()
+
     # Reload when posts change
     extra_files = itertools.chain(
-        app.config['FLATPAGES_ROOT'].iterdir(),
+        site.app.config['FLATPAGES_ROOT'].iterdir(),
     )
-    # reload when static files change
-    # Which causes the above combine_and_minify_*() to run
-    # and recreate combined.min.css/combined.min.js files
-    # because on reload the thread running flask will be re-created
-    assert app.static_folder is not None
-    if Path(app.static_folder).exists():
-        extra_files = itertools.chain(extra_files, Path(app.static_folder).iterdir())
-    app.run(debug=True, host=host, port=port, extra_files=extra_files)
+
+    try:
+        site.app.run(debug=True, host=host, port=port, extra_files=extra_files)
+    finally:
+        # After Flask has been stopped stop watchdog
+        stop_event.set()
 
 
 @cli.command('templates', short_help='Create any missing templates')

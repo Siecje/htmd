@@ -2,6 +2,7 @@
 
 ## [] - 
 ### Added
+- `htmd preview` will re-create combined.min.css and combined.min.js for new files
 
 ## [5.1.0] - 2024-02-09
 ### Added

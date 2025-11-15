@@ -6,9 +6,10 @@ import time
 from types import TracebackType
 
 from click.testing import CliRunner
-from htmd.cli import preview
+from htmd.cli import preview, StaticHandler
 import pytest
 import requests
+from watchdog.events import FileModifiedEvent
 
 from utils import set_example_to_draft, set_example_to_draft_build
 
@@ -137,7 +138,7 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
     'static',
     'foo',
 ])
-def test_preview_reload_css(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
+def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
     if static_dir != 'static':
         # Change static directory in config.toml
         config_path = Path('config.toml')
@@ -154,10 +155,6 @@ def test_preview_reload_css(run_start: CliRunner, static_dir: str) -> None:  # n
         # Ensure directory exists
         Path(static_dir).mkdir(exist_ok=True)
 
-        css_path = Path(static_dir) / 'style.css'
-        with css_path.open('w') as css_file:
-            css_file.write('')
-
     url = 'http://localhost:9090/static/combined.min.css'
     new_style = 'p {color: red;}'
     expected = new_style.replace(' ', '').replace(';', '')
@@ -167,93 +164,150 @@ def test_preview_reload_css(run_start: CliRunner, static_dir: str) -> None:  # n
         assert expected not in before
 
         css_path = Path(static_dir) / 'style.css'
-        with css_path.open('a') as css_file:
-            css_file.write('\n' + new_style + '\n')
+        # When static_dir != 'static' this will be a new file
+        if static_dir != 'static':
+            assert css_path.exists() is False
 
-        # Ensure new style is available after reload
+        with css_path.open('a') as css_file:
+            css_file.write('\n' + expected + '\n')
+
+        # Ensure new style is served
         read_timeout = False
         after = before
         max_attempts = 50_000
         attempts = 1
-        while after == before and attempts < max_attempts:
+
+        # CSS changes can be seen without stopping webserver
+        # Require two responses to be the same because
+        # response was missing the last few characters
+        # AssertionError: assert 'p{color:red}' in '\np{color:red'
+        previous_response = None
+        consecutive_same_responses = 0
+        same_response_goal = 2
+        while (
+            (before == after or consecutive_same_responses < same_response_goal)
+            and attempts < max_attempts
+        ):
             try:
                 response = requests.get(url, timeout=0.1)
             except (
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.ReadTimeout,
-            ):
-                # happens during restart
-                read_timeout = True
+            ):  # pragma: no cover
+                # Can happen when file is being replaced
+                # Verify webserver didn't restart
+                try:
+                    response = requests.get('http://localhost:9090', timeout=0.1)
+                except (
+                    requests.exceptions.ChunkedEncodingError,
+                    requests.exceptions.ConnectionError,
+                    requests.exceptions.ReadTimeout,
+                ):  # pragma: no cover
+                    read_timeout = True  # pragma: no cover
             else:
                 after = response.text
 
+                if previous_response == after:
+                    consecutive_same_responses += 1
+                else:
+                    consecutive_same_responses = 0
+                previous_response = after
             attempts += 1
 
-        assert read_timeout, 'Preview did not reload.'
-        assert before != after
-        assert expected in after
+    assert read_timeout is False, 'Preview did reload.'
+    assert before != after
+    assert expected in after
 
 
 @pytest.mark.parametrize('static_dir', [
     'static',
     'foo',
 ])
-def test_preview_reload_js(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
-    # Change static directory in config.toml
-    config_path = Path('config.toml')
-    with config_path.open('r') as config_file:
-        lines = config_file.readlines()
+def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
+    js_path = Path(static_dir) / 'script.js'
+    if static_dir != 'static':
+        # Change static directory in config.toml
+        config_path = Path('config.toml')
+        with config_path.open('r') as config_file:
+            lines = config_file.readlines()
 
-    with config_path.open('w') as config_file:
-        for line in lines:
-            if 'static = ' in line:
-                config_file.write(f'static = "{static_dir}"\n')
-            else:
-                config_file.write(line)
+        with config_path.open('w') as config_file:
+            for line in lines:
+                if 'static = ' in line:
+                    config_file.write(f'static = "{static_dir}"\n')
+                else:
+                    config_file.write(line)
 
-    # Ensure directory exists
-    Path(static_dir).mkdir(exist_ok=True)
+        # Ensure directory exists
+        Path(static_dir).mkdir(exist_ok=True)
+
+        # Create file to test modified files update
+        with js_path.open('w') as js_file:
+            js_file.write('document.getElementByTagName("div")')
 
     url = 'http://localhost:9090/static/combined.min.js'
-    new_js = 'document.getElementByTagName("body");'
-    expected = new_js
-    # Need to create before running preview since no .js files exist
-    js_path = Path(static_dir) / 'script.js'
-    with js_path.open('w') as js_file:
-        js_file.write('document.getElementByTagName("div");')
+    expected = 'document.getElementByTagName("body")'
 
     with run_preview():
         response = requests.get(url, timeout=0.01)
         before = response.text
         assert expected not in before
 
-        with js_path.open('w') as js_file:
-            js_file.write('\n' + new_js + '\n')
+        if static_dir != 'static':
+            assert js_path.exists()
 
-        # Ensure new script is available after reload
+        with js_path.open('w') as js_file:
+            js_file.write(expected)
+
+        # Ensure new script is served
         read_timeout = False
         after = before
         max_attempts = 50_000
         attempts = 1
-        while after == before and attempts < max_attempts:
+
+        # JS changes can be seen without stopping webserver
+        # Require two responses to be the same because
+        # response was missing the last few characters
+        # after == 'document.getElementByTagName("body"' # noqa: ERA001
+        previous_response = None
+        consecutive_same_responses = 0
+        same_response_goal = 2
+        while (
+            (before == after or consecutive_same_responses < same_response_goal)
+            and attempts < max_attempts
+        ):
             try:
                 response = requests.get(url, timeout=0.1)
             except (
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.ReadTimeout,
-            ):
-                # happens during restart
-                read_timeout = True
+            ):  # pragma: no cover
+                # Can happen when file is being replaced
+                # Verify webserver didn't restart
+                try:
+                    response = requests.get('http://localhost:9090', timeout=0.1)
+                except (
+                    requests.exceptions.ChunkedEncodingError,
+                    requests.exceptions.ConnectionError,
+                    requests.exceptions.ReadTimeout,
+                ):  # pragma: no cover
+                    read_timeout = True  # pragma: no cover
             else:
                 after = response.text
 
+                if previous_response == after:
+                    consecutive_same_responses += 1
+                else:
+                    consecutive_same_responses = 0
+                previous_response = after
+
             attempts += 1
 
-        assert read_timeout, 'Preview did not reload.'
-        assert before != after
-        assert expected in after
+    assert read_timeout is False, 'Preview did reload.'
+    assert before != after
+    assert expected in after
 
 
 @pytest.mark.parametrize('posts_dir', [
@@ -472,3 +526,59 @@ def test_preview_when_static_folder_does_not_exist(run_start: CliRunner) -> None
         assert static_path.exists() is False
         response = requests.get(url, timeout=0.01)
         assert response.status_code == success
+
+
+def test_preview_when_combined_js_exists(run_start: CliRunner) -> None:
+    combined_path = Path('static') / 'combined.min.js'
+
+    with combined_path.open('w') as combined_js_file:
+        combined_js_file.write('document.getElementByTagName("body");')
+
+    new_path = Path('static') / 'new.js'
+    new_js = 'console.log("new");'
+    with new_path.open('w') as new_js_file:
+        new_js_file.write(new_js)
+
+    # invoke_preview is only used for test coverage
+    invoke_preview(run_start)
+
+    url = 'http://localhost:9090/static/combined.min.js'
+    success = 200
+    with run_preview():
+        response = requests.get(url, timeout=0.01)
+        assert response.status_code == success
+        assert new_js in response.text
+
+    # invoke again will exit combine_and_minify_js() early
+    # since there is no change
+    # invoke_preview is only used for test coverage
+    invoke_preview(run_start)
+
+    url = 'http://localhost:9090/static/combined.min.js'
+    success = 200
+    with run_preview():
+        response = requests.get(url, timeout=0.01)
+        assert response.status_code == success
+        assert new_js in response.text
+
+
+def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
+    static_handler = StaticHandler(Path('static'))
+
+    # Add new file to combined.min.css
+    new_css = 'body { background-color: aqua;}'
+    new_css_path = Path('static') / 'new.css'
+    with new_css_path.open('w') as new_css_file:
+        new_css_file.write(new_css)
+
+    css_file_event = FileModifiedEvent(bytes(new_css_path), '', is_synthetic=True)
+    static_handler.on_modified(css_file_event)
+
+    new_js = 'document.getElementByTag("body")'
+    new_js_path = Path('static') / 'new.js'
+    with new_js_path.open('w') as new_js_file:
+        new_js_file.write(new_js)
+    js_file_event = FileModifiedEvent(str(new_js_path), '', is_synthetic=True)
+    static_handler.on_modified(js_file_event)
+    # Verify exit early when .js file event but no changes
+    static_handler.on_modified(js_file_event)
