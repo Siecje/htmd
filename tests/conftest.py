@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.fixture(scope='function')  # noqa: PT003
-def run_start() -> Generator[CliRunner, None, None]:
+def run_start() -> Generator[CliRunner]:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)

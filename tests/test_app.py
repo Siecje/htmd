@@ -11,7 +11,7 @@ from utils import set_example_to_draft
 
 
 @pytest.fixture(scope='module')
-def run_start() -> Generator[CliRunner, None, None]:
+def run_start() -> Generator[CliRunner]:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)

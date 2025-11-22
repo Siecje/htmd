@@ -37,7 +37,7 @@ def get_draft_uuid(path: str) -> str:
 
 
 @pytest.fixture(scope='module')
-def build_draft() -> Generator[CliRunner, None, None]:
+def build_draft() -> Generator[CliRunner]:
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(start)
