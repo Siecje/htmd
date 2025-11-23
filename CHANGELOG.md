@@ -1,16 +1,24 @@
 # Change log
 
-## [] - 
+## [5.2.0] - 
 ### Added
 - `htmd preview` will re-create combined.min.css and combined.min.js for new files
+- `htmd preview` will reload when posts are modified
+### Changed
+- Improve post template when there are no tags
+- Use flexbox for nav and footer
+### Fixed
+- Fix `htmd preview` when static directory is not the default
+### Removed
+- Dropped support for Python 3.11, 3.12
 
 ## [5.1.0] - 2024-02-09
 ### Added
 - `pip install htmd[dev]` to install development dependencies
 - Support Python 3.13 and 3.14
-- `htmd preview` will reload when posts are modified
+- Use default author when no author in post
 ### Fixed
-- Fix `htmd preview` when static directory is not the default
+- Fix post date format in _list.html template
 
 ## [5.0.0] - 2024-02-09
 ### Added
