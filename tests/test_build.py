@@ -30,6 +30,9 @@ def test_build_js_minify(run_start: CliRunner) -> None:
     result = run_start.invoke(build, ['--js-minify'])
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
+    with (Path('build') / 'index.html').open('r') as built_index:
+        contents = built_index.read()
+    assert 'combined.min.js' in contents
 
 
 def test_build_js_minify_no_js_files(run_start: CliRunner) -> None:

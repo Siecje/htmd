@@ -160,23 +160,13 @@ def build(
 
     assert app.static_folder is not None
     static_path = Path(app.static_folder)
-    if static_path.is_dir():
-        css_changed = None
-        if css_minify:
-            assert app.static_folder is not None
-            css_changed = combine_and_minify_css(static_path)
+    if css_minify and combine_and_minify_css(static_path):
+        app.config['INCLUDE_CSS'] = app.jinja_env.globals['INCLUDE_CSS'] = True
 
-        js_changed = None
-        if js_minify:
-            assert app.static_folder is not None
-            js_changed = combine_and_minify_js(static_path)
+    if js_minify and combine_and_minify_js(static_path):
+        app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
 
-        if css_changed or js_changed:
-            # reload to set app.config['INCLUDE_CSS'] and app.config['INCLUDE_JS']
-            # setting them here doesn't work
-            importlib.reload(site)
-
-    set_posts_datetime(site.app, site.posts)
+    set_posts_datetime(app, site.posts)
 
     freezer = site.freezer
     try:
@@ -272,19 +262,14 @@ def preview(
     # reload for tests to refresh app.static_folder
     # otherwise app.static_folder will be from another test
     importlib.reload(site)
+    app = site.app
 
-    css_changed = None
-    if css_minify:
-        assert site.app.static_folder is not None
-        css_changed = combine_and_minify_css(Path(site.app.static_folder))
+    assert site.app.static_folder is not None
+    if css_minify and combine_and_minify_css(Path(site.app.static_folder)):
+        app.config['INCLUDE_CSS'] = app.jinja_env.globals['INCLUDE_CSS'] = True
 
-    js_changed = None
-    if js_minify:
-        assert site.app.static_folder is not None
-        js_changed = combine_and_minify_js(Path(site.app.static_folder))
-
-    if css_changed or js_changed:
-        importlib.reload(site)
+    if js_minify and combine_and_minify_js(Path(site.app.static_folder)):
+        app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
 
     if drafts:
         site.preview_drafts()
@@ -303,17 +288,17 @@ def preview(
 
     watch_thread = threading.Thread(
         target=watch_static,
-        args=(site.app.static_folder, stop_event),
+        args=(app.static_folder, stop_event),
     )
     watch_thread.start()
 
     # Reload when posts change
     extra_files = itertools.chain(
-        site.app.config['FLATPAGES_ROOT'].iterdir(),
+        app.config['FLATPAGES_ROOT'].iterdir(),
     )
 
     try:
-        site.app.run(debug=True, host=host, port=port, extra_files=extra_files)
+        app.run(debug=True, host=host, port=port, extra_files=extra_files)
     finally:
         # After Flask has been stopped stop watchdog
         stop_event.set()
