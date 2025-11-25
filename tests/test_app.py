@@ -1,5 +1,4 @@
 from collections.abc import Generator
-import importlib
 
 from click.testing import CliRunner
 from flask import Flask
@@ -24,6 +23,7 @@ def run_start() -> Generator[CliRunner]:
 def flask_app(run_start: CliRunner) -> Flask:  # noqa: ARG001
     from htmd.site import app
     app.config.update({
+        'FLATPAGES_AUTO_RELOAD': True,
         'TESTING': True,
     })
     return app
@@ -65,7 +65,6 @@ def test_tag_does_not_exist(client: FlaskClient) -> None:
 
     set_example_to_draft()
     from htmd import site
-    importlib.reload(site)
     response = client.get('/tags/first/')
     assert response.status_code == not_found
     response = client.get('/author/Taylor/')
