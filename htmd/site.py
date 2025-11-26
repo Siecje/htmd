@@ -214,13 +214,13 @@ def feed() -> ResponseReturnValue:
     for post in published_posts:
         url = url_for(
             'post',
-            year=post.meta.get('published').strftime('%Y'),
-            month=post.meta.get('published').strftime('%m'),
-            day=post.meta.get('published').strftime('%d'),
+            year=post.meta['published'].strftime('%Y'),
+            month=post.meta['published'].strftime('%m'),
+            day=post.meta['published'].strftime('%d'),
             path=post.path,
         )
 
-        post_datetime = post.meta.get('updated') or post.meta.get('published')
+        post_datetime = post.meta.get('updated') or post.meta['published']
         atom.add(
             post.meta.get('title'),
             post.html,
@@ -350,7 +350,7 @@ def year_view(year: int) -> ResponseReturnValue:
     sorted_posts = sorted(
         year_posts,
         reverse=False,
-        key=lambda p: p.meta.get('published'),
+        key=lambda p: p.meta['published'],
     )
     return render_template('year.html', year=year_str, posts=sorted_posts)
 
@@ -358,15 +358,15 @@ def year_view(year: int) -> ResponseReturnValue:
 @app.route('/<year>/<month>/')
 def month_view(year: str, month: str) -> ResponseReturnValue:
     month_posts = [
-        p for p in published_posts if year == p.meta.get('published').strftime('%Y')
-        and month == p.meta.get('published').strftime('%m')
+        p for p in published_posts if year == p.meta['published'].strftime('%Y')
+        and month == p.meta['published'].strftime('%m')
     ]
     if not month_posts:
         abort(404)
     sorted_posts = sorted(
         month_posts,
         reverse=False,
-        key=lambda p: p.meta.get('published'),
+        key=lambda p: p.meta['published'],
     )
     month_string = MONTHS[month]
     return render_template(
@@ -380,9 +380,9 @@ def month_view(year: str, month: str) -> ResponseReturnValue:
 @app.route('/<year>/<month>/<day>/')
 def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
     day_posts = [
-        p for p in published_posts if year == p.meta.get('published').strftime('%Y')
-        and month == p.meta.get('published').strftime('%m')
-        and day == p.meta.get('published').strftime('%d')
+        p for p in published_posts if year == p.meta['published'].strftime('%Y')
+        and month == p.meta['published'].strftime('%m')
+        and day == p.meta['published'].strftime('%d')
     ]
     if not day_posts:
         abort(404)
@@ -406,7 +406,7 @@ def page_not_found(_e: Exception | int) -> ResponseReturnValue:
 def year_view() -> Iterator[dict]:  # noqa: F811
     for post in published_posts:
         yield {
-            'year': post.meta.get('published').year,
+            'year': post.meta['published'].year,
         }
 
 
@@ -414,8 +414,8 @@ def year_view() -> Iterator[dict]:  # noqa: F811
 def month_view() -> Iterator[dict]:  # noqa: F811
     for post in published_posts:
         yield {
-            'month': post.meta.get('published').strftime('%m'),
-            'year': post.meta.get('published').year,
+            'month': post.meta['published'].strftime('%m'),
+            'year': post.meta['published'].year,
         }
 
 
@@ -423,9 +423,9 @@ def month_view() -> Iterator[dict]:  # noqa: F811
 def day_view() -> Iterator[dict]:  # noqa: F811
     for post in published_posts:
         yield {
-            'day': post.meta.get('published').strftime('%d'),
-            'month': post.meta.get('published').strftime('%m'),
-            'year': post.meta.get('published').year,
+            'day': post.meta['published'].strftime('%d'),
+            'month': post.meta['published'].strftime('%m'),
+            'year': post.meta['published'].year,
         }
 
 
