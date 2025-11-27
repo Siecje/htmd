@@ -1,5 +1,4 @@
 import datetime
-import importlib
 import itertools
 from pathlib import Path
 import signal
@@ -14,6 +13,7 @@ from flask_flatpages import FlatPages
 from watchdog.events import DirModifiedEvent, FileModifiedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
+from . import site
 from .utils import (
     combine_and_minify_css,
     combine_and_minify_js,
@@ -62,14 +62,8 @@ def start(all_templates: bool) -> None:  # noqa: FBT001
 
 
 @cli.command('verify', short_help='Verify posts formatting is correct.')
-def verify() -> None:
-    # import is here to avoid looking for the config
-    # which doesn't exist until you run start
-    from . import site
-    # reload is needed for testing when the directory changes
-    # FlatPages has already been loaded so the pages do not reload
-    importlib.reload(site)
-    app = site.app
+def verify() -> Flask:
+    app = site.init_app()
 
     correct = True
     required_fields = ['title']
@@ -105,6 +99,7 @@ def verify() -> None:
 
     if not correct:
         sys.exit(1)
+    return app
 
 
 def set_posts_datetime(app: Flask, posts: FlatPages) -> None:
@@ -152,11 +147,8 @@ def build(
     css_minify: bool,  # noqa: FBT001
     js_minify: bool,  # noqa: FBT001
 ) -> None:
-    ctx.invoke(verify)
+    app = ctx.invoke(verify)
     # If verify fails sys.exit(1) will run
-
-    from . import site
-    app = site.app
 
     assert app.static_folder is not None
     static_path = Path(app.static_folder)
@@ -258,11 +250,7 @@ def preview(
     js_minify: bool,  # noqa: FBT001
     drafts: bool,  # noqa: FBT001
 ) -> None:
-    from . import site
-    # reload for tests to refresh app.static_folder
-    # otherwise app.static_folder will be from another test
-    importlib.reload(site)
-    app = site.app
+    app = site.init_app()
 
     assert site.app.static_folder is not None
     if css_minify and combine_and_minify_css(Path(site.app.static_folder)):

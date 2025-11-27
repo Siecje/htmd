@@ -195,6 +195,7 @@ def test_build_empty_directory() -> None:
 def test_build_without_static(run_start: CliRunner) -> None:
     path = Path('static')
     shutil.rmtree(path)
+    assert path.exists() is False
     result = run_start.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)

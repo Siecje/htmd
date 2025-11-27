@@ -7,6 +7,7 @@
 ### Changed
 - Improve post template when there are no tags
 - Use flexbox for nav and footer
+- Refactor Flask app and not require importlib.reload()
 ### Fixed
 - Fix `htmd preview` when static directory is not the default
 ### Removed

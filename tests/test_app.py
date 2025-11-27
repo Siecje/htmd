@@ -3,6 +3,7 @@ from collections.abc import Generator
 from click.testing import CliRunner
 from flask import Flask
 from flask.testing import FlaskClient
+from htmd import site
 from htmd.cli import start
 import pytest
 
@@ -21,7 +22,7 @@ def run_start() -> Generator[CliRunner]:
 
 @pytest.fixture
 def flask_app(run_start: CliRunner) -> Flask:  # noqa: ARG001
-    from htmd.site import app
+    app = site.init_app()
     app.config.update({
         'FLATPAGES_AUTO_RELOAD': True,
         'TESTING': True,
@@ -64,7 +65,6 @@ def test_tag_does_not_exist(client: FlaskClient) -> None:
     assert response.status_code == not_found
 
     set_example_to_draft()
-    from htmd import site
     response = client.get('/tags/first/')
     assert response.status_code == not_found
     response = client.get('/author/Taylor/')

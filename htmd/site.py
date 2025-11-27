@@ -20,6 +20,23 @@ from .utils import set_post_metadata, valid_uuid
 this_dir = Path(__file__).parent
 
 
+class Posts(FlatPages):
+    def __init__(self, app: Flask) -> None:
+        super().__init__(app)
+        self.show_drafts: bool = False
+        self.published_posts: list[Page] = []
+
+
+app = Flask(
+    __name__,
+    # default templates
+    template_folder=this_dir / 'example_site' / 'templates',
+)
+freezer = Freezer(app)
+pages = Blueprint('pages', __name__)
+posts = Posts(app)
+
+
 def get_project_dir() -> Path:
     current_directory = Path.cwd()
 
@@ -34,105 +51,108 @@ def get_project_dir() -> Path:
     return current_directory
 
 
-project_dir = get_project_dir()
+def init_app() -> Flask:
+    project_dir = get_project_dir()
+
+    try:
+        with (project_dir / 'config.toml').open('rb') as config_file:
+            htmd_config = tomllib.load(config_file)
+    except FileNotFoundError:
+        msg = 'Can not find config.toml'
+        sys.exit(msg)
+
+    # Flask configs are flat, config.toml is not
+    # Define the configuration keys and their default values
+    # 'Flask config': [section, key, default]
+    config_keys : dict[str, tuple[str, str, typing.Any]] = {
+        'SITE_NAME': ('site', 'name', ''),
+        'SITE_URL': ('site', 'url', ''),
+        'SITE_LOGO': ('site', 'logo', ''),
+        'SITE_DESCRIPTION': ('site', 'description', ''),
+        'SITE_TWITTER': ('site', 'twitter', ''),
+        'SITE_FACEBOOK': ('site', 'facebook', ''),
+        'FACEBOOK_APP_ID': ('site', 'facebook_app_id', ''),
+
+        'BUILD_FOLDER': ('folders', 'build', 'build'),
+        'PAGES_FOLDER': ('folders', 'pages', 'pages'),
+        'POSTS_FOLDER': ('folders', 'posts', 'posts'),
+        'STATIC_FOLDER': ('folders', 'static', 'static'),
+        'TEMPLATE_FOLDER': ('folders', 'templates', 'templates'),
+
+        'POSTS_EXTENSION': ('posts', 'extension', '.md'),
+
+        'PRETTY_HTML': ('html', 'pretty', False),
+        'MINIFY_HTML': ('html', 'minify', False),
+
+        'SHOW_AUTHOR': ('author', 'show', True),
+        'DEFAULT_AUTHOR': ('author', 'default_name', ''),
+        'DEFAULT_AUTHOR_TWITTER': ('author', 'default_twitter', ''),
+        'DEFAULT_AUTHOR_FACEBOOK': ('author', 'default_facebook', ''),
+    }
+    # Update app.config using the configuration keys
+    for flask_key, (table, key, default) in config_keys.items():
+        app.config[flask_key] = htmd_config.get(table, {}).get(key, default)
+    app.static_folder = project_dir / app.config['STATIC_FOLDER']
+    assert app.static_folder is not None
+    # To avoid full paths in config.toml
+    app.config['FLATPAGES_ROOT'] = (
+        project_dir / app.config['POSTS_FOLDER']
+    )
+    app.config['FREEZER_DESTINATION'] = (
+        project_dir / app.config['BUILD_FOLDER']
+    )
+    app.config['FREEZER_REMOVE_EXTRA_FILES'] = True
+    # Allow build to be version controlled
+    app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', '.hg*']
+    app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
+
+    if Path(app.static_folder).is_dir():
+        app.config['INCLUDE_CSS'] = (
+            Path(app.static_folder) / 'combined.min.css').exists()
+        app.config['INCLUDE_JS'] = (
+            Path(app.static_folder) / 'combined.min.js').exists()
+    else:
+        # During testing they can be True from a previous test
+        app.config['INCLUDE_CSS'] = False
+        app.config['INCLUDE_JS'] = False
+
+    # Without clearing the cache tests will use templates from the first test
+    # Even when the template folder and jinja_loader has changed
+    app.jinja_env.cache = {}
+
+    # Allow config settings (even new user created ones) to be used in templates
+    for key in app.config:
+        app.jinja_env.globals[key] = app.config[key]
+
+    pages.template_folder = project_dir / app.config['PAGES_FOLDER']
+
+    # Use templates in user set template folder
+    # but fallback to app.template_folder (example_site/templates/)
+    assert app.jinja_loader is not None
+    app.jinja_loader = ChoiceLoader([
+        FileSystemLoader(project_dir / app.config['TEMPLATE_FOLDER']),
+        # Setting pages.template_folder is not enough
+        FileSystemLoader(pages.template_folder),
+        app.jinja_loader,
+    ])
+
+    # Without .reload() posts are from first test
+    posts.reload()
+    posts.published_posts = [p for p in posts if not p.meta.get('draft', False)]
+    posts.show_drafts = False
+    freezer.init_app(app)
+
+    return app
 
 
-try:
-    with (project_dir / 'config.toml').open('rb') as config_file:
-        htmd_config = tomllib.load(config_file)
-except FileNotFoundError:
-    msg = 'Can not find config.toml'
-    sys.exit(msg)
-
-
-# Flask configs are flat, config.toml is not
-# Define the configuration keys and their default values
-# 'Flask config': [section, key, default]
-config_keys : dict[str, tuple[str, str, typing.Any]] = {
-    'SITE_NAME': ('site', 'name', ''),
-    'SITE_URL': ('site', 'url', ''),
-    'SITE_LOGO': ('site', 'logo', ''),
-    'SITE_DESCRIPTION': ('site', 'description', ''),
-    'SITE_TWITTER': ('site', 'twitter', ''),
-    'SITE_FACEBOOK': ('site', 'facebook', ''),
-    'FACEBOOK_APP_ID': ('site', 'facebook_app_id', ''),
-
-    'BUILD_FOLDER': ('folders', 'build', 'build'),
-    'PAGES_FOLDER': ('folders', 'pages', 'pages'),
-    'POSTS_FOLDER': ('folders', 'posts', 'posts'),
-    'STATIC_FOLDER': ('folders', 'static', 'static'),
-    'TEMPLATE_FOLDER': ('folders', 'templates', 'templates'),
-
-    'POSTS_EXTENSION': ('posts', 'extension', '.md'),
-
-    'PRETTY_HTML': ('html', 'pretty', False),
-    'MINIFY_HTML': ('html', 'minify', False),
-
-    'SHOW_AUTHOR': ('author', 'show', True),
-    'DEFAULT_AUTHOR': ('author', 'default_name', ''),
-    'DEFAULT_AUTHOR_TWITTER': ('author', 'default_twitter', ''),
-    'DEFAULT_AUTHOR_FACEBOOK': ('author', 'default_facebook', ''),
-}
-app = Flask(
-    __name__,
-    # default templates
-    template_folder=this_dir / 'example_site' / 'templates',
-)
-# Update app.config using the configuration keys
-for flask_key, (table, key, default) in config_keys.items():
-    app.config[flask_key] = htmd_config.get(table, {}).get(key, default)
-app.static_folder = project_dir / app.config['STATIC_FOLDER']
-assert app.static_folder is not None
-
-# To avoid full paths in config.toml
-app.config['FLATPAGES_ROOT'] = (
-    project_dir / app.config['POSTS_FOLDER']
-)
-app.config['FREEZER_DESTINATION'] = (
-    project_dir / app.config['BUILD_FOLDER']
-)
-app.config['FREEZER_REMOVE_EXTRA_FILES'] = True
-# Allow build to be version controlled
-app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', '.hg*']
-app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
-
-if Path(app.static_folder).is_dir():
-    app.config['INCLUDE_CSS'] = (Path(app.static_folder) / 'combined.min.css').exists()
-    app.config['INCLUDE_JS'] = (Path(app.static_folder) / 'combined.min.js').exists()
-
-
-posts = FlatPages(app)
-published_posts = [p for p in posts if not p.meta.get('draft', False)]
-freezer = Freezer(app)
-
-
-SHOW_DRAFTS = False
 def preview_drafts() -> None:
-    global published_posts, SHOW_DRAFTS  # noqa: PLW0603
-    SHOW_DRAFTS = True
-    published_posts = [p for p in posts if 'published' in p.meta]
-
-
-# Allow config settings (even new user created ones) to be used in templates
-for key in app.config:
-    app.jinja_env.globals[key] = app.config[key]
+    posts.show_drafts = True
+    posts.published_posts = [p for p in posts if 'published' in p.meta]
 
 
 def truncate_post_html(post_html: str) -> str:
     return BeautifulSoup(post_html[:255], 'html.parser').prettify()
-
-
 app.jinja_env.globals['truncate_post_html'] = truncate_post_html
-
-
-# Use templates in user set template folder
-# but fallback to app.template_folder (example_site/templates/)
-assert app.jinja_loader is not None
-app.jinja_loader = ChoiceLoader([
-    FileSystemLoader(project_dir / app.config['TEMPLATE_FOLDER']),
-    app.jinja_loader,
-])
-
 
 MONTHS = {
     '01': 'January',
@@ -148,13 +168,6 @@ MONTHS = {
     '11': 'November',
     '12': 'December',
 }
-
-
-pages = Blueprint(
-    'pages',
-    __name__,
-    template_folder=project_dir / app.config['PAGES_FOLDER'],
-)
 
 
 @app.after_request
@@ -174,15 +187,16 @@ def format_html(response: Response) -> ResponseReturnValue:
 def page(path: str) -> ResponseReturnValue:
     # ensure page is from pages directory
     # otherwise this will load any templates in the template folder
-    pages_folder = project_dir / app.config['PAGES_FOLDER']
-    if not pages_folder.is_dir():
+    pages_folder = pages.template_folder
+    if not isinstance(pages_folder, Path) or not pages_folder.is_dir():
         abort(404)
     for page_path in pages_folder.iterdir():
         if path == page_path.stem:
             break
     else:
         abort(404)
-    return render_template(path + '.html', active=path)
+    ret = render_template(path + '.html', active=path)
+    return ret
 
 
 app.register_blueprint(pages)
@@ -196,7 +210,11 @@ def pygments_css() -> ResponseReturnValue:
 
 @app.route('/')
 def index() -> ResponseReturnValue:
-    latest = sorted(published_posts, reverse=True, key=lambda p: p.meta['published'])
+    latest = sorted(
+        posts.published_posts,
+        reverse=True,
+        key=lambda p: p.meta['published'],
+    )
     return render_template('index.html', active='home', posts=latest[:4])
 
 
@@ -211,7 +229,7 @@ def feed() -> ResponseReturnValue:
         title=name,
         url=url,
     )
-    for post in published_posts:
+    for post in posts.published_posts:
         url = url_for(
             'post',
             year=post.meta['published'].strftime('%Y'),
@@ -235,13 +253,17 @@ def feed() -> ResponseReturnValue:
 
 @app.route('/all/')
 def all_posts() -> ResponseReturnValue:
-    latest = sorted(published_posts, reverse=True, key=lambda p: p.meta['published'])
+    latest = sorted(
+        posts.published_posts,
+        reverse=True,
+        key=lambda p: p.meta['published'],
+    )
     return render_template('all_posts.html', active='posts', posts=latest)
 
 
 def draft_and_not_shown(post: Page) -> bool:
     is_draft = 'draft' in post.meta
-    return is_draft and not SHOW_DRAFTS and 'build' not in str(post.meta['draft'])
+    return is_draft and not posts.show_drafts and 'build' not in str(post.meta['draft'])
 
 
 # If month and day are ints then Flask removes leading zeros
@@ -269,7 +291,7 @@ def draft(post_uuid: str) -> ResponseReturnValue:
 @app.route('/tags/')
 def all_tags() -> ResponseReturnValue:
     tag_counts: dict[str, int] = {}
-    for post in published_posts:
+    for post in posts.published_posts:
         for tag in post.meta.get('tags', []):
             if tag not in tag_counts:
                 tag_counts[tag] = 0
@@ -288,9 +310,9 @@ def tag(tag: str) -> ResponseReturnValue:
     tagged = [p for p in posts if tag in p.meta.get('tags', [])]
     if not tagged:
         abort(404)
-    if not SHOW_DRAFTS and no_posts_shown(tagged):
+    if not posts.show_drafts and no_posts_shown(tagged):
         abort(404)
-    if SHOW_DRAFTS:
+    if posts.show_drafts:
         tagged_published = tagged
     else:
         tagged_published = [p for p in tagged if 'draft' not in p.meta]
@@ -312,9 +334,9 @@ def author(author: str) -> ResponseReturnValue:
     if not posts_author:
         abort(404)
 
-    if not SHOW_DRAFTS and no_posts_shown(posts_author):
+    if not posts.show_drafts and no_posts_shown(posts_author):
         abort(404)
-    if SHOW_DRAFTS:
+    if posts.show_drafts:
         posts_author_published = posts_author
     else:
         posts_author_published = [p for p in posts_author if 'draft' not in p.meta]
@@ -343,7 +365,8 @@ def year_view(year: int) -> ResponseReturnValue:
     if len(year_str) != len('YYYY'):
         abort(404)
     year_posts = [
-        p for p in published_posts if year_str == p.meta['published'].strftime('%Y')
+        p for p in posts.published_posts
+        if year_str == p.meta['published'].strftime('%Y')
     ]
     if not year_posts:
         abort(404)
@@ -358,7 +381,7 @@ def year_view(year: int) -> ResponseReturnValue:
 @app.route('/<year>/<month>/')
 def month_view(year: str, month: str) -> ResponseReturnValue:
     month_posts = [
-        p for p in published_posts if year == p.meta['published'].strftime('%Y')
+        p for p in posts.published_posts if year == p.meta['published'].strftime('%Y')
         and month == p.meta['published'].strftime('%m')
     ]
     if not month_posts:
@@ -380,7 +403,7 @@ def month_view(year: str, month: str) -> ResponseReturnValue:
 @app.route('/<year>/<month>/<day>/')
 def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
     day_posts = [
-        p for p in published_posts if year == p.meta['published'].strftime('%Y')
+        p for p in posts.published_posts if year == p.meta['published'].strftime('%Y')
         and month == p.meta['published'].strftime('%m')
         and day == p.meta['published'].strftime('%d')
     ]
@@ -404,7 +427,7 @@ def page_not_found(_e: Exception | int) -> ResponseReturnValue:
 # Telling Frozen-Flask about routes that are not linked to in templates
 @freezer.register_generator  # type: ignore[no-redef]
 def year_view() -> Iterator[dict]:  # noqa: F811
-    for post in published_posts:
+    for post in posts.published_posts:
         yield {
             'year': post.meta['published'].year,
         }
@@ -412,7 +435,7 @@ def year_view() -> Iterator[dict]:  # noqa: F811
 
 @freezer.register_generator  # type: ignore[no-redef]
 def month_view() -> Iterator[dict]:  # noqa: F811
-    for post in published_posts:
+    for post in posts.published_posts:
         yield {
             'month': post.meta['published'].strftime('%m'),
             'year': post.meta['published'].year,
@@ -421,7 +444,7 @@ def month_view() -> Iterator[dict]:  # noqa: F811
 
 @freezer.register_generator  # type: ignore[no-redef]
 def day_view() -> Iterator[dict]:  # noqa: F811
-    for post in published_posts:
+    for post in posts.published_posts:
         yield {
             'day': post.meta['published'].strftime('%d'),
             'month': post.meta['published'].strftime('%m'),
@@ -446,8 +469,8 @@ def draft() -> Iterator[dict]:  # noqa: F811
 
 @freezer.register_generator  # type: ignore[no-redef]
 def page() -> Iterator[str]:  # noqa: F811
-    pages_folder = project_dir / app.config['PAGES_FOLDER']
-    if not pages_folder.is_dir():
+    pages_folder = pages.template_folder
+    if not isinstance(pages_folder, Path) or not pages_folder.is_dir():
         return
     for page in pages_folder.iterdir():
         # Need to create for pages.page
