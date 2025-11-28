@@ -8,6 +8,7 @@
 - Improve post template when there are no tags
 - Use flexbox for nav and footer
 - Refactor Flask app and not require importlib.reload()
+- Only include static files in build if they have a link
 ### Fixed
 - Fix `htmd preview` when static directory is not the default
 ### Removed

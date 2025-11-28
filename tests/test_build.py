@@ -54,6 +54,11 @@ def test_build_css_minify(run_start: CliRunner) -> None:
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
     assert 'combined.min.css' in contents
+    # combined.min.css is used instead of style.css
+    static_build_files = [
+        file.name for file in (Path('build') / 'static').iterdir()]
+    assert 'combined.min.css' in static_build_files
+    assert 'style.css' not in static_build_files
 
 
 def test_build_no_css_minify(run_start: CliRunner) -> None:

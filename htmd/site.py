@@ -32,7 +32,7 @@ app = Flask(
     # default templates
     template_folder=this_dir / 'example_site' / 'templates',
 )
-freezer = Freezer(app)
+freezer = Freezer(app, with_static_files=False)
 pages = Blueprint('pages', __name__)
 posts = Posts(app)
 
