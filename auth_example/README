@@ -1,0 +1,29 @@
+This is a rudimentary login example, which can work well in static site environments
+such as Github Pages. Note the limitations, being primarily a weakness to rainbow-table
+(brute force) password attacks. It is common knowledge that storing hashed passwords is
+only *slightly* better than storing plaintext passwords, and you should do neither!
+
+HOWEVER! This vulnerability is addressed formally by the concept of "password hash salting",
+which generates an algorithmic symbol, which reduces to a verifiable password, but is
+wholly non-reverse-engineerable to the original input, with or without rainbow tables.
+
+This example does not include such a function since, as a proof of concept, it does not
+require full functionality or max security features. But for non-financial, non-critical
+authentication (e.g. user account differentiation among trusting peers), it works fine.
+
+file: logins.json
+The included auth file is in JSON format, and has data for 2 functioning authentication
+pairs, listed here for testing purposes.
+
+1)
+user: cantelope
+pass: frontendRocks!
+
+2)
+user: foo
+pass: 1234
+
+only these two logins will work, producing a "success" status, vs "fail".
+
+To add or change users, one need only use the 'passhash' function which simply takes
+the MD5 hash of supplied user-name, concatenated with a password, as the auth hash.
