@@ -1,33 +1,9 @@
-from collections.abc import Generator
-
-from click.testing import CliRunner
 from flask import Flask
 from flask.testing import FlaskClient
 from htmd import site
-from htmd.cli import start
 import pytest
 
 from utils import set_example_to_draft
-
-
-@pytest.fixture(scope='module')
-def run_start() -> Generator[CliRunner]:
-    runner = CliRunner()
-    with runner.isolated_filesystem():
-        result = runner.invoke(start)
-        assert result.exit_code == 0
-        # Tests code is run here
-        yield runner
-
-
-@pytest.fixture
-def flask_app(run_start: CliRunner) -> Flask:  # noqa: ARG001
-    app = site.init_app()
-    app.config.update({
-        'FLATPAGES_AUTO_RELOAD': True,
-        'TESTING': True,
-    })
-    return app
 
 
 @pytest.fixture

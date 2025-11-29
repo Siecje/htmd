@@ -142,15 +142,16 @@ def set_post_metadata(
     found = False
     with file_path.open('w') as file:
         for line in lines:
-            if not found and field in line:
-                # Update datetime value
-                line = f'{field}: {value}\n'  # noqa: PLW2901
-                found = True
-            elif not found and '...' in line:
-                # Write field and value before '...'
+            if not found and field  + ':' in line:
                 file.write(f'{field}: {value}\n')
                 found = True
-            file.write(line)
+            elif not found and line == '...\n':
+                # Write field and value before '...'
+                file.write(f'{field}: {value}\n')
+                file.write(line)
+                found = True
+            else:
+                file.write(line)
 
 
 def valid_uuid(string: str) -> bool:

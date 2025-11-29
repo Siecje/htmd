@@ -11,6 +11,7 @@
 - Only include static files in build if they have a link
 ### Fixed
 - Fix `htmd preview` when static directory is not the default
+- Fix `set_post_metadata()` field check
 ### Removed
 - Dropped support for Python 3.11, 3.12
 
