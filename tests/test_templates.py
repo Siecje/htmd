@@ -28,4 +28,4 @@ def test_templates_without_folder() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(templates)
     assert result.exit_code == 1
-    assert result.output == expected_output
+    assert result.stderr == expected_output

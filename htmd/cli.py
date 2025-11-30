@@ -20,6 +20,7 @@ from .utils import (
     copy_missing_templates,
     copy_site_file,
     create_directory,
+    send_stderr,
     set_post_metadata,
 )
 
@@ -75,7 +76,7 @@ def verify() -> Flask:
             if field not in post.meta:
                 correct = False
                 msg = f'Post "{post.path}" does not have field {field}.'
-                click.echo(click.style(msg, fg='red'))
+                send_stderr(msg)
         if 'published' in post.meta:
             published = post.meta.get('published')
             if not hasattr(published, 'year'):
@@ -84,7 +85,7 @@ def verify() -> Flask:
                     f'Published date {published} for {post.path}'
                     ' is not in the format YYYY-MM-DD.'
                 )
-                click.echo(click.style(msg, fg='red'))
+                send_stderr(msg)
 
     if correct:
         msg = 'All posts are correctly formatted.'
@@ -164,7 +165,7 @@ def build(
     try:
         freezer.freeze()
     except ValueError as exc:
-        click.echo(click.style(str(exc), fg='red'))
+        send_stderr(str(exc))
         sys.exit(1)
 
     build_dir = app.config.get('FREEZER_DESTINATION')
@@ -297,5 +298,5 @@ def templates() -> None:
     try:
         copy_missing_templates()
     except FileNotFoundError:
-        click.echo(click.style('templates/ directory not found.', fg='red'))
+        send_stderr('templates/ directory not found.')
         sys.exit(1)

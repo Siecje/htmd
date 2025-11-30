@@ -161,3 +161,7 @@ def valid_uuid(string: str) -> bool:
         return False
     else:
         return True
+
+
+def send_stderr(message: str) -> None:
+    click.echo(click.style(message, fg='red'), err=True)

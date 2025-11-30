@@ -9,6 +9,7 @@
 - Use flexbox for nav and footer
 - Refactor Flask app and not require importlib.reload()
 - Only include static files in build if they have a link
+- Use stderr for errors and `htmd verify` validation
 ### Fixed
 - Fix `htmd preview` when static directory is not the default
 - Fix `set_post_metadata()` field check

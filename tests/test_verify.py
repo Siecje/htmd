@@ -20,7 +20,7 @@ def test_verify_author_missing(run_start: CliRunner) -> None:
     result = run_start.invoke(verify)
     assert result.exit_code == 1
     expected_output = 'Post "example" does not have field author.\n'
-    assert result.output == expected_output
+    assert result.stderr == expected_output
 
 
 def test_verify_title_missing(run_start: CliRunner) -> None:
@@ -30,7 +30,7 @@ def test_verify_title_missing(run_start: CliRunner) -> None:
     result = run_start.invoke(verify)
     assert result.exit_code == 1
     expected_output = 'Post "example" does not have field title.\n'
-    assert result.output == expected_output
+    assert result.stderr == expected_output
 
 
 def test_verify_published_missing(run_start: CliRunner) -> None:
