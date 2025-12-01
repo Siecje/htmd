@@ -1,5 +1,4 @@
 import datetime
-import itertools
 from pathlib import Path
 import signal
 import sys
@@ -10,7 +9,14 @@ import warnings
 import click
 from flask import Flask
 from flask_flatpages import FlatPages
-from watchdog.events import DirModifiedEvent, FileModifiedEvent, FileSystemEventHandler
+from watchdog.events import (
+    DirCreatedEvent,
+    DirModifiedEvent,
+    FileCreatedEvent,
+    FileModifiedEvent,
+    FileSystemEvent,
+    FileSystemEventHandler,
+)
 from watchdog.observers import Observer
 
 from . import site
@@ -195,16 +201,52 @@ class StaticHandler(FileSystemEventHandler):
             click.echo(f'Changes in {src_path}. Recreating {dst_js}...')
 
 
-def watch_static(static_folder: str, exit_event: threading.Event) -> None:
-    static_directory = Path(static_folder)
+class PostsCreatedHandler(FileSystemEventHandler):
+    def handle_event(self, event: FileSystemEvent, is_new_post: bool) -> None:  # noqa: FBT001
+        if event.is_directory:
+            return
+        src_path = event.src_path
+        if isinstance(src_path, bytes):
+            src_path = src_path.decode('utf-8')
+        if not src_path.endswith('.md'):
+            return
 
-    event_handler = StaticHandler(static_directory)
+        site.posts.reload()
+        site.posts.published_posts = [
+            p for p in site.posts if not p.meta.get('draft', False)
+        ]
+        action = 'created' if is_new_post else 'updated'
+        click.echo(f'Post {action} {src_path}.')
+
+    def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
+        self.handle_event(event, is_new_post=True)
+
+    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
+        self.handle_event(event, is_new_post=False)
+
+
+def watch_disk(
+    static_folder: str,
+    posts_path: Path,
+    exit_event: threading.Event,
+) -> None:
     observer = Observer()
+
+    static_directory = Path(static_folder)
+    static_handler = StaticHandler(static_directory)
     observer.schedule(
-        event_handler,
+        static_handler,
         path=str(static_directory),
         recursive=True,
     )
+
+    posts_handler = PostsCreatedHandler()
+    observer.schedule(
+        posts_handler,
+        path=str(posts_path),
+        recursive=True,
+    )
+
     observer.start()
 
     try:
@@ -276,18 +318,17 @@ def preview(
     signal.signal(signal.SIGINT, handle_sigterm)
 
     watch_thread = threading.Thread(
-        target=watch_static,
-        args=(app.static_folder, stop_event),
+        target=watch_disk,
+        args=(
+            app.static_folder,
+            app.config['FLATPAGES_ROOT'],
+            stop_event,
+        ),
     )
     watch_thread.start()
 
-    # Reload when posts change
-    extra_files = itertools.chain(
-        app.config['FLATPAGES_ROOT'].iterdir(),
-    )
-
     try:
-        app.run(debug=True, host=host, port=port, extra_files=extra_files)
+        app.run(debug=True, host=host, port=port)
     finally:
         # After Flask has been stopped stop watchdog
         stop_event.set()

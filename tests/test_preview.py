@@ -6,10 +6,10 @@ import time
 from types import TracebackType
 
 from click.testing import CliRunner
-from htmd.cli import preview, StaticHandler
+from htmd.cli import PostsCreatedHandler, preview, StaticHandler
 import pytest
 import requests
-from watchdog.events import FileModifiedEvent
+from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileModifiedEvent
 
 from utils import set_example_to_draft, set_example_to_draft_build
 
@@ -314,7 +314,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # n
     'posts',
     'bar',
 ])
-def test_preview_reload_when_posts_change(run_start: CliRunner, posts_dir: str) -> None:  # noqa: ARG001
+def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None:  # noqa: ARG001
     if posts_dir != 'posts':
         # Change static directory in config.toml
         config_path = Path('config.toml')
@@ -330,20 +330,21 @@ def test_preview_reload_when_posts_change(run_start: CliRunner, posts_dir: str) 
 
         # Ensure directory exists
         Path(posts_dir).mkdir(exist_ok=True)
-        # Move example post into new posts folder
-        shutil.copy(Path('posts') / 'example.md', Path(posts_dir))
 
     url = 'http://localhost:9090/'
-    expected = 'This is a new post.'
+    title = 'Test Title'
+    expected = 'This is the content.'
     with run_preview():
         response = requests.get(url, timeout=0.01)
         before = response.text
         assert expected not in before
+        assert title not in before
 
+        # file will be new when posts_dir != 'posts'
         post_path = Path(posts_dir) / 'example.md'
         with post_path.open('w') as post_file:
             post_file.write('---\n')
-            post_file.write('title: New\n')
+            post_file.write(f'title: {title}\n')
             post_file.write('published: 2025-11-05\n')
             post_file.write('...\n')
             post_file.write(f'{expected}\n')
@@ -360,7 +361,7 @@ def test_preview_reload_when_posts_change(run_start: CliRunner, posts_dir: str) 
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.ReadTimeout,
-            ):
+            ):  # pragma: no cover
                 # happens during restart
                 read_timeout = True
             else:
@@ -368,9 +369,10 @@ def test_preview_reload_when_posts_change(run_start: CliRunner, posts_dir: str) 
 
             attempts += 1
 
-        assert read_timeout, 'Preview did not reload.'
+        assert read_timeout is False, 'Preview did reload.'
         assert before != after
         assert expected in after
+        assert title in after
 
 
 @pytest.mark.parametrize('pages_dir', [
@@ -396,7 +398,7 @@ def test_preview_shows_pages_change_without_reload(
 
         # Ensure directory exists
         Path(pages_dir).mkdir(exist_ok=True)
-        # Move example post into new posts folder
+        # Move example page into new pages folder
         shutil.copy(Path('pages') / 'about.html', Path(pages_dir))
 
     url = 'http://localhost:9090/about/'
@@ -415,6 +417,54 @@ def test_preview_shows_pages_change_without_reload(
         assert expected not in before
 
         with page_path.open('w') as page_file:
+            page_file.write(contents)
+
+        # Ensure new sentence is available after change
+        read_timeout = False
+        after = before
+        max_attempts = 50_000
+        attempts = 1
+
+        # Since HTML changes can be seen without reloading
+        while before == after and attempts < max_attempts:
+            try:
+                response = requests.get(url, timeout=0.1)
+            except (
+                requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.ReadTimeout,
+            ):  # pragma: no cover
+                # happens during restart
+                read_timeout = True  # pragma: no cover
+            else:
+                after = response.text
+
+            attempts += 1
+
+        assert read_timeout is False, 'Preview did reload.'
+        assert before != after
+        assert expected in after
+
+
+def test_preview_shows_new_pages(run_start: CliRunner) -> None:  # noqa: ARG001
+    page_path = Path('pages') / 'about.html'
+    with page_path.open('r') as page_file:
+        contents = page_file.read()
+
+    new_path_path = Path('pages') / 'new.html'
+    expected = 'This is new.'
+    contents = contents.replace(
+        '</p>',
+        f' {expected}</p>',
+    )
+    url = 'http://localhost:9090/new/'
+    with run_preview():
+        response = requests.get(url, timeout=0.01)
+        before = response.text
+        assert response.status_code == 404  # noqa: PLR2004
+        assert expected not in before
+
+        with new_path_path.open('w') as page_file:
             page_file.write(contents)
 
         # Ensure new sentence is available after change
@@ -582,3 +632,19 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     static_handler.on_modified(js_file_event)
     # Verify exit early when .js file event but no changes
     static_handler.on_modified(js_file_event)
+
+
+def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
+    posts_handler = PostsCreatedHandler()
+
+    # Add non .md file
+    non_md_path = Path('posts') / 'not_markdown.txt'
+    with non_md_path.open('w') as non_md_file:
+        non_md_file.write('This is not markdown.')
+
+    new_file_event = FileCreatedEvent(bytes(non_md_path), '', is_synthetic=True)
+    posts_handler.on_created(new_file_event)
+
+    posts_path = Path('posts')
+    new_dir_event = DirCreatedEvent(bytes(posts_path), '', is_synthetic=True)
+    posts_handler.on_created(new_dir_event)
