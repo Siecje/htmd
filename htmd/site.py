@@ -51,7 +51,20 @@ def get_project_dir() -> Path:
     return current_directory
 
 
-def init_app() -> Flask:
+def reload_posts(show_drafts: bool | None = None) -> None: # noqa: FBT001
+    posts.reload()
+    if show_drafts is not None:
+        posts.show_drafts = show_drafts
+    if posts.show_drafts:
+        posts.published_posts = [p for p in posts if 'published' in p.meta]
+    else:
+        posts.published_posts = [
+            p for p in posts
+            if not p.meta.get('draft', False) and 'published' in p.meta
+        ]
+
+
+def init_app(show_drafts: bool = False) -> Flask: # noqa: FBT001,FBT002
     project_dir = get_project_dir()
 
     try:
@@ -137,17 +150,11 @@ def init_app() -> Flask:
     ])
 
     # Without .reload() posts are from first test
-    posts.reload()
-    posts.published_posts = [p for p in posts if not p.meta.get('draft', False)]
-    posts.show_drafts = False
+    reload_posts(show_drafts)
+
     freezer.init_app(app)
 
     return app
-
-
-def preview_drafts() -> None:
-    posts.show_drafts = True
-    posts.published_posts = [p for p in posts if 'published' in p.meta]
 
 
 def truncate_post_html(post_html: str) -> str:

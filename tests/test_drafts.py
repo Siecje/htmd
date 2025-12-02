@@ -115,6 +115,16 @@ def test_no_drafts_for_day(build_draft: CliRunner) -> None:  # noqa: ARG001
 
 
 def test_draft_without_published(run_start: CliRunner) -> None:
+    set_example_to_draft()
+    remove_fields_from_post('example', ('published', 'updated'))
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+    draft_path = Path('build') / 'draft' / 'example' / 'index.html'
+    assert not draft_path.is_file()
+
+
+def test_draft_build_and_without_published(run_start: CliRunner) -> None:
     set_example_to_draft_build()
     remove_fields_from_post('example', ('published', 'updated'))
     result = run_start.invoke(build)

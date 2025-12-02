@@ -211,10 +211,7 @@ class PostsCreatedHandler(FileSystemEventHandler):
         if not src_path.endswith('.md'):
             return
 
-        site.posts.reload()
-        site.posts.published_posts = [
-            p for p in site.posts if not p.meta.get('draft', False)
-        ]
+        site.reload_posts()
         action = 'created' if is_new_post else 'updated'
         click.echo(f'Post {action} {src_path}.')
 
@@ -293,7 +290,7 @@ def preview(
     js_minify: bool,  # noqa: FBT001
     drafts: bool,  # noqa: FBT001
 ) -> None:
-    app = site.init_app()
+    app = site.init_app(drafts)
 
     assert site.app.static_folder is not None
     if css_minify and combine_and_minify_css(Path(site.app.static_folder)):
@@ -301,9 +298,6 @@ def preview(
 
     if js_minify and combine_and_minify_js(Path(site.app.static_folder)):
         app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
-
-    if drafts:
-        site.preview_drafts()
 
     stop_event = threading.Event()
 
