@@ -165,3 +165,53 @@ def valid_uuid(string: str) -> bool:
 
 def send_stderr(message: str) -> None:
     click.echo(click.style(message, fg='red'), err=True)
+
+
+def validate_post(post: Page, required_fields: list[str]) -> bool: # noqa: C901
+    correct = True
+    for field in required_fields:
+        if field not in post.meta:
+            correct = False
+            msg = f'Post "{post.path}" does not have field {field}.'
+            send_stderr(msg)
+    if 'published' in post.meta:
+        published = post.meta.get('published')
+        if not hasattr(published, 'year'):
+            correct = False
+            msg = (
+                f'Published date {published} for {post.path}'
+                ' is not in the format YYYY-MM-DD.'
+            )
+            send_stderr(msg)
+    if 'updated' in post.meta:
+        updated = post.meta.get('updated')
+        if not hasattr(updated, 'year'):
+            correct = False
+            msg = (
+                f'Updated date {updated} for {post.path}'
+                ' is not in the format YYYY-MM-DD.'
+            )
+            send_stderr(msg)
+    if 'draft' in post.meta:
+        draft = post.meta['draft']
+        if draft in [True, False, 'build']:
+            pass
+        elif 'build|' in draft:
+            draft_id = draft.split('|')[1]
+            if not valid_uuid(draft_id):
+                correct = False
+                msg = (
+                    f'Draft field {draft} for {post.path}'
+                    ' has an invalid UUID4.'
+                )
+                send_stderr(msg)
+        else:
+            correct = False
+            msg = (
+                f'Draft field {draft} for {post.path}'
+                ' is not valid. It must be True, False,'
+                ' "build", or "build|<UUID4>".'
+            )
+            send_stderr(msg)
+
+    return correct

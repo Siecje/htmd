@@ -28,6 +28,7 @@ from .utils import (
     create_directory,
     send_stderr,
     set_post_metadata,
+    validate_post,
 )
 
 
@@ -78,20 +79,8 @@ def verify() -> Flask:
     if not app.config.get('DEFAULT_AUTHOR'):
         required_fields.append('author')
     for post in site.posts:
-        for field in required_fields:
-            if field not in post.meta:
-                correct = False
-                msg = f'Post "{post.path}" does not have field {field}.'
-                send_stderr(msg)
-        if 'published' in post.meta:
-            published = post.meta.get('published')
-            if not hasattr(published, 'year'):
-                correct = False
-                msg = (
-                    f'Published date {published} for {post.path}'
-                    ' is not in the format YYYY-MM-DD.'
-                )
-                send_stderr(msg)
+        if not validate_post(post, required_fields):
+            correct = False
 
     if correct:
         msg = 'All posts are correctly formatted.'
@@ -212,6 +201,9 @@ class PostsCreatedHandler(FileSystemEventHandler):
             return
 
         site.reload_posts()
+        for post in site.posts:
+            validate_post(post, [])
+
         action = 'created' if is_new_post else 'updated'
         click.echo(f'Post {action} {src_path}.')
 

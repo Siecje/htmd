@@ -3,7 +3,7 @@
 ## [5.2.0] - 
 ### Added
 - `htmd preview` will re-create combined.min.css and combined.min.js for new files
-- `htmd preview` will refresh posts when modified
+- `htmd preview` will refresh posts when modified and verify posts
 ### Changed
 - Improve post template when there are no tags
 - Use flexbox for nav and footer

@@ -56,11 +56,18 @@ def reload_posts(show_drafts: bool | None = None) -> None: # noqa: FBT001
     if show_drafts is not None:
         posts.show_drafts = show_drafts
     if posts.show_drafts:
-        posts.published_posts = [p for p in posts if 'published' in p.meta]
+        posts.published_posts = [
+            p for p in posts
+            if 'published' in p.meta and hasattr(p.meta['published'], 'year')
+        ]
     else:
         posts.published_posts = [
             p for p in posts
-            if not p.meta.get('draft', False) and 'published' in p.meta
+            if (
+                not p.meta.get('draft', False)
+                and 'published' in p.meta
+                and hasattr(p.meta['published'], 'year')
+            )
         ]
 
 
