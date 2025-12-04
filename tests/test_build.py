@@ -296,3 +296,7 @@ def test_build_with_default_author(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
+    post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
+    with post_path.open('r') as post_file:
+        contents = post_file.read()
+    assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents

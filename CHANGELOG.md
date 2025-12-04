@@ -13,6 +13,7 @@
 ### Fixed
 - Fix `htmd preview` when static directory is not the default
 - Fix `set_post_metadata()` field check
+- Fix published date in post.html template
 ### Removed
 - Dropped support for Python 3.11, 3.12
 
