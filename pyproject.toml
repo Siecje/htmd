@@ -92,5 +92,6 @@ htmd = [
   "example_site/pages/*.html",
   "example_site/posts/*.md",
   "example_site/static/*.css",
+  "example_site/static/favicon.svg",
   "example_site/templates/*.html",
 ]

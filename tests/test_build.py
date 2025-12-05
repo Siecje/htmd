@@ -300,3 +300,16 @@ def test_build_with_default_author(run_start: CliRunner) -> None:
     with post_path.open('r') as post_file:
         contents = post_file.read()
     assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
+
+
+def test_build_contains_favicon(run_start: CliRunner) -> None:
+    with (Path('static') / 'favicon.svg').open('r') as favicon_file:
+        original_contents = favicon_file.read()
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+    build_favicon = Path('build') / 'static' / 'favicon.svg'
+    assert build_favicon.is_file()
+    with build_favicon.open('r') as favicon_file:
+        contents = favicon_file.read()
+    assert contents == original_contents

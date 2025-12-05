@@ -12,6 +12,7 @@ def test_start() -> None:
         'static/ was created.\n'
         'static/_reset.css was created.\n'
         'static/style.css was created.\n'
+        'static/favicon.svg was created.\n'
         'pages/ was created.\n'
         'pages/about.html was created.\n'
         'posts/ was created.\n'
@@ -21,6 +22,32 @@ def test_start() -> None:
     )
     with runner.isolated_filesystem():
         result = runner.invoke(start)
+
+        expected_files = (
+            'config.toml',
+            'pages/about.html',
+            'posts/example.md',
+            'static/_reset.css',
+            'static/style.css',
+            'static/favicon.svg',
+            'templates/_layout.html',
+        )
+        expected_dirs = (
+            'pages',
+            'posts',
+            'static',
+            'templates',
+        )
+
+        for file in expected_files:
+            file_path = Path(file)
+            assert file_path.exists()
+            assert file_path.is_file()
+
+        for folder in expected_dirs:
+            dir_path = Path(folder)
+            assert dir_path.exists()
+
     assert result.exit_code == 0
     assert result.output == expected_output
 
@@ -44,6 +71,7 @@ def test_start_all_templates() -> None:
         'static/ was created.\n'
         'static/_reset.css was created.\n'
         'static/style.css was created.\n'
+        'static/favicon.svg was created.\n'
         'pages/ was created.\n'
         'pages/about.html was created.\n'
         'posts/ was created.\n'
@@ -53,6 +81,41 @@ def test_start_all_templates() -> None:
     )
     with runner.isolated_filesystem():
         result = runner.invoke(start, ['--all-templates'])
+        expected_files = (
+            'config.toml',
+            'pages/about.html',
+            'posts/example.md',
+            'static/_reset.css',
+            'static/style.css',
+            'static/favicon.svg',
+            'templates/404.html',
+            'templates/_layout.html',
+            'templates/_list.html',
+            'templates/all_posts.html',
+            'templates/all_tags.html',
+            'templates/author.html',
+            'templates/day.html',
+            'templates/index.html',
+            'templates/month.html',
+            'templates/post.html',
+            'templates/tag.html',
+            'templates/year.html',
+        )
+        expected_dirs = (
+            'pages',
+            'posts',
+            'static',
+            'templates',
+        )
+        for file in expected_files:
+            file_path = Path(file)
+            assert file_path.exists()
+            assert file_path.is_file()
+
+        for folder in expected_dirs:
+            dir_path = Path(folder)
+            assert dir_path.exists()
+
     assert result.exit_code == 0
     assert result.output == expected_output
 

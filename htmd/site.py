@@ -144,6 +144,9 @@ def init_app(show_drafts: bool = False) -> Flask: # noqa: FBT001,FBT002
     for key in app.config:
         app.jinja_env.globals[key] = app.config[key]
 
+    favicon_path = Path(app.static_folder) / 'favicon.svg'
+    app.jinja_env.globals['INCLUDE_DEFAULT_FAVICON'] = favicon_path.is_file()
+
     pages.template_folder = project_dir / app.config['PAGES_FOLDER']
 
     # Use templates in user set template folder

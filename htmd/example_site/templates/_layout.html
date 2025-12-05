@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>{% block title %}{% endblock title %} | {{ SITE_NAME }}</title>
+  {% block favicon %}
+    {% if INCLUDE_DEFAULT_FAVICON %}
+      <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" sizes="any" type="image/svg+xml">
+    {% endif %}
+  {% endblock favicon %}
   {% block meta_tags %}
     {% if SITE_NAME %}
       <meta property="og:site_name" content="{{ SITE_NAME }}">

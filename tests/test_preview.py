@@ -648,3 +648,16 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     posts_path = Path('posts')
     new_dir_event = DirCreatedEvent(bytes(posts_path), '', is_synthetic=True)
     posts_handler.on_created(new_dir_event)
+
+
+def test_favicon(run_start: CliRunner) -> None:  # noqa: ARG001
+    url = 'http://localhost:9090/static/favicon.svg'
+    success = 200
+    with run_preview():
+        response = requests.get(url, timeout=0.1)
+    assert response.status_code == success
+    assert response.headers['Content-Type'] == 'image/svg+xml; charset=utf-8'
+    assert len(response.content) > 0
+    with (Path('static') / 'favicon.svg').open('rb') as favicon_file:
+        svg_content = favicon_file.read()
+    assert response.content == svg_content

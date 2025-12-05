@@ -58,6 +58,7 @@ def start(all_templates: bool) -> None:  # noqa: FBT001
     dir_static = create_directory('static/')
     copy_site_file(dir_static, '_reset.css')
     copy_site_file(dir_static, 'style.css')
+    copy_site_file(dir_static, 'favicon.svg')
 
     dir_pages = create_directory('pages/')
     copy_site_file(dir_pages, 'about.html')
