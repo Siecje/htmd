@@ -2,6 +2,7 @@
 
 ```shell
 # Add changes to CHANGELOG.md
+# Update requirements.txt
 # Change version in pyproject.toml
 git add -u
 git commit -m "Version X"
@@ -19,4 +20,5 @@ venv/bin/python -m pip install twine
 venv/bin/twine check dist/*
 venv/bin/twine upload dist/*
 # Create new release in GitHub
+# Upload wheel and archive from dist/
 ```
