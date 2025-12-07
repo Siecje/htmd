@@ -1,5 +1,15 @@
 # Change log
 
+## [ ] -
+### Added
+
+### Changed
+
+### Fixed
+
+### Breaking
+
+
 ## [6.0.0] - 2025-12-06
 ### Added
 - `pip install htmd[dev]` to install development dependencies
