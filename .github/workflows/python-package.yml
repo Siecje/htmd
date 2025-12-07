@@ -3,7 +3,21 @@
 
 name: htmd
 
-on: [ push, pull_request ]
+on:
+  push:
+    paths:
+      - '.github/**'
+      - 'htmd/**'
+      - 'tests/**'
+      - 'typehints/**'
+      - pyproject.toml
+  pull_request:
+    paths:
+      - '.github/**'
+      - 'htmd/**'
+      - 'tests/**'
+      - 'typehints/**'
+      - pyproject.toml
 
 jobs:
   ruff:
