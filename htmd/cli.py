@@ -65,6 +65,8 @@ def start(all_templates: bool) -> None:  # noqa: FBT001
 
     dir_posts = create_directory('posts/')
     copy_site_file(dir_posts, 'example.md')
+    create_directory('posts/password-protect/')
+    Path('posts/password-protect/.keep').touch()
 
     copy_site_file(Path(), 'config.toml')
     click.echo('Add the site name and edit settings in config.toml')

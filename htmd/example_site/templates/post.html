@@ -1,6 +1,10 @@
 {% extends "_layout.html" %}
 
-{% block title %}{{ post.title }}{% endblock title %}
+{% block title %}
+  {% if not encrypted_title %}
+    {{ post.title }}
+  {% endif %}
+{% endblock title %}
 
 {% block meta_tags %}
   {{ super() }}
@@ -16,7 +20,9 @@
   {% if 'draft' not in post.meta %}
     <meta property="og:url" content="{{ url_for('post', year=post.meta['published'].year, month=post.meta['published'].strftime('%m'), day=post.meta['published'].strftime('%d'), path=post.path, _external=True) }}">
   {% endif %}
-  <meta property="og:title" content="{{ post.title }}">
+  {% if not encrypted_title %}
+    <meta property="og:title" content="{{ post.title }}">
+  {% endif %}
   <meta property="og:description" content="{{ post.description }}">
   {% if post.image or SITE_LOGO %}
     <meta property="og:image" content="{{ url_for('static', filename=post.image or SITE_LOGO, _external=True) }}">
@@ -35,7 +41,13 @@
 {% block content %}
   {# TODO: use post.image #}
   <article>
-    <h1>{{ post.title }}</h1>
+    <h1>
+      {% if encrypted_title %}
+        <span id="post-title"></span>
+      {% else %}
+        {{ post.title }}
+      {% endif %}
+    </h1>
     {% if post.subtitle %}
       <h2 class="subheading">{{ post.subtitle }}</h2>
     {% endif %}
@@ -44,7 +56,12 @@
           Posted by <a href="{{ url_for('author', author = post.author or DEFAULT_AUTHOR) }}">{{ post.author }}</a> on {% if post.published %}{{ post.published.strftime('%Y-%m-%d') }}{% endif %}
         </span>
     {% endif %}
-    {{ post.html|safe }}
+
+    {% if encrypted_content %}
+        <div id="post-content"></div>
+    {% else %}
+      {{ post.html|safe }}
+    {% endif %}
 
     <hr class="small">
     {% if post.tags %}
@@ -55,3 +72,18 @@
     {% endif %}
   </article>
 {% endblock content %}
+
+{% if encrypted_content %}
+  {% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='password-protect.js') }}"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async function() {
+        const cipherHTML = "{{ encrypted_content }}";
+        const cipherTitle = "{{ encrypted_title }}";
+        const password = prompt("Enter a value:");
+        await decryptPost(password, cipherHTML, cipherTitle);
+      });
+    </script>
+  {% endblock scripts %}
+{% endif %}

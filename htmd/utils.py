@@ -139,10 +139,29 @@ def set_post_metadata(
     with file_path.open('r') as file:
         lines = file.readlines()
 
+    # Format multi-line value
+    if value.count('\n') > 0:
+        value_lines = value.split('\n')
+        value_formatted = '|\n'
+        for line in value_lines:
+            value_formatted += '    ' + line + '\n'
+        value = value_formatted.rstrip()
+
+    # Write updated file
     found = False
     with file_path.open('w') as file:
-        for line in lines:
-            if not found and field  + ':' in line:
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if not found and line.startswith(f'{field}:'):
+                # Field already exists, check if it's a multi-line value
+                if line.strip().endswith('|'):
+                    # Multi-line value, skip lines for value
+                    j = i + 1
+                    while j < len(lines) and lines[j].startswith('    '):
+                        j += 1
+                    i = j - 1
+
                 file.write(f'{field}: {value}\n')
                 found = True
             elif not found and line == '...\n':
@@ -152,6 +171,8 @@ def set_post_metadata(
                 found = True
             else:
                 file.write(line)
+            i += 1
+
 
 
 def valid_uuid(string: str) -> bool:

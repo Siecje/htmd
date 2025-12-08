@@ -2,7 +2,7 @@
 
 ## [ ] -
 ### Added
-
+- Posts can now be password protected
 ### Changed
 
 ### Fixed

@@ -35,6 +35,21 @@ def set_example_draft_status(draft_status: str) -> None:
             post_file.write(line)
 
 
+def set_example_password_value(value: str) -> None:
+    remove_fields_from_post('example', ('password',))
+    post_path = Path('posts') / 'example.md'
+
+    with post_path.open('r') as post_file:
+        lines = post_file.readlines()
+
+    with post_path.open('w') as post_file:
+        for line in lines:
+            if line == '...\n':
+                password_line = f'password: {value}\n'
+                post_file.write(password_line)
+            post_file.write(line)
+
+
 def set_example_to_draft() -> None:
     set_example_draft_status('true')
 

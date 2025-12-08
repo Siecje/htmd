@@ -7,13 +7,22 @@ import uuid
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
-from flask import abort, Blueprint, Flask, render_template, Response, url_for
+from flask import (
+    abort,
+    Blueprint,
+    Flask,
+    render_template,
+    Response,
+    send_from_directory,
+    url_for,
+)
 from flask.typing import ResponseReturnValue
 from flask_flatpages import FlatPages, Page, pygments_style_defs
 from flask_frozen import Freezer
 from htmlmin import minify
 from jinja2 import ChoiceLoader, FileSystemLoader
 
+from .password_protect import encrypt_post
 from .utils import set_post_metadata, valid_uuid
 
 
@@ -225,6 +234,14 @@ def pygments_css() -> ResponseReturnValue:
     return pygments_style_defs('tango'), 200, {'Content-Type': 'text/css'}
 
 
+@app.route('/static/password-protect.js')
+def static_password_protect() -> ResponseReturnValue:
+    return send_from_directory(
+        this_dir / 'example_site' / 'static',
+        'password-protect.js',
+    )
+
+
 @app.route('/')
 def index() -> ResponseReturnValue:
     latest = sorted(
@@ -283,6 +300,22 @@ def draft_and_not_shown(post: Page) -> bool:
     return is_draft and not posts.show_drafts and 'build' not in str(post.meta['draft'])
 
 
+def render_password_protected_post(post: Page) -> ResponseReturnValue:
+    password, encrypted_content, encrypted_title = encrypt_post(
+        post.html,
+        post.meta['title'],
+        post.meta['password'],
+    )
+    if password != post.meta['password']:
+        set_post_metadata(app, post, 'password', password)
+    return render_template(
+        'post.html',
+        post=post,
+        encrypted_content=encrypted_content,
+        encrypted_title=encrypted_title,
+    )
+
+
 # If month and day are ints then Flask removes leading zeros
 @app.route('/<year>/<month>/<day>/<path:path>/')
 def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
@@ -294,15 +327,21 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     date_str = f'{year}-{month}-{day}'
     if post.meta.get('published').strftime('%Y-%m-%d') != date_str:
         abort(404)
+    if 'password' in post.meta and post.meta['password'] is not False:
+        return render_password_protected_post(post)
     return render_template('post.html', post=post)
 
 
-@app.route('/draft/<post_uuid>/')  # noqa: RET503
+@app.route('/draft/<post_uuid>/')
 def draft(post_uuid: str) -> ResponseReturnValue:
     for post in posts:
         if str(post.meta.get('draft', '')).replace('build|', '') == post_uuid:
-            return render_template('post.html', post=post)
-    abort(404)
+            break
+    else:
+        abort(404)
+    if 'password' in post.meta and post.meta['password'] is not False:
+        return render_password_protected_post(post)
+    return render_template('post.html', post=post)
 
 
 @app.route('/tags/')

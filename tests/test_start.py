@@ -17,6 +17,7 @@ def test_start() -> None:
         'pages/about.html was created.\n'
         'posts/ was created.\n'
         'posts/example.md was created.\n'
+        'posts/password-protect/ was created.\n'
         'config.toml was created.\n'
         'Add the site name and edit settings in config.toml\n'
     )
@@ -76,6 +77,7 @@ def test_start_all_templates() -> None:
         'pages/about.html was created.\n'
         'posts/ was created.\n'
         'posts/example.md was created.\n'
+        'posts/password-protect/ was created.\n'
         'config.toml was created.\n'
         'Add the site name and edit settings in config.toml\n'
     )
