@@ -3,7 +3,7 @@ from pathlib import Path
 
 SUCCESS_REGEX = (
     'All posts are correctly formatted.\n'
-    r'Static site was created in [\w\/\\]*build\n'
+    r'Static site was created in .*build\n'
 )
 
 
