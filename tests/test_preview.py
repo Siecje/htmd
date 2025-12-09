@@ -46,7 +46,23 @@ class run_preview:  # noqa: N801
         cmd = [sys.executable, '-m', 'htmd', 'preview']
         if self.args:
             cmd += self.args
-        self.task = subprocess.Popen(cmd)  # noqa: S603
+        # Create a Popen object with stdout and stderr set to subprocess.PIPE
+        self.task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Read and print the output and error messages in real-time
+        def read_output(pipe, label):
+            for line in iter(pipe.readline, b''):
+                print(f"{label}: {line.decode('utf-8').strip()}")
+
+        # Create threads to read from stdout and stderr
+        import threading
+        stdout_thread = threading.Thread(target=read_output, args=(self.task.stdout, "Output"))
+        stderr_thread = threading.Thread(target=read_output, args=(self.task.stderr, "Error"))
+
+        # Start the threads
+        stdout_thread.start()
+        stderr_thread.start()
+
         count = 0
         while count < self.max_tries:  # pragma: no branch
             try:
