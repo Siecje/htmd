@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -46,14 +47,22 @@ class run_preview:  # noqa: N801
         cmd = [sys.executable, '-m', 'htmd', 'preview']
         if self.args:
             cmd += self.args
+
         self.task = subprocess.Popen(cmd)  # noqa: S603
-        count = 0
-        while count < self.max_tries:  # pragma: no branch
+
+        if (
+            'GITHUB_ACTIONS' in os.environ
+            and os.environ.get('RUNNER_OS') == 'macOS'
+        ):  # pragma: no cover
+            wait_time = 5
+        else:  # pragma: no cover
+            wait_time = 1
+
+        for _ in range(self.max_tries):  # pragma: no branch
             try:
                 requests.get(BASE_URL, timeout=1)
             except requests.exceptions.ConnectionError:
-                count += 1
-                time.sleep(0.1)
+                time.sleep(wait_time)
             else:
                 break
         return BASE_URL
@@ -65,6 +74,11 @@ class run_preview:  # noqa: N801
         traceback: TracebackType | None,
     ) -> None:
         self.task.terminate()
+        try:
+            self.task.wait(5)
+        except subprocess.TimeoutExpired:  # pragma: no cover
+            if self.task.poll() is None:
+                self.task.kill()
 
 
 def test_preview(run_start: CliRunner) -> None:  # noqa: ARG001
