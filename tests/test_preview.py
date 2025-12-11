@@ -81,11 +81,17 @@ def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
         (200, 'http://localhost:9090/static/combined.min.css'),
         (200, 'http://localhost:9090/static/combined.min.js'),
     )
+    # Create the only JavaScript file
     js_path = Path('static') / 'scripts.js'
     with js_path.open('w') as js_file:
         js_file.write('document.getElementsByTagName("body");')
 
+    combined_js_path = Path('static') / 'combined.min.js'
+    assert not combined_js_path.exists()
+
+    # When preview starts combined.min.js should be created
     with run_preview(args):
+        assert combined_js_path.exists()
         for status, url in urls:
             response = requests.get(url, timeout=0.1)
             assert response.status_code == status
