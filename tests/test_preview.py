@@ -14,6 +14,9 @@ from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileModifiedEvent
 from utils import set_example_to_draft, set_example_to_draft_build
 
 
+BASE_URL = 'http://localhost:9090'
+
+
 def invoke_preview(run_start: CliRunner, args: list[str] | None = None) -> None:
     """
     run_start.invoke(preview) fails but it is used to track test coverage.
@@ -39,21 +42,21 @@ class run_preview:  # noqa: N801
         self.args = args
         self.max_tries = max_tries
 
-    def __enter__(self: 'run_preview') -> None:
+    def __enter__(self: 'run_preview') -> str:
         cmd = [sys.executable, '-m', 'htmd', 'preview']
         if self.args:
             cmd += self.args
         self.task = subprocess.Popen(cmd)  # noqa: S603
-        url = 'http://localhost:9090/'
         count = 0
         while count < self.max_tries:  # pragma: no branch
             try:
-                requests.get(url, timeout=1)
+                requests.get(BASE_URL, timeout=1)
             except requests.exceptions.ConnectionError:
                 count += 1
                 time.sleep(0.1)
             else:
                 break
+        return BASE_URL
 
     def __exit__(
         self: 'run_preview',
@@ -65,12 +68,11 @@ class run_preview:  # noqa: N801
 
 
 def test_preview(run_start: CliRunner) -> None:  # noqa: ARG001
-    url = 'http://localhost:9090/'
     with pytest.raises(requests.exceptions.ConnectionError):
-        requests.get(url, timeout=1)
+        requests.get(BASE_URL, timeout=1)
     success = 200
     with run_preview():
-        response = requests.get(url, timeout=1)
+        response = requests.get(BASE_URL, timeout=1)
         assert response.status_code == success
 
 
@@ -78,8 +80,8 @@ def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
     args = ['--css-minify', '--js-minify']
     invoke_preview(run_start, args)
     urls = (
-        (200, 'http://localhost:9090/static/combined.min.css'),
-        (200, 'http://localhost:9090/static/combined.min.js'),
+        (200, '/static/combined.min.css'),
+        (200, '/static/combined.min.js'),
     )
     # Create the only JavaScript file
     js_path = Path('static') / 'scripts.js'
@@ -90,10 +92,10 @@ def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
     assert not combined_js_path.exists()
 
     # When preview starts combined.min.js should be created
-    with run_preview(args):
+    with run_preview(args) as base_url:
         assert combined_js_path.exists()
         for status, url in urls:
-            response = requests.get(url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
 
 
@@ -101,16 +103,16 @@ def test_preview_no_css_minify(run_start: CliRunner) -> None:
     args = ['--no-css-minify', '--js-minify']
     invoke_preview(run_start, args)
     urls = (
-        (404, 'http://localhost:9090/static/combined.min.css'),
-        (200, 'http://localhost:9090/static/combined.min.js'),
+        (404, '/static/combined.min.css'),
+        (200, '/static/combined.min.js'),
     )
     js_path = Path('static') / 'scripts.js'
     with js_path.open('w') as js_file:
         js_file.write('document.getElementsByTagName("body");')
 
-    with run_preview(args):
+    with run_preview(args) as base_url:
         for status, url in urls:
-            response = requests.get(url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
 
 
@@ -118,12 +120,12 @@ def test_preview_css_minify_no_js_minify(run_start: CliRunner) -> None:
     args = ['--css-minify', '--no-js-minify']
     invoke_preview(run_start, args)
     urls = (
-        (200, 'http://localhost:9090/static/combined.min.css'),
-        (404, 'http://localhost:9090/static/combined.min.js'),
+        (200, '/static/combined.min.css'),
+        (404, '/static/combined.min.js'),
     )
-    with run_preview(args):
+    with run_preview(args) as base_url:
         for status, url in urls:
-            response = requests.get(url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
 
 
@@ -131,12 +133,12 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
     args = ['--no-css-minify', '--no-js-minify']
     invoke_preview(run_start, args)
     urls = (
-        (404, 'http://localhost:9090/static/combined.min.css'),
-        (404, 'http://localhost:9090/static/combined.min.js'),
+        (404, '/static/combined.min.css'),
+        (404, '/static/combined.min.js'),
     )
-    with run_preview(args):
+    with run_preview(args) as base_url:
         for status, url in urls:
-            response = requests.get(url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
 
 
@@ -161,11 +163,11 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # 
         # Ensure directory exists
         Path(static_dir).mkdir(exist_ok=True)
 
-    url = 'http://localhost:9090/static/combined.min.css'
+    url = '/static/combined.min.css'
     new_style = 'p {color: red;}'
     expected = new_style.replace(' ', '').replace(';', '')
-    with run_preview():
-        response = requests.get(url, timeout=1)
+    with run_preview() as base_url:
+        response = requests.get(base_url + url, timeout=1)
         before = response.text
         assert expected not in before
 
@@ -195,7 +197,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # 
             and attempts < max_attempts
         ):
             try:
-                response = requests.get(url, timeout=1)
+                response = requests.get(base_url + url, timeout=1)
             except (
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
@@ -204,7 +206,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # 
                 # Can happen when file is being replaced
                 # Verify webserver didn't restart
                 try:
-                    response = requests.get('http://localhost:9090', timeout=1)
+                    response = requests.get(base_url, timeout=1)
                 except (
                     requests.exceptions.ChunkedEncodingError,
                     requests.exceptions.ConnectionError,
@@ -252,11 +254,11 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # n
         with js_path.open('w') as js_file:
             js_file.write('document.getElementByTagName("div")')
 
-    url = 'http://localhost:9090/static/combined.min.js'
+    url = '/static/combined.min.js'
     expected = 'document.getElementByTagName("body")'
 
-    with run_preview():
-        response = requests.get(url, timeout=1)
+    with run_preview() as base_url:
+        response = requests.get(base_url + url, timeout=1)
         before = response.text
         assert expected not in before
 
@@ -284,7 +286,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # n
             and attempts < max_attempts
         ):
             try:
-                response = requests.get(url, timeout=1)
+                response = requests.get(base_url + url, timeout=1)
             except (
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
@@ -293,7 +295,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # n
                 # Can happen when file is being replaced
                 # Verify webserver didn't restart
                 try:
-                    response = requests.get('http://localhost:9090', timeout=1)
+                    response = requests.get(base_url, timeout=1)
                 except (
                     requests.exceptions.ChunkedEncodingError,
                     requests.exceptions.ConnectionError,
@@ -337,11 +339,10 @@ def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None
         # Ensure directory exists
         Path(posts_dir).mkdir(exist_ok=True)
 
-    url = 'http://localhost:9090/'
     title = 'Test Title'
     expected = 'This is the content.'
-    with run_preview():
-        response = requests.get(url, timeout=1)
+    with run_preview() as base_url:
+        response = requests.get(base_url, timeout=1)
         before = response.text
         assert expected not in before
         assert title not in before
@@ -362,7 +363,7 @@ def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None
         attempts = 1
         while after == before and attempts < max_attempts:
             try:
-                response = requests.get(url, timeout=1)
+                response = requests.get(base_url, timeout=1)
             except (
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
@@ -407,7 +408,7 @@ def test_preview_shows_pages_change_without_reload(
         # Move example page into new pages folder
         shutil.copy(Path('pages') / 'about.html', Path(pages_dir))
 
-    url = 'http://localhost:9090/about/'
+    url = '/about/'
     expected = 'This is new.'
     page_path = Path(pages_dir) / 'about.html'
     with page_path.open('r') as page_file:
@@ -417,8 +418,8 @@ def test_preview_shows_pages_change_without_reload(
         '</p>',
         f' {expected}</p>',
     )
-    with run_preview():
-        response = requests.get(url, timeout=1)
+    with run_preview() as base_url:
+        response = requests.get(base_url + url, timeout=1)
         before = response.text
         assert expected not in before
 
@@ -434,7 +435,7 @@ def test_preview_shows_pages_change_without_reload(
         # Since HTML changes can be seen without reloading
         while before == after and attempts < max_attempts:
             try:
-                response = requests.get(url, timeout=1)
+                response = requests.get(base_url + url, timeout=1)
             except (
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
@@ -463,9 +464,9 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:  # noqa: ARG001
         '</p>',
         f' {expected}</p>',
     )
-    url = 'http://localhost:9090/new/'
-    with run_preview():
-        response = requests.get(url, timeout=1)
+    url = '/new/'
+    with run_preview() as base_url:
+        response = requests.get(base_url + url, timeout=1)
         before = response.text
         assert response.status_code == 404  # noqa: PLR2004
         assert expected not in before
@@ -482,7 +483,7 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:  # noqa: ARG001
         # Since HTML changes can be seen without reloading
         while before == after and attempts < max_attempts:
             try:
-                response = requests.get(url, timeout=1)
+                response = requests.get(base_url + url, timeout=1)
             except (
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
@@ -519,24 +520,24 @@ def test_preview_drafts(run_start: CliRunner) -> None:
         '/all/',
     )
     # drafts should not appear
-    with run_preview():
+    with run_preview() as base_url:
         for status, url in urls:
-            response = requests.get('http://localhost:9090' + url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
 
         for url in not_in:
-            response = requests.get('http://localhost:9090' + url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == success
             assert 'Example Post' not in response.text
 
     # drafts should appear
-    with run_preview(args):
+    with run_preview(args) as base_url:
         for _status, url in urls:
-            response = requests.get('http://localhost:9090' + url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == success
 
         for url in not_in:
-            response = requests.get('http://localhost:9090' + url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == success
             assert 'Example Post' in response.text
 
@@ -553,13 +554,13 @@ def test_preview_drafts(run_start: CliRunner) -> None:
         '/',
         '/all/',
     )
-    with run_preview():
+    with run_preview() as base_url:
         for status, url in urls:
-            response = requests.get('http://localhost:9090' + url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
 
         for url in not_in:
-            response = requests.get('http://localhost:9090' + url, timeout=1)
+            response = requests.get(base_url + url, timeout=1)
             assert response.status_code == success
             assert 'Example Post' not in response.text
 
@@ -576,11 +577,10 @@ def test_preview_when_static_folder_does_not_exist(run_start: CliRunner) -> None
     # invoke_preview is only used for test coverage
     invoke_preview(run_start)
 
-    url = 'http://localhost:9090/'
     success = 200
-    with run_preview():
+    with run_preview() as base_url:
         assert static_path.exists() is False
-        response = requests.get(url, timeout=1)
+        response = requests.get(base_url, timeout=1)
         assert response.status_code == success
 
 
@@ -598,10 +598,10 @@ def test_preview_when_combined_js_exists(run_start: CliRunner) -> None:
     # invoke_preview is only used for test coverage
     invoke_preview(run_start)
 
-    url = 'http://localhost:9090/static/combined.min.js'
+    url = '/static/combined.min.js'
     success = 200
-    with run_preview():
-        response = requests.get(url, timeout=1)
+    with run_preview() as base_url:
+        response = requests.get(base_url + url, timeout=1)
         assert response.status_code == success
         assert new_js in response.text
 
@@ -610,10 +610,10 @@ def test_preview_when_combined_js_exists(run_start: CliRunner) -> None:
     # invoke_preview is only used for test coverage
     invoke_preview(run_start)
 
-    url = 'http://localhost:9090/static/combined.min.js'
+    url = '/static/combined.min.js'
     success = 200
-    with run_preview():
-        response = requests.get(url, timeout=1)
+    with run_preview() as base_url:
+        response = requests.get(base_url + url, timeout=1)
         assert response.status_code == success
         assert new_js in response.text
 
@@ -657,10 +657,10 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
 
 
 def test_favicon(run_start: CliRunner) -> None:  # noqa: ARG001
-    url = 'http://localhost:9090/static/favicon.svg'
+    url = '/static/favicon.svg'
     success = 200
-    with run_preview():
-        response = requests.get(url, timeout=1)
+    with run_preview() as base_url:
+        response = requests.get(base_url + url, timeout=1)
     assert response.status_code == success
     assert response.headers['Content-Type'] == 'image/svg+xml; charset=utf-8'
     assert len(response.content) > 0
