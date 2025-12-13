@@ -86,8 +86,8 @@ class run_preview:  # noqa: N801
         traceback: TracebackType | None,
     ) -> None:
         self.task.terminate()
-        try:
-            self.task.wait()
+        try: # pragma: no cover
+            self.task.wait(5)
         except Exception as e:
             # Handle any exceptions that occur while waiting for the process to finish
             print(f"Error waiting for process to finish: {e}")
