@@ -44,9 +44,17 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools
         python -m pip install .[dev]
+    - name: Determine wait time
+        id: wait_time
+        run: |
+          if [ "${GITHUB_ACTIONS}" = "true" ] && [ "${RUNNER_OS}" = "macos" ]; then
+            echo "WAIT_TIME=5"
+          else
+            echo "WAIT_TIME=1"
+          fi
     - name: Tests
       env:
-        WAIT_TIME: ${{ (GITHUB_ACTIONS && RUNNER_OS == 'macos') ? 5 : 1 }}
+        WAIT_TIME: ${{ steps.wait_time.outputs.WAIT_TIME }}
       run: |
         coverage run --branch -m pytest -x
         coverage html --omit='/tmp/*'
