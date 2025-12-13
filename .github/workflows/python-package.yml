@@ -47,8 +47,8 @@ jobs:
     - name: Tests
       run: |
         coverage run --branch -m pytest -x
-        coverage html --omit='/tmp/*' --omit='/private/*'
-        coverage report --omit='/tmp/*' --omit='/private/*' --fail-under=100
+        coverage html
+        coverage report --fail-under=100
     - name: Archive code coverage results
       if: ${{ failure() }}
       uses: actions/upload-artifact@v4
