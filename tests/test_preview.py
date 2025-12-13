@@ -86,15 +86,15 @@ class run_preview:  # noqa: N801
         traceback: TracebackType | None,
     ) -> None:
         self.task.terminate()
-        try: # pragma: no cover
+        try:
             self.task.wait(5)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             # Handle any exceptions that occur while waiting for the process to finish
             print(f"Error waiting for process to finish: {e}")
         finally:
             # Ensure that the process is terminated, even if an exception occurs
             if self.task.poll() is None:
-                self.task.kill()
+                self.task.kill()  # pragma: no cover
 
 
 def test_preview(run_start: CliRunner) -> None:  # noqa: ARG001
