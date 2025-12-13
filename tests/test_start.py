@@ -50,6 +50,7 @@ def test_start() -> None:
             assert dir_path.exists()
 
     assert result.exit_code == 0
+    print(result.output)
     assert result.output == expected_output
 
 
