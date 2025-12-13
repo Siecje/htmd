@@ -64,7 +64,10 @@ class run_preview:  # noqa: N801
         stdout_thread.start()
         stderr_thread.start()
 
-        wait_time = int(os.environ.get('WAIT_TIME', '1'))
+        wait_time = 1
+        if os.environ.get('GITHUB_ACTIONS', False) and os.environ.get('RUNNER_OS') == 'macOS': # pragma: no cover
+            wait_time = 5
+
         count = 0
         while count < self.max_tries:  # pragma: no branch
             try:
