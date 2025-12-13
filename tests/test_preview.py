@@ -14,7 +14,7 @@ from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileModifiedEvent
 from utils import set_example_to_draft, set_example_to_draft_build
 
 
-BASE_URL = 'http://localhost:9090'
+BASE_URL = 'http://[::1]:9090'
 
 
 def invoke_preview(run_start: CliRunner, args: list[str] | None = None) -> None:

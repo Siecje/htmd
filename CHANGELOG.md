@@ -4,7 +4,7 @@
 ### Added
 - Posts can now be password protected
 ### Changed
-
+- Run `html preview` on `::1` instead of `127.0.0.1` by default
 ### Fixed
 
 ### Breaking

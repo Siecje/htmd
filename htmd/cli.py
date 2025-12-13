@@ -253,7 +253,7 @@ def watch_disk(
 @click.pass_context
 @click.option(
     '--host', '-h',
-    default='127.0.0.1',
+    default='::1',
     help='Location to access the files.',
 )
 @click.option(
