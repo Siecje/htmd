@@ -69,7 +69,7 @@ class run_preview:  # noqa: N801
                 requests.get(BASE_URL, timeout=1)
             except requests.exceptions.ConnectionError:
                 count += 1
-                time.sleep(0.1)
+                time.sleep(10)
             else:
                 break
         return BASE_URL

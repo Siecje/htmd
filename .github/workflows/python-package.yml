@@ -46,8 +46,6 @@ jobs:
         python -m pip install .[dev]
     - name: Tests
       run: |
-        ifconfig -a
-        route -n -6
         coverage run --branch -m pytest -x
         coverage html --omit='/tmp/*'
         coverage report --omit='/tmp/*' --fail-under=100
