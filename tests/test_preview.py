@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -63,13 +64,14 @@ class run_preview:  # noqa: N801
         stdout_thread.start()
         stderr_thread.start()
 
+        wait_time = int(os.environ.get('WAIT_TIME', '1'))
         count = 0
         while count < self.max_tries:  # pragma: no branch
             try:
                 requests.get(BASE_URL, timeout=1)
             except requests.exceptions.ConnectionError:
                 count += 1
-                time.sleep(10)
+                time.sleep(wait_time)
             else:
                 break
         return BASE_URL

@@ -45,6 +45,8 @@ jobs:
         python -m pip install --upgrade pip setuptools
         python -m pip install .[dev]
     - name: Tests
+      env:
+        WAIT_TIME: ${{ (GITHUB_ACTIONS && RUNNER_OS == 'macos') ? 5 : 1 }}
       run: |
         coverage run --branch -m pytest -x
         coverage html --omit='/tmp/*'
