@@ -104,6 +104,6 @@ venv/bin/python -m pytest .
 
 ```shell
 venv/bin/coverage run --branch -m pytest .
-venv/bin/coverage html --omit='/private/*'
+venv/bin/coverage html
 open htmlcov/index.html
 ```

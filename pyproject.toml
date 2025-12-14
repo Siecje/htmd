@@ -57,6 +57,12 @@ Homepage = "https://github.com/siecje/htmd"
 Issues = "https://github.com/siecje/htmd/issues"
 Repository = "https://github.com/siecje/htmd.git"
 
+[tool.coverage.run]
+omit = [
+  "/tmp/*",
+  "/private/*",
+]
+
 [tool.ruff]
 src = [".", "tests"]
 
