@@ -29,7 +29,7 @@ Pages are other webpages on the site, for example the About page.
 ## How do I edit the layout of the site?
 
 Edit the `templates/_layout.html` file that was created when running `htmd start`.
-This a [Jinja 2](http://jinja.pocoo.org/docs/dev/templates/#template-inheritance) template that all other pages will use by default.
+This a [Jinja](https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance) template that all other pages will use by default.
 You can add a link to CSS files that you have created in `static/`.
 To change other pages you will need to override the page template by creating a file with the same name in the `templates/` folder.
 The complete list of templates can be found [here](https://github.com/Siecje/htmd/tree/main/htmd/example_site/templates).
