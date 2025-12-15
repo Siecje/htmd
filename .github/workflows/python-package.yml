@@ -46,7 +46,7 @@ jobs:
         python -m pip install .[dev]
     - name: Tests
       run: |
-        coverage run --branch -m pytest
+        coverage run -m pytest
         coverage html
         coverage report --fail-under=100
     - name: Archive code coverage results

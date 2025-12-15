@@ -85,7 +85,7 @@ venv/bin/python -m mypy .
 ### Running ruff
 
 ```shell
-venv/bin/python -m ruff check --exclude typehints
+venv/bin/python -m ruff check
 ```
 
 
@@ -103,7 +103,7 @@ venv/bin/python -m pytest .
 #### Running the tests with coverage.py
 
 ```shell
-venv/bin/coverage run --branch -m pytest .
+venv/bin/coverage run -m pytest .
 venv/bin/coverage html
 open htmlcov/index.html
 ```
