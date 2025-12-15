@@ -73,9 +73,9 @@
   </article>
 {% endblock content %}
 
-{% if encrypted_content %}
-  {% block scripts %}
-    {{ super() }}
+{% block scripts %}
+  {{ super() }}
+  {% if encrypted_content %}
     <script src="{{ url_for('static', filename='password-protect.js') }}"></script>
     <script>
       document.addEventListener("DOMContentLoaded", async function() {
@@ -85,5 +85,5 @@
         await decryptPost(password, cipherHTML, cipherTitle);
       });
     </script>
-  {% endblock scripts %}
-{% endif %}
+  {% endif %}
+{% endblock scripts %}

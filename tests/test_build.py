@@ -448,6 +448,7 @@ def test_build_draft_password_false(run_start: CliRunner) -> None:
     assert title in contents
     body = 'This is the post'
     assert body in contents
+    assert 'password-protect.js' not in contents
 
     with (Path('posts') / 'example.md').open('r') as md_file:
         md_str = md_file.read()
