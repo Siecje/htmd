@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -43,7 +42,7 @@ class run_preview:  # noqa: N801
     def __init__(
         self: 'run_preview',
         args: list[str] | None = None,
-        max_tries: int = 10,
+        max_tries: int = 10_000,
     ) -> None:
         self.args = args
         self.max_tries = max_tries
@@ -55,19 +54,11 @@ class run_preview:  # noqa: N801
 
         self.task = subprocess.Popen(cmd)  # noqa: S603
 
-        if (
-            'GITHUB_ACTIONS' in os.environ
-            and os.environ.get('RUNNER_OS') == 'macOS'
-        ):  # pragma: no cover
-            wait_time = 5
-        else:  # pragma: no cover
-            wait_time = 1
-
         for _ in range(self.max_tries):  # pragma: no branch
             try:
-                requests.get(BASE_URL, timeout=1)
+                requests.head(BASE_URL, timeout=1)
             except requests.exceptions.ConnectionError:
-                time.sleep(wait_time)
+                continue
             else:
                 break
         return BASE_URL
@@ -715,33 +706,40 @@ def test_sse(run_start: CliRunner) -> None:  # noqa: ARG001
         with requests.get(
             url,
             stream=True,
-            timeout=10,
+            timeout=30,
         ) as response:
             for line in response.iter_lines():  # pragma: no branch
                 if line:
                     data = line.decode('utf-8')
                     changes.append(data)
+                    start_event.clear()
                     if len(changes) >= 2:  # noqa: PLR2004
                         break
 
         end_event.set()
 
+    changes: list[str] = []
+    started = threading.Event()
+    ended = threading.Event()
     with run_preview() as base_url:
         response = requests.get(base_url, timeout=1)
         assert expected_js in response.text
 
-        changes: list[str] = []
-        started = threading.Event()
-        ended = threading.Event()
         thread = threading.Thread(
             target=in_thread,
             args=(started, ended, base_url + '/changes', changes),
         )
         thread.start()
 
-        started.wait(timeout=5)
+        started.wait(timeout=10)
+
         # Trigger two events
         set_example_contents('Different1.')
+        start_time = int(time.time())
+        wait_s = 10
+        while started.is_set() and (int(time.time()) - start_time) < wait_s:
+            time.sleep(0.1)
+
         set_example_contents('Different2.')
-        ended.wait(timeout=5)
-        assert changes == ['data: refresh', 'data: refresh']
+        ended.wait(timeout=10)
+    assert changes == ['data: refresh', 'data: refresh']
