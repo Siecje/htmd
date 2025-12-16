@@ -337,7 +337,7 @@ def preview(
         stop_event.set()
 
 
-@cli.command('templates', short_help='Create any missing templates')
+@cli.command('templates', short_help='Create any missing templates.')
 def templates() -> None:
     try:
         copy_missing_templates()

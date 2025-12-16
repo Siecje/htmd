@@ -3,6 +3,28 @@
 htmd allows you to write Markdown and use templates to create a static website.
 Yes it is another static site generator.
 
+## Getting Started
+
+```shell
+pip install htmd
+```
+
+`htmd --help`
+```shell
+Usage: htmd [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --version  Show the version and exit.
+  --help     Show this message and exit.
+
+Commands:
+  build      Create static version of the site.
+  preview    Serve files to preview site.
+  start      Create example files to get started.
+  templates  Create any missing templates.
+  verify     Verify posts formatting is correct.
+```
+
 ## Why another static site generator?
 
 I admit I didn't try them [all](https://staticsitegenerators.net/).
@@ -43,20 +65,23 @@ For example, if the draft metadata is `draft: build|f47d4d98-9d66-448a-9e08-7b5c
 
 To view the site as if all drafts were published run `htmd preview --drafts`. 
 
-## Getting Started
+## How do I password protect a post?
 
-```shell
-pip install htmd
-```
+A post will be password protected if `password:` exists in the post metadata.
 
-```shell
-Commands:
-  start      Create example files to get started.
-  verify     Verify posts formatting is correct.
-  build      Create static version of the site.
-  preview    Serve files to preview site.
-  templates  Create any missing templates
-```
+On `htmd build` a password will be added as the value of the `password` metadata field.
+
+If publishing to a public repo the page contents and password should not be visible.
+Password protected posts can go into the `posts/password-protect/` directory
+which can be ignored by source control.
+
+When you open a password protect post in the browser there will be a password prompt
+if the correct password is entered you can read the post.
+
+## Since there is no backend server how are the contents hidden?
+
+The page contents are encrypted in the JavaScript of the HTML document.
+Only if the correct private key is provided will the contents be shown.
 
 ## Development
 
@@ -87,7 +112,6 @@ venv/bin/python -m mypy .
 ```shell
 venv/bin/python -m ruff check
 ```
-
 
 ### Running the tests
 
