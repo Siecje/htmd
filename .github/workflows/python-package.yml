@@ -27,7 +27,7 @@ jobs:
       - uses: chartboost/ruff-action@v1
         with:
           src: "./htmd ./tests"
-  build:
+  unit-test:
     strategy:
       fail-fast: false
       matrix:
