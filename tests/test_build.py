@@ -454,3 +454,21 @@ def test_build_draft_password_false(run_start: CliRunner) -> None:
         md_str = md_file.read()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     assert data['password'] is False
+
+
+def test_build_doesnt_have_sse(run_start: CliRunner) -> None:
+    sse_js_line = 'sse.onmessage'
+    layout_path = Path('templates') / '_layout.html'
+    with layout_path.open('r') as layout_file:
+        contents = layout_file.read()
+    assert sse_js_line in contents
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+    post_path = Path('build') / 'index.html'
+    with post_path.open('r') as post_file:
+        contents = post_file.read()
+
+    assert sse_js_line not in contents

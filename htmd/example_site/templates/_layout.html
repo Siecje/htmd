@@ -66,6 +66,16 @@
     {% if INCLUDE_JS %}
       <script src="{{ url_for('static', filename='combined.min.js') }}"></script>
     {% endif %}
+    {% if PREVIEW %}
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const sse = new EventSource('/changes');
+          sse.onmessage = (event) => {
+            location.reload();
+          }
+        });
+      </script>
+    {% endif %}
   {% endblock scripts %}
 </body>
 </html>

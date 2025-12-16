@@ -1,3 +1,6 @@
+import threading
+import time
+
 from flask import Flask
 from flask.testing import FlaskClient
 from htmd import site
@@ -53,3 +56,56 @@ def test_tag_does_not_exist(client: FlaskClient) -> None:
     assert response.status_code == found
     response = client.get('/author/Taylor/')
     assert response.status_code == found
+
+
+def test_changes_view(client: FlaskClient) -> None:
+    response = client.get('/changes')
+    assert response.status_code == 200  # noqa: PLR2004
+    assert response.mimetype == 'text/event-stream'
+
+
+def test_changes_view_event_stream(flask_app: Flask) -> None:
+    def in_thread(
+        start_event: threading.Event,
+        end_event: threading.Event,
+        url: str,
+        changes: list[bytes],
+        client: FlaskClient,
+    ) -> None:
+        start_event.set()
+        with client:
+            response = client.get(url)
+            for data in response.response:  # pragma: no branch
+                assert isinstance(data, bytes)
+                changes.append(data)
+                if len(changes) >= 2:  # noqa: PLR2004
+                    break
+        end_event.set()
+
+    changes: list[bytes] = []
+    client = flask_app.test_client()
+    # Set the refresh event
+    refresh_event = threading.Event()
+    flask_app.config['refresh_event'] = refresh_event
+
+    started = threading.Event()
+    ended = threading.Event()
+    thread = threading.Thread(
+        target=in_thread,
+        args=(started, ended, '/changes', changes, client),
+    )
+    thread.start()
+    started.wait(5)
+
+    # trigger two events
+    refresh_event.set()
+    while refresh_event.is_set():
+        time.sleep(0.1)
+    refresh_event.set()
+
+    ended.wait(timeout=5)
+    expected = [
+        b'data: refresh\n\n',
+        b'data: refresh\n\n',
+    ]
+    assert changes == expected

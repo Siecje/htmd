@@ -172,9 +172,10 @@ def build(
 
 
 class StaticHandler(FileSystemEventHandler):
-    def __init__(self, static_directory: Path) -> None:
+    def __init__(self, static_directory: Path, event: threading.Event) -> None:
         super().__init__()
         self.static_directory = static_directory
+        self.event = event
 
     def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
         if event.is_directory:
@@ -188,12 +189,18 @@ class StaticHandler(FileSystemEventHandler):
             return
 
         if src_path.endswith('.css') and combine_and_minify_css(self.static_directory):
+            self.event.set()
             click.echo(f'Changes in {src_path}. Recreating {dst_css}...')
         elif src_path.endswith('.js') and combine_and_minify_js(self.static_directory):
+            self.event.set()
             click.echo(f'Changes in {src_path}. Recreating {dst_js}...')
 
 
 class PostsCreatedHandler(FileSystemEventHandler):
+    def __init__(self, event: threading.Event) -> None:
+        super().__init__()
+        self.event = event
+
     def handle_event(self, event: FileSystemEvent, is_new_post: bool) -> None:  # noqa: FBT001
         if event.is_directory:
             return
@@ -206,6 +213,8 @@ class PostsCreatedHandler(FileSystemEventHandler):
         site.reload_posts()
         for post in site.posts:
             validate_post(post, [])
+
+        self.event.set()
 
         action = 'created' if is_new_post else 'updated'
         click.echo(f'Post {action} {src_path}.')
@@ -221,18 +230,19 @@ def watch_disk(
     static_folder: str,
     posts_path: Path,
     exit_event: threading.Event,
+    refresh_event: threading.Event,
 ) -> None:
     observer = Observer()
 
     static_directory = Path(static_folder)
-    static_handler = StaticHandler(static_directory)
+    static_handler = StaticHandler(static_directory, refresh_event)
     observer.schedule(
         static_handler,
         path=str(static_directory),
         recursive=True,
     )
 
-    posts_handler = PostsCreatedHandler()
+    posts_handler = PostsCreatedHandler(refresh_event)
     observer.schedule(
         posts_handler,
         path=str(posts_path),
@@ -306,16 +316,20 @@ def preview(
     signal.signal(signal.SIGTERM, handle_sigterm)
     signal.signal(signal.SIGINT, handle_sigterm)
 
+    refresh_event = threading.Event()
+    app.config['refresh_event'] = refresh_event
     watch_thread = threading.Thread(
         target=watch_disk,
         args=(
             app.static_folder,
             app.config['FLATPAGES_ROOT'],
             stop_event,
+            refresh_event,
         ),
     )
     watch_thread.start()
 
+    app.jinja_env.globals['PREVIEW'] = True
     try:
         app.run(debug=True, host=host, port=port)
     finally:

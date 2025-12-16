@@ -3,6 +3,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from types import TracebackType
 
@@ -12,7 +13,11 @@ import pytest
 import requests
 from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileModifiedEvent
 
-from utils import set_example_to_draft, set_example_to_draft_build
+from utils import (
+    set_example_contents,
+    set_example_to_draft,
+    set_example_to_draft_build,
+)
 
 
 BASE_URL = 'http://[::1]:9090'
@@ -633,7 +638,8 @@ def test_preview_when_combined_js_exists(run_start: CliRunner) -> None:
 
 
 def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
-    static_handler = StaticHandler(Path('static'))
+    event = threading.Event()
+    static_handler = StaticHandler(Path('static'), event)
 
     # Add new file to combined.min.css
     new_css = 'body { background-color: aqua;}'
@@ -643,6 +649,8 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
 
     css_file_event = FileModifiedEvent(bytes(new_css_path), '', is_synthetic=True)
     static_handler.on_modified(css_file_event)
+    assert event.is_set()
+    event.clear()
 
     new_js = 'document.getElementByTag("body")'
     new_js_path = Path('static') / 'new.js'
@@ -650,12 +658,16 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
         new_js_file.write(new_js)
     js_file_event = FileModifiedEvent(str(new_js_path), '', is_synthetic=True)
     static_handler.on_modified(js_file_event)
+    assert event.is_set()
+    event.clear()
     # Verify exit early when .js file event but no changes
     static_handler.on_modified(js_file_event)
+    assert not event.is_set()
 
 
 def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
-    posts_handler = PostsCreatedHandler()
+    event = threading.Event()
+    posts_handler = PostsCreatedHandler(event)
 
     # Add non .md file
     non_md_path = Path('posts') / 'not_markdown.txt'
@@ -664,10 +676,12 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
 
     new_file_event = FileCreatedEvent(bytes(non_md_path), '', is_synthetic=True)
     posts_handler.on_created(new_file_event)
+    assert not event.is_set()
 
     posts_path = Path('posts')
     new_dir_event = DirCreatedEvent(bytes(posts_path), '', is_synthetic=True)
     posts_handler.on_created(new_dir_event)
+    assert not event.is_set()
 
 
 def test_favicon(run_start: CliRunner) -> None:  # noqa: ARG001
@@ -681,3 +695,53 @@ def test_favicon(run_start: CliRunner) -> None:  # noqa: ARG001
     with (Path('static') / 'favicon.svg').open('rb') as favicon_file:
         svg_content = favicon_file.read()
     assert response.content == svg_content
+
+
+def test_sse(run_start: CliRunner) -> None:  # noqa: ARG001
+    layout_path = Path('templates') / '_layout.html'
+    with layout_path.open('r') as layout_file:
+        contents = layout_file.read()
+
+    expected_js = 'sse.onmessage'
+    assert expected_js in contents
+
+    def in_thread(
+        start_event: threading.Event,
+        end_event: threading.Event,
+        url: str,
+        changes: list[str],
+    ) -> None:
+        start_event.set()
+        with requests.get(
+            url,
+            stream=True,
+            timeout=10,
+        ) as response:
+            for line in response.iter_lines():  # pragma: no branch
+                if line:
+                    data = line.decode('utf-8')
+                    changes.append(data)
+                    if len(changes) >= 2:  # noqa: PLR2004
+                        break
+
+        end_event.set()
+
+    with run_preview() as base_url:
+        response = requests.get(base_url, timeout=1)
+        assert expected_js in response.text
+
+        changes: list[str] = []
+        started = threading.Event()
+        ended = threading.Event()
+        thread = threading.Thread(
+            target=in_thread,
+            args=(started, ended, base_url + '/changes', changes),
+        )
+        thread.start()
+
+        started.wait(timeout=5)
+        # Trigger two events
+        set_example_contents('Different1.')
+        set_example_contents('Different2.')
+        ended.wait(timeout=5)
+        assert changes == ['data: refresh', 'data: refresh']

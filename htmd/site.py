@@ -41,7 +41,7 @@ app = Flask(
     # default templates
     template_folder=this_dir / 'example_site' / 'templates',
 )
-freezer = Freezer(app, with_static_files=False)
+freezer = Freezer(app, with_static_files=False, with_no_argument_rules=False)
 pages = Blueprint('pages', __name__)
 posts = Posts(app)
 
@@ -207,6 +207,21 @@ def format_html(response: Response) -> ResponseReturnValue:
         elif app.config.get('MINIFY_HTML', False):
             response.data = minify(response.data.decode('utf-8'))
     return response
+
+
+@app.route('/changes')
+def changes() -> ResponseReturnValue:
+    """To cause browser refresh on file changes."""
+    def event_stream() -> typing.Iterable[str]:
+        event = app.config.get('refresh_event')
+        if not event:
+            return
+        while True:
+            event.wait()
+            yield 'data: refresh\n\n'
+            event.clear()
+
+    return Response(event_stream(), mimetype='text/event-stream')
 
 
 @pages.route('/<path:path>/')
@@ -533,3 +548,8 @@ def page() -> Iterator[str]:  # noqa: F811
         # Since this route is in a different Blueprint
         # Using the URL works
         yield f'/{page.stem}/'
+
+
+@freezer.register_generator
+def add_404() -> Iterator[str]:
+    yield '/404.html'

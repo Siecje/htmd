@@ -56,3 +56,22 @@ def set_example_to_draft() -> None:
 
 def set_example_to_draft_build() -> None:
     set_example_draft_status('build')
+
+
+def set_example_contents(text: str) -> None:
+    post_path = Path('posts') / 'example.md'
+
+    with post_path.open('r') as post_file:
+        lines = post_file.readlines()
+
+    new_lines = []
+    for line in lines:  # pragma: no branch
+        if line == '...\n':
+            break
+        new_lines.append(line)
+    new_lines.append(text)
+
+    with post_path.open('w') as post_file:
+        for line in lines:
+            post_file.write(line)
+
