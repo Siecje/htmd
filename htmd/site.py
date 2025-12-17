@@ -325,6 +325,7 @@ def render_password_protected_post(post: Page) -> ResponseReturnValue:
         set_post_metadata(app, post, 'password', password)
     return render_template(
         'post.html',
+        active=post.path,
         post=post,
         encrypted_content=encrypted_content,
         encrypted_title=encrypted_title,
@@ -344,7 +345,7 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
         abort(404)
     if 'password' in post.meta and post.meta['password'] is not False:
         return render_password_protected_post(post)
-    return render_template('post.html', post=post)
+    return render_template('post.html', active=path, post=post)
 
 
 @app.route('/draft/<post_uuid>/')
@@ -356,7 +357,11 @@ def draft(post_uuid: str) -> ResponseReturnValue:
         abort(404)
     if 'password' in post.meta and post.meta['password'] is not False:
         return render_password_protected_post(post)
-    return render_template('post.html', post=post)
+    return render_template(
+        'post.html',
+        active=post.path,
+        post=post,
+    )
 
 
 @app.route('/tags/')
@@ -392,7 +397,7 @@ def tag(tag: str) -> ResponseReturnValue:
         reverse=True,
         key=lambda p: p.meta.get('published'),
     )
-    return render_template('tag.html', posts=sorted_posts, tag=tag)
+    return render_template('tag.html', active=tag, posts=sorted_posts, tag=tag)
 
 
 @app.route('/author/<author>/')
@@ -446,7 +451,12 @@ def year_view(year: int) -> ResponseReturnValue:
         reverse=False,
         key=lambda p: p.meta['published'],
     )
-    return render_template('year.html', year=year_str, posts=sorted_posts)
+    return render_template(
+        'year.html',
+        active=year_str,
+        year=year_str,
+        posts=sorted_posts,
+    )
 
 
 @app.route('/<year>/<month>/')
@@ -465,6 +475,7 @@ def month_view(year: str, month: str) -> ResponseReturnValue:
     month_string = MONTHS[month]
     return render_template(
         'month.html',
+        active=year,
         year=year,
         month_string=month_string,
         posts=sorted_posts,
@@ -483,6 +494,7 @@ def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
     month_string = MONTHS[month]
     return render_template(
         'day.html',
+        active=f'{year}-{month}-{day}',
         year=year,
         month_string=month_string,
         day=day,

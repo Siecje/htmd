@@ -4,6 +4,7 @@
 ### Added
 - Posts can now be password protected
 - During `htmd preview` the page will refresh when files change
+- active is available for every page
 ### Changed
 - Run `html preview` on `::1` instead of `127.0.0.1` by default
 ### Fixed
