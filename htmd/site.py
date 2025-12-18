@@ -1,3 +1,4 @@
+import calendar
 from collections.abc import Iterator
 from pathlib import Path
 import sys
@@ -179,21 +180,6 @@ def init_app(show_drafts: bool = False) -> Flask: # noqa: FBT001,FBT002
 def truncate_post_html(post_html: str) -> str:
     return BeautifulSoup(post_html[:255], 'html.parser').prettify()
 app.jinja_env.globals['truncate_post_html'] = truncate_post_html
-
-MONTHS = {
-    '01': 'January',
-    '02': 'February',
-    '03': 'March',
-    '04': 'April',
-    '05': 'May',
-    '06': 'June',
-    '07': 'July',
-    '08': 'August',
-    '09': 'September',
-    '10': 'October',
-    '11': 'November',
-    '12': 'December',
-}
 
 
 @app.after_request
@@ -472,7 +458,7 @@ def month_view(year: str, month: str) -> ResponseReturnValue:
         reverse=False,
         key=lambda p: p.meta['published'],
     )
-    month_string = MONTHS[month]
+    month_string = calendar.month_name[int(month)]
     return render_template(
         'month.html',
         active=year,
@@ -491,7 +477,7 @@ def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
     ]
     if not day_posts:
         abort(404)
-    month_string = MONTHS[month]
+    month_string = calendar.month_name[int(month)]
     return render_template(
         'day.html',
         active=f'{year}-{month}-{day}',
