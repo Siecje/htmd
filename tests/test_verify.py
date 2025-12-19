@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from click.testing import CliRunner
-from htmd.cli import verify
+from htmd.cli.verify import verify
 
 from utils import remove_fields_from_post
 

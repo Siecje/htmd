@@ -4,7 +4,7 @@ import re
 import shutil
 
 from click.testing import CliRunner
-from htmd.cli import build
+from htmd.cli.build import build
 import yaml
 
 from utils import (

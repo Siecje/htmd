@@ -1,5 +1,5 @@
 from click.testing import CliRunner
-from htmd.cli import templates
+from htmd.cli.templates import templates
 
 
 def test_templates(run_start: CliRunner) -> None:

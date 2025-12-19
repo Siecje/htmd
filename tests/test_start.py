@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from click.testing import CliRunner
-from htmd.cli import start
+from htmd.cli.start import start
 
 
 def test_start() -> None:

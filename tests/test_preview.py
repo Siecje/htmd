@@ -7,7 +7,7 @@ import time
 from types import TracebackType
 
 from click.testing import CliRunner
-from htmd.cli import PostsCreatedHandler, preview, StaticHandler
+from htmd.cli.preview import PostsCreatedHandler, preview, StaticHandler
 import pytest
 import requests
 from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileModifiedEvent

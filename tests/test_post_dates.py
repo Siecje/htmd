@@ -2,7 +2,7 @@ import datetime
 from pathlib import Path
 
 from click.testing import CliRunner
-from htmd.cli import build
+from htmd.cli.build import build
 
 from utils import remove_fields_from_post
 

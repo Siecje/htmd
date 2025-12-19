@@ -3,7 +3,8 @@ from pathlib import Path
 import re
 
 from click.testing import CliRunner
-from htmd.cli import build, start
+from htmd.cli.build import build
+from htmd.cli.start import start
 import pytest
 
 from utils import (

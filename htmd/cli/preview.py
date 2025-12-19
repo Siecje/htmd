@@ -1,14 +1,9 @@
-import datetime
 from pathlib import Path
 import signal
-import sys
 import threading
 import types
-import warnings
 
 import click
-from flask import Flask
-from flask_flatpages import FlatPages
 from watchdog.events import (
     DirCreatedEvent,
     DirModifiedEvent,
@@ -19,156 +14,12 @@ from watchdog.events import (
 )
 from watchdog.observers import Observer
 
-from . import site
-from .utils import (
+from .. import site
+from ..utils import (
     combine_and_minify_css,
     combine_and_minify_js,
-    copy_missing_templates,
-    copy_site_file,
-    create_directory,
-    send_stderr,
-    set_post_metadata,
     validate_post,
 )
-
-
-warnings.filterwarnings('ignore', '.*Nothing frozen for endpoints.*')
-
-
-@click.group()
-@click.version_option()
-def cli() -> None:
-    pass  # pragma: no cover
-
-
-@cli.command('start', short_help='Create example files to get started.')
-@click.option(
-    '--all-templates',
-    is_flag=True,
-    default=False,
-    help='Include all templates.',
-)
-def start(all_templates: bool) -> None:  # noqa: FBT001
-    dir_templates = create_directory('templates/')
-    if all_templates:
-        copy_missing_templates()
-    else:
-        copy_site_file(dir_templates, '_layout.html')
-
-    dir_static = create_directory('static/')
-    copy_site_file(dir_static, '_reset.css')
-    copy_site_file(dir_static, 'style.css')
-    copy_site_file(dir_static, 'favicon.svg')
-
-    dir_pages = create_directory('pages/')
-    copy_site_file(dir_pages, 'about.html')
-
-    dir_posts = create_directory('posts/')
-    copy_site_file(dir_posts, 'example.md')
-    create_directory('posts/password-protect/')
-    Path('posts/password-protect/.keep').touch()
-
-    copy_site_file(Path(), 'config.toml')
-    click.echo('Add the site name and edit settings in config.toml')
-
-
-@cli.command('verify', short_help='Verify posts formatting is correct.')
-def verify() -> Flask:
-    app = site.init_app()
-
-    correct = True
-    required_fields = ['title']
-    # Only check author if there is no default
-    if not app.config.get('DEFAULT_AUTHOR'):
-        required_fields.append('author')
-    for post in site.posts:
-        if not validate_post(post, required_fields):
-            correct = False
-
-    if correct:
-        msg = 'All posts are correctly formatted.'
-        click.echo(click.style(msg, fg='green'))
-
-    # Check if SITE_NAME exists
-    site_name = app.config.get('SITE_NAME')
-    if not site_name:
-        # SITE_NAME is not required
-        message = '[site] name is not set in config.toml.'
-        click.echo(click.style(message, fg='yellow'))
-
-    if not correct:
-        sys.exit(1)
-    return app
-
-
-def set_posts_datetime(app: Flask, posts: FlatPages) -> None:
-    # Ensure each post has a published date
-    # set time for correct date field
-    for post in posts:
-        if post.meta.get('draft', False):
-            continue
-        if 'updated' not in post.meta:
-            published = post.meta.get('published')
-            if isinstance(published, datetime.datetime):
-                field = 'updated'
-            else:
-                field = 'published'
-        else:
-            field = 'updated'
-
-        post_datetime = post.meta.get(field)
-        now = datetime.datetime.now(tz=datetime.UTC)
-        current_time = now.time()
-        if isinstance(post_datetime, datetime.date):
-            post_datetime = datetime.datetime.combine(
-                post_datetime, current_time,
-            ).replace(tzinfo=datetime.UTC)
-        else:
-            post_datetime = now
-        post.meta[field] = post_datetime
-        set_post_metadata(app, post, field, post_datetime.isoformat())
-
-
-@cli.command('build', short_help='Create static version of the site.')
-@click.pass_context
-@click.option(
-    '--css-minify/--no-css-minify',
-    default=True,
-    help='If CSS should be minified',
-)
-@click.option(
-    '--js-minify/--no-js-minify',
-    default=True,
-    help='If JavaScript should be minified',
-)
-def build(
-    ctx: click.Context,
-    css_minify: bool,  # noqa: FBT001
-    js_minify: bool,  # noqa: FBT001
-) -> None:
-    app = ctx.invoke(verify)
-    # If verify fails sys.exit(1) will run
-
-    assert app.static_folder is not None
-    static_path = Path(app.static_folder)
-    if css_minify and combine_and_minify_css(static_path):
-        app.config['INCLUDE_CSS'] = app.jinja_env.globals['INCLUDE_CSS'] = True
-
-    if js_minify and combine_and_minify_js(static_path):
-        app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
-
-    set_posts_datetime(app, site.posts)
-
-    freezer = site.freezer
-    try:
-        freezer.freeze()
-    except ValueError as exc:
-        send_stderr(str(exc))
-        sys.exit(1)
-
-    build_dir = app.config.get('FREEZER_DESTINATION')
-    msg = f'Static site was created in {build_dir}'
-    click.echo(click.style(msg, fg='green'))
 
 
 class StaticHandler(FileSystemEventHandler):
@@ -259,7 +110,7 @@ def watch_disk(
         observer.join()
 
 
-@cli.command('preview', short_help='Serve files to preview site.')
+@click.command('preview', short_help='Serve files to preview site.')
 @click.pass_context
 @click.option(
     '--host', '-h',
@@ -335,12 +186,3 @@ def preview(
     finally:
         # After Flask has been stopped stop watchdog
         stop_event.set()
-
-
-@cli.command('templates', short_help='Create any missing templates.')
-def templates() -> None:
-    try:
-        copy_missing_templates()
-    except FileNotFoundError:
-        send_stderr('templates/ directory not found.')
-        sys.exit(1)

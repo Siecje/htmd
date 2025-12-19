@@ -3,7 +3,7 @@ from collections.abc import Generator
 from click.testing import CliRunner
 from flask import Flask
 from htmd import site
-from htmd.cli import start
+from htmd.cli.start import start
 import pytest
 
 
