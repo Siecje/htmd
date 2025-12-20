@@ -1,5 +1,8 @@
-beautifulsoup4==4.14.2
+beautifulsoup4==4.14.3
+blinker==1.9.0
+cffi==2.0.0
 click==8.3.1
+cryptography==46.0.3
 csscompressor==0.9.5
 feedwerk==1.2.0
 Flask==3.1.2

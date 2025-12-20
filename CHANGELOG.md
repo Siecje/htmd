@@ -1,16 +1,21 @@
 # Change log
 
-## [ ] -
+## [ ] - 
 ### Added
-- Posts can now be password protected
-- During `htmd preview` the page will refresh when files change
-- active is available for every page
+
 ### Changed
-- Run `html preview` on `::1` instead of `127.0.0.1` by default
+
 ### Fixed
 
 ### Breaking
 
+## [6.1.0] - 2025-12-20
+### Added
+- Posts can now be password protected
+- During `htmd preview` the page will refresh when files change
+- `active` is available for every page
+### Changed
+- Run `html preview` on `::1` instead of `127.0.0.1` by default
 
 ## [6.0.0] - 2025-12-06
 ### Added
