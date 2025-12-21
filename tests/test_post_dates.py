@@ -19,7 +19,7 @@ def test_build_post_404_invalid_date_year(run_start: CliRunner) -> None:
     with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
-    new_line = '''<p><a href="{{ url_for('post', year=14, month='10', day='30', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
+    new_line = '''<p><a href="{{ url_for('posts.post', year=14, month='10', day='30', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
     with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
@@ -44,7 +44,7 @@ def test_build_post_404_invalid_date_month(run_start: CliRunner) -> None:
     with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
-    new_line = '''<p><a href="{{ url_for('post', year=2014, month='1', day='30', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
+    new_line = '''<p><a href="{{ url_for('posts.post', year=2014, month='1', day='30', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
     with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
@@ -69,7 +69,7 @@ def test_build_post_404_invalid_date_day(run_start: CliRunner) -> None:
     with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
-    new_line = '''<p><a href="{{ url_for('post', year=2014, month='10', day='3', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
+    new_line = '''<p><a href="{{ url_for('posts.post', year=2014, month='10', day='3', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
     with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
@@ -94,7 +94,7 @@ def test_build_post_404_different_date(run_start: CliRunner) -> None:
     with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
-    new_line = '''<p><a href="{{ url_for('post', year=2014, month='10', day='29', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
+    new_line = '''<p><a href="{{ url_for('posts.post', year=2014, month='10', day='29', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
     with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
@@ -120,7 +120,7 @@ def test_build_year_404_incorrect(run_start: CliRunner) -> None:
     with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
-    new_line = '''<p><a href="{{ url_for('year_view', year=14) }}">DNE link</a></p>\n'''
+    new_line = '''<p><a href="{{ url_for('posts.year_view', year=14) }}">DNE link</a></p>\n'''  # noqa: E501
     with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
@@ -145,7 +145,7 @@ def test_build_year_404_no_posts(run_start: CliRunner) -> None:
     with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
-    new_line = '''<p><a href="{{ url_for('year_view', year=2013) }}">DNE link</a></p>\n'''  # noqa: E501
+    new_line = '''<p><a href="{{ url_for('posts.year_view', year=2013) }}">DNE link</a></p>\n'''  # noqa: E501
     with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
@@ -171,7 +171,7 @@ def test_build_month_404_no_posts(run_start: CliRunner) -> None:
     with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
-    new_line = '''<p><a href="{{ url_for('month_view', year=2014, month='01') }}">DNE link</a></p>\n'''  # noqa: E501
+    new_line = '''<p><a href="{{ url_for('posts.month_view', year=2014, month='01') }}">DNE link</a></p>\n'''  # noqa: E501
     with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:
@@ -197,7 +197,7 @@ def test_build_day_404_no_posts(run_start: CliRunner) -> None:
     with about_path.open('r') as about_file:
         lines = about_file.readlines()
 
-    new_line = '''<p><a href="{{ url_for('day_view', year=2014, month='10', day='29') }}">DNE link</a></p>\n'''  # noqa: E501
+    new_line = '''<p><a href="{{ url_for('posts.day_view', year=2014, month='10', day='29') }}">DNE link</a></p>\n'''  # noqa: E501
     with about_path.open('w') as about_file:
         for line in lines:
             if '<p>This is the about page.</p>' in line:

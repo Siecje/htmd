@@ -9,7 +9,7 @@ from ..utils import validate_post
 
 @click.command('verify', short_help='Verify posts formatting is correct.')
 def verify() -> Flask:
-    app = site.init_app()
+    app = site.create_app()
 
     correct = True
     required_fields = ['title']

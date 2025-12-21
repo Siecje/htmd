@@ -146,13 +146,13 @@ def preview(
     js_minify: bool,  # noqa: FBT001
     drafts: bool,  # noqa: FBT001
 ) -> None:
-    app = site.init_app(drafts)
+    app = site.create_app(drafts)
 
-    assert site.app.static_folder is not None
-    if css_minify and combine_and_minify_css(Path(site.app.static_folder)):
+    assert app.static_folder is not None
+    if css_minify and combine_and_minify_css(Path(app.static_folder)):
         app.config['INCLUDE_CSS'] = app.jinja_env.globals['INCLUDE_CSS'] = True
 
-    if js_minify and combine_and_minify_js(Path(site.app.static_folder)):
+    if js_minify and combine_and_minify_js(Path(app.static_folder)):
         app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
 
     stop_event = threading.Event()

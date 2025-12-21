@@ -96,7 +96,7 @@ section-order = ["future", "standard-library", "third-party", "first-party", "lo
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["htmd", "htmd.cli"]
+include = ["htmd", "htmd.cli", "htmd.site"]
 
 [tool.setuptools.package-data]
 htmd = [

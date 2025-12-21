@@ -1,6 +1,6 @@
 # Change log
 
-## [ ] - 
+## [7.0.0] - 
 ### Added
 
 ### Changed
@@ -8,6 +8,18 @@
 ### Fixed
 
 ### Breaking
+- Anchor elements in templates need to update `url_for` argument
+    - `index` -> `main.index`
+    - `pygments_css` -> `main.pygments_css`
+    - `all_posts` -> `posts.all_posts`
+    - `all_tags` -> `posts.all_tags`
+    - `author` -> `posts.author`
+    - `day_view` -> `posts.all_ags`
+    - `feed` -> `posts.feed`
+    - `month_view` -> `posts.all_ags`
+    - `post` -> `posts.post`
+    - `tag` -> `posts.tag`
+    - `year_view` -> `posts.all_ags`
 
 ## [6.1.0] - 2025-12-20
 ### Added

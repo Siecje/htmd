@@ -18,7 +18,7 @@
   {# Open Graph Tags #}
   <meta property="og:type" content="article">
   {% if 'draft' not in post.meta %}
-    <meta property="og:url" content="{{ url_for('post', year=post.meta['published'].year, month=post.meta['published'].strftime('%m'), day=post.meta['published'].strftime('%d'), path=post.path, _external=True) }}">
+    <meta property="og:url" content="{{ url_for('posts.post', year=post.meta['published'].year, month=post.meta['published'].strftime('%m'), day=post.meta['published'].strftime('%d'), path=post.path, _external=True) }}">
   {% endif %}
   {% if not encrypted_title %}
     <meta property="og:title" content="{{ post.title }}">
@@ -53,7 +53,7 @@
     {% endif %}
     {% if SHOW_AUTHOR %}
         <span class="meta">
-          Posted by <a href="{{ url_for('author', author = post.author or DEFAULT_AUTHOR) }}">{{ post.author }}</a> on {% if post.published %}{{ post.published.strftime('%Y-%m-%d') }}{% endif %}
+          Posted by <a href="{{ url_for('posts.author', author = post.author or DEFAULT_AUTHOR) }}">{{ post.author }}</a> on {% if post.published %}{{ post.published.strftime('%Y-%m-%d') }}{% endif %}
         </span>
     {% endif %}
 
@@ -67,7 +67,7 @@
     {% if post.tags %}
       <p><strong>Tags</strong></p>
       {% for tag in post.meta.get('tags') %}
-        <a class="tag" href="{{ url_for('tag', tag=tag) }}">{{ tag }}</a>
+        <a class="tag" href="{{ url_for('posts.tag', tag=tag) }}">{{ tag }}</a>
       {% endfor %}
     {% endif %}
   </article>

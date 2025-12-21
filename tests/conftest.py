@@ -29,7 +29,7 @@ def run_start_module() -> Generator[CliRunner]:
 
 @pytest.fixture
 def flask_app(run_start_module: CliRunner) -> Flask:  # noqa: ARG001
-    app = site.init_app()
+    app = site.create_app()
     app.config.update({
         'FLATPAGES_AUTO_RELOAD': True,
         'TESTING': True,
