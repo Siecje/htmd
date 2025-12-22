@@ -1,4 +1,5 @@
 from pathlib import Path
+import platform
 import signal
 import threading
 import types
@@ -13,6 +14,7 @@ from watchdog.events import (
     FileSystemEventHandler,
 )
 from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 
 from .. import site
 from ..utils import (
@@ -83,7 +85,12 @@ def watch_disk(
     exit_event: threading.Event,
     refresh_event: threading.Event,
 ) -> None:
-    observer = Observer()
+    # Logic to switch observer based on OS
+    if platform.system() == "Windows":
+        click.echo("Windows detected: Using PollingObserver.")
+        observer = PollingObserver()
+    else:
+        observer = Observer()
 
     static_directory = Path(static_folder)
     static_handler = StaticHandler(static_directory, refresh_event)
