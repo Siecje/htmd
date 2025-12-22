@@ -52,7 +52,11 @@ class run_preview:  # noqa: N801
         if self.args:
             cmd += self.args
 
-        self.task = subprocess.Popen(cmd)  # noqa: S603
+        self.task = subprocess.Popen(
+            cmd,stdout=subprocess.DEVNULL, 
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )  # noqa: S603
 
         for _ in range(self.max_tries):  # pragma: no branch
             try:
