@@ -195,6 +195,18 @@ def test_build_page_without_link(run_start: CliRunner) -> None:
         assert 'Totally new' in page_file.read()
 
 
+def test_build_pages_with_non_html_file(run_start: CliRunner) -> None:
+    page_path = Path('pages') / '.DS_STORE'
+    with page_path.open('w'):
+        pass
+    assert page_path.is_file()
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert (Path('build') / '.DS_STORE').exists() is False
+    build_path = Path('build') / '.DS_STORE' / 'index.html'
+    assert build_path.exists() is False
+
+
 def test_build_empty_directory() -> None:
     expected = 'Can not find config.toml\n'
     runner = CliRunner()

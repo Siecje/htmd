@@ -73,12 +73,10 @@ def draft() -> Iterator[tuple[str, dict[str, str]]]:
 
 
 @freezer.register_generator
-def page() -> Iterator[str]:
+def page() -> Iterator[tuple[str, dict[str, str]]]:
     pages_folder = pages.template_folder
     if not isinstance(pages_folder, Path) or not pages_folder.is_dir():
         return
     for page in pages_folder.iterdir():
-        # Need to create for pages.page
-        # Since this route is in a different Blueprint
-        # Using the URL works
-        yield f'/{page.stem}/'
+        if page.is_file() and not page.name.startswith('.') and page.suffix == '.html':
+            yield 'pages.page', {'path': page.stem}
