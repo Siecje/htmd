@@ -19,8 +19,8 @@ def verify() -> Flask:
     for post in site.posts:
         if not validate_post(post, required_fields):
             correct = False
-
-    if correct:
+            break
+    else:
         msg = 'All posts are correctly formatted.'
         click.echo(click.style(msg, fg='green'))
 
