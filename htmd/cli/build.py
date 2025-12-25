@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 import datetime
 from pathlib import Path
 import sys
@@ -5,7 +6,7 @@ import warnings
 
 import click
 from flask import Flask
-from flask_flatpages import FlatPages
+from flask_flatpages import Page
 
 from .. import site
 from ..utils import (
@@ -20,7 +21,7 @@ from .verify import verify
 warnings.filterwarnings('ignore', '.*Nothing frozen for endpoints.*')
 
 
-def set_posts_datetime(app: Flask, posts: FlatPages) -> None:
+def set_posts_datetime(app: Flask, posts: Iterable[Page]) -> None:
     # Ensure each post has a published date
     # set time for correct date field
     for post in posts:

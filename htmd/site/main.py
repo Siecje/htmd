@@ -1,5 +1,5 @@
+from collections.abc import Generator
 from pathlib import Path
-import typing
 
 from bs4 import BeautifulSoup
 from flask import (
@@ -20,7 +20,7 @@ main_bp = Blueprint('main', __name__)
 
 
 @main_bp.after_request
-def format_html(response: Response) -> ResponseReturnValue:
+def format_html(response: Response) -> Response:
     if response.mimetype == 'text/html':
         if current_app.config.get('PRETTY_HTML', False):
             response.data = BeautifulSoup(
@@ -33,10 +33,10 @@ def format_html(response: Response) -> ResponseReturnValue:
 
 
 @main_bp.route('/changes')
-def changes() -> ResponseReturnValue:
+def changes() -> Response:
     """To cause browser refresh on file changes."""
     event = current_app.config.get('refresh_event')
-    def event_stream() -> typing.Iterable[str]:
+    def event_stream() -> Generator[str]:
         if not event:
             return
         while True:

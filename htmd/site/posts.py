@@ -7,6 +7,7 @@ from flask import (
     Blueprint,
     current_app,
     render_template,
+    Response,
     url_for,
 )
 from flask.blueprints import BlueprintSetupState
@@ -61,7 +62,7 @@ def on_load(state: BlueprintSetupState) -> None:
 
 
 @posts_bp.route('/feed.atom')
-def feed() -> ResponseReturnValue:
+def feed() -> Response:
     name = current_app.config.get('SITE_NAME')
     subtitle = current_app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
     url = current_app.config.get('URL')
