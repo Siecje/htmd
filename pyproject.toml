@@ -45,6 +45,7 @@ dev = [
   "types-PyYAML",
   "types-beautifulsoup4",
   "types-requests",
+  "Werkzeug",
 ]
 
 [project.scripts]

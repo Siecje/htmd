@@ -1,16 +1,20 @@
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 import threading
 import time
-from types import TracebackType
+from unittest.mock import patch
 
 from click.testing import CliRunner
-from htmd.cli.preview import PostsCreatedHandler, preview, StaticHandler
+from flask import Flask
+import htmd.cli.preview as preview_module
 import pytest
 import requests
 from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileModifiedEvent
+from werkzeug.serving import BaseWSGIServer, make_server
 
 from utils import (
     set_example_contents,
@@ -22,73 +26,113 @@ from utils import (
 BASE_URL = 'http://[::1]:9090'
 
 
-def invoke_preview(run_start: CliRunner, args: list[str] | None = None) -> None:
-    """
-    run_start.invoke(preview) fails but it is used to track test coverage.
+WEBSERVER: None | BaseWSGIServer = None
+WEBSERVER_THREADED = False
+def start_webserver(app: Flask, host: str, port: int) -> None:
+    # global keyword is required for tests to pass
+    global WEBSERVER # noqa: PLW0603
+    WEBSERVER = make_server(
+        host,
+        port,
+        app,
+        threaded=WEBSERVER_THREADED,
+    )
+    assert WEBSERVER is not None
+    WEBSERVER.serve_forever()
 
-    I get a message that the path I pass to pytest is not found.
-    I've track it down to this subprocess call.
-    https://github.com/pallets/werkzeug/blob/d3dd65a27388fbd39d146caacf2563639ba622f0/src/werkzeug/_reloader.py#L273
-    str(args) is "['/path/to/venv/bin/python', '-m', 'pytest', 'tests']"
-    ERROR: file or directory not found: tests
-    Which is how I'm running my tests.
-    If I pass tests/test_preview.py then I see
-    ERROR: file or directory not found: tests/test_preview.py
-    """
-    run_start.invoke(preview, args)
 
+@contextmanager
+def run_preview(
+    runner: CliRunner,
+    args: list[str] | None = None,
+    *,
+    max_tries: int = 100,
+    threaded:  bool = False,
+) -> Generator[str]:
+    # global keyword is required for tests to pass
+    global WEBSERVER_THREADED  # noqa: PLW0603
+    global WEBSERVER  # noqa: PLW0603
+    WEBSERVER = None
 
-class run_preview:  # noqa: N801
-    def __init__(
-        self: 'run_preview',
-        args: list[str] | None = None,
-        max_tries: int = 10_000,
-    ) -> None:
-        self.args = args
-        self.max_tries = max_tries
+    if threaded:
+        WEBSERVER_THREADED = True
 
-    def __enter__(self: 'run_preview') -> str:
-        cmd = [sys.executable, '-m', 'htmd', 'preview']
-        if self.args:
-            cmd += self.args
+    # start_webserver is replaced so it can be stopped for the thread to stop
+    # since we can't send signals (ctrl+c) to a thread
+    # setup_stop_thread_on_signal is replaced because threads can't receive signals
+    with (
+        patch(
+            'htmd.cli.preview.start_webserver',
+            side_effect=start_webserver,
+        ),
+        patch(
+            'htmd.cli.preview.setup_stop_thread_on_signal',
+            side_effect=lambda _x: None,
+        ),
+    ):
+        thread = threading.Thread(
+            target=runner.invoke,
+            args=(preview_module.preview, args or []),
+            kwargs={'catch_exceptions': False},
+            daemon=True,
+        )
+        thread.start()
 
-        self.task = subprocess.Popen(cmd)  # noqa: S603
+        for _ in range(max_tries):  # pragma: no branch
+            if WEBSERVER is not None:
+                try:
+                    requests.head(BASE_URL, timeout=1)
+                    break
+                except requests.exceptions.ConnectionError:  # pragma: no cover
+                    pass
+            time.sleep(0.1)
 
-        for _ in range(self.max_tries):  # pragma: no branch
-            try:
-                requests.head(BASE_URL, timeout=1)
-            except requests.exceptions.ConnectionError:
-                continue
-            else:
-                break
-        return BASE_URL
-
-    def __exit__(
-        self: 'run_preview',
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
-        self.task.terminate()
         try:
-            self.task.wait(5)
-        except subprocess.TimeoutExpired:  # pragma: no cover
-            if self.task.poll() is None:
-                self.task.kill()
+            yield BASE_URL
+        finally:
+            if WEBSERVER:  # pragma: no branch
+                WEBSERVER.shutdown()
+            thread.join(timeout=1.0)
 
 
-def test_preview(run_start: CliRunner) -> None:  # noqa: ARG001
+@contextmanager
+def run_preview_subprocess(
+    args: list[str] | None = None,
+    *,
+    max_tries: int = 10_000,
+) -> Generator[str]:
+    cmd = [sys.executable, '-m', 'htmd', 'preview']
+    if args:  # pragma: no branch
+        cmd += args  # pragma: no cover
+
+    task = subprocess.Popen(cmd)  # noqa: S603
+    for _ in range(max_tries):  # pragma: no branch
+        try:
+            requests.head(BASE_URL, timeout=1)
+        except requests.exceptions.ConnectionError:
+            continue
+        else:
+            break
+    yield BASE_URL
+    task.terminate()
+    try:
+        task.wait(5)
+    except subprocess.TimeoutExpired:  # pragma: no cover
+        if task.poll() is None:
+            task.kill()
+
+
+def test_preview(run_start: CliRunner) -> None:
     with pytest.raises(requests.exceptions.ConnectionError):
         requests.get(BASE_URL, timeout=1)
     success = 200
-    with run_preview():
+    with run_preview(run_start):
         response = requests.get(BASE_URL, timeout=1)
         assert response.status_code == success
 
 
 def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
     args = ['--css-minify', '--js-minify']
-    invoke_preview(run_start, args)
     urls = (
         (200, '/static/combined.min.css'),
         (200, '/static/combined.min.js'),
@@ -102,7 +146,7 @@ def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
     assert not combined_js_path.exists()
 
     # When preview starts combined.min.js should be created
-    with run_preview(args) as base_url:
+    with run_preview(run_start, args) as base_url:
         assert combined_js_path.exists()
         for status, url in urls:
             response = requests.get(base_url + url, timeout=1)
@@ -111,7 +155,6 @@ def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
 
 def test_preview_no_css_minify(run_start: CliRunner) -> None:
     args = ['--no-css-minify', '--js-minify']
-    invoke_preview(run_start, args)
     urls = (
         (404, '/static/combined.min.css'),
         (200, '/static/combined.min.js'),
@@ -120,7 +163,7 @@ def test_preview_no_css_minify(run_start: CliRunner) -> None:
     with js_path.open('w') as js_file:
         js_file.write('document.getElementsByTagName("body");')
 
-    with run_preview(args) as base_url:
+    with run_preview(run_start, args) as base_url:
         for status, url in urls:
             response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
@@ -128,12 +171,11 @@ def test_preview_no_css_minify(run_start: CliRunner) -> None:
 
 def test_preview_css_minify_no_js_minify(run_start: CliRunner) -> None:
     args = ['--css-minify', '--no-js-minify']
-    invoke_preview(run_start, args)
     urls = (
         (200, '/static/combined.min.css'),
         (404, '/static/combined.min.js'),
     )
-    with run_preview(args) as base_url:
+    with run_preview(run_start, args) as base_url:
         for status, url in urls:
             response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
@@ -141,12 +183,11 @@ def test_preview_css_minify_no_js_minify(run_start: CliRunner) -> None:
 
 def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
     args = ['--no-css-minify', '--no-js-minify']
-    invoke_preview(run_start, args)
     urls = (
         (404, '/static/combined.min.css'),
         (404, '/static/combined.min.js'),
     )
-    with run_preview(args) as base_url:
+    with run_preview(run_start, args) as base_url:
         for status, url in urls:
             response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
@@ -156,7 +197,7 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
     'static',
     'foo',
 ])
-def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
+def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
     if static_dir != 'static':
         # Change static directory in config.toml
         config_path = Path('config.toml')
@@ -176,7 +217,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # 
     url = '/static/combined.min.css'
     new_style = 'p {color: red;}'
     expected = new_style.replace(' ', '').replace(';', '')
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         response = requests.get(base_url + url, timeout=1)
         before = response.text
         assert expected not in before
@@ -192,7 +233,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # 
         # Ensure new style is served
         read_timeout = False
         after = before
-        max_attempts = 50_000
+        max_attempts = 50
         attempts = 1
 
         # CSS changes can be seen without stopping webserver
@@ -223,6 +264,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # 
                     requests.exceptions.ReadTimeout,
                 ):  # pragma: no cover
                     read_timeout = True  # pragma: no cover
+                    break
             else:
                 after = response.text
 
@@ -242,7 +284,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:  # 
     'static',
     'foo',
 ])
-def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # noqa: ARG001
+def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
     js_path = Path(static_dir) / 'script.js'
     if static_dir != 'static':
         # Change static directory in config.toml
@@ -267,7 +309,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # n
     url = '/static/combined.min.js'
     expected = 'document.getElementByTagName("body")'
 
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         response = requests.get(base_url + url, timeout=1)
         before = response.text
         assert expected not in before
@@ -281,7 +323,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # n
         # Ensure new script is served
         read_timeout = False
         after = before
-        max_attempts = 50_000
+        max_attempts = 50
         attempts = 1
 
         # JS changes can be seen without stopping webserver
@@ -312,6 +354,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # n
                     requests.exceptions.ReadTimeout,
                 ):  # pragma: no cover
                     read_timeout = True  # pragma: no cover
+                    break
             else:
                 after = response.text
 
@@ -332,7 +375,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:  # n
     'posts',
     'bar',
 ])
-def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None:  # noqa: ARG001
+def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None:
     if posts_dir != 'posts':
         # Change static directory in config.toml
         config_path = Path('config.toml')
@@ -351,7 +394,7 @@ def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None
 
     title = 'Test Title'
     expected = 'This is the content.'
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         response = requests.get(base_url, timeout=1)
         before = response.text
         assert expected not in before
@@ -369,7 +412,7 @@ def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None
         # Ensure new sentence is available after reload
         read_timeout = False
         after = before
-        max_attempts = 50_000
+        max_attempts = 50
         attempts = 1
         while after == before and attempts < max_attempts:
             try:
@@ -381,6 +424,7 @@ def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None
             ):  # pragma: no cover
                 # happens during restart
                 read_timeout = True
+                break
             else:
                 after = response.text
 
@@ -428,7 +472,9 @@ def test_preview_shows_pages_change_without_reload(
         '</p>',
         f' {expected}</p>',
     )
-    with run_preview() as base_url:
+    # Using subprocess because pages are not being wathced
+    # reloading relies on app.run(deubg-true)
+    with run_preview_subprocess() as base_url:
         response = requests.get(base_url + url, timeout=1)
         before = response.text
         assert expected not in before
@@ -439,7 +485,7 @@ def test_preview_shows_pages_change_without_reload(
         # Ensure new sentence is available after change
         read_timeout = False
         after = before
-        max_attempts = 50_000
+        max_attempts = 50
         attempts = 1
 
         # Since HTML changes can be seen without reloading
@@ -453,17 +499,18 @@ def test_preview_shows_pages_change_without_reload(
             ):  # pragma: no cover
                 # happens during restart
                 read_timeout = True  # pragma: no cover
+                break
             else:
                 after = response.text
 
             attempts += 1
 
         assert read_timeout is False, 'Preview did reload.'
-        assert before != after
+        assert before != after, 'Page did not change.'
         assert expected in after
 
 
-def test_preview_shows_new_pages(run_start: CliRunner) -> None:  # noqa: ARG001
+def test_preview_shows_new_pages(run_start: CliRunner) -> None:
     page_path = Path('pages') / 'about.html'
     with page_path.open('r') as page_file:
         contents = page_file.read()
@@ -475,7 +522,7 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:  # noqa: ARG001
         f' {expected}</p>',
     )
     url = '/new/'
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         response = requests.get(base_url + url, timeout=1)
         before = response.text
         assert response.status_code == 404  # noqa: PLR2004
@@ -487,7 +534,7 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:  # noqa: ARG001
         # Ensure new sentence is available after change
         read_timeout = False
         after = before
-        max_attempts = 50_000
+        max_attempts = 50
         attempts = 1
 
         # Since HTML changes can be seen without reloading
@@ -501,6 +548,7 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:  # noqa: ARG001
             ):  # pragma: no cover
                 # happens during restart
                 read_timeout = True  # pragma: no cover
+                break
             else:
                 after = response.text
 
@@ -513,7 +561,6 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:  # noqa: ARG001
 
 def test_preview_drafts(run_start: CliRunner) -> None:
     args = ['--drafts']
-    invoke_preview(run_start, args)
     set_example_to_draft()
     success = 200
 
@@ -530,7 +577,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
         '/all/',
     )
     # drafts should not appear
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         for status, url in urls:
             response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
@@ -541,7 +588,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
             assert 'Example Post' not in response.text
 
     # drafts should appear
-    with run_preview(args) as base_url:
+    with run_preview(run_start, args) as base_url:
         for _status, url in urls:
             response = requests.get(base_url + url, timeout=1)
             assert response.status_code == success
@@ -564,7 +611,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
         '/',
         '/all/',
     )
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         for status, url in urls:
             response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
@@ -584,11 +631,8 @@ def test_preview_when_static_folder_does_not_exist(run_start: CliRunner) -> None
 
     assert static_path.exists() is False
 
-    # invoke_preview is only used for test coverage
-    invoke_preview(run_start)
-
     success = 200
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         assert static_path.exists() is False
         response = requests.get(base_url, timeout=1)
         assert response.status_code == success
@@ -605,24 +649,18 @@ def test_preview_when_combined_js_exists(run_start: CliRunner) -> None:
     with new_path.open('w') as new_js_file:
         new_js_file.write(new_js)
 
-    # invoke_preview is only used for test coverage
-    invoke_preview(run_start)
-
     url = '/static/combined.min.js'
     success = 200
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         response = requests.get(base_url + url, timeout=1)
         assert response.status_code == success
         assert new_js in response.text
 
     # invoke again will exit combine_and_minify_js() early
     # since there is no change
-    # invoke_preview is only used for test coverage
-    invoke_preview(run_start)
-
     url = '/static/combined.min.js'
     success = 200
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         response = requests.get(base_url + url, timeout=1)
         assert response.status_code == success
         assert new_js in response.text
@@ -630,7 +668,7 @@ def test_preview_when_combined_js_exists(run_start: CliRunner) -> None:
 
 def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     event = threading.Event()
-    static_handler = StaticHandler(Path('static'), event)
+    static_handler = preview_module.StaticHandler(Path('static'), event)
 
     # Add new file to combined.min.css
     new_css = 'body { background-color: aqua;}'
@@ -658,7 +696,7 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
 
 def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     event = threading.Event()
-    posts_handler = PostsCreatedHandler(event)
+    posts_handler = preview_module.PostsCreatedHandler(event)
 
     # Add non .md file
     non_md_path = Path('posts') / 'not_markdown.txt'
@@ -675,10 +713,10 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     assert not event.is_set()
 
 
-def test_favicon(run_start: CliRunner) -> None:  # noqa: ARG001
+def test_favicon(run_start: CliRunner) -> None:
     url = '/static/favicon.svg'
     success = 200
-    with run_preview() as base_url:
+    with run_preview(run_start) as base_url:
         response = requests.get(base_url + url, timeout=1)
     assert response.status_code == success
     assert response.headers['Content-Type'] == 'image/svg+xml; charset=utf-8'
@@ -688,7 +726,7 @@ def test_favicon(run_start: CliRunner) -> None:  # noqa: ARG001
     assert response.content == svg_content
 
 
-def test_sse(run_start: CliRunner) -> None:  # noqa: ARG001
+def test_sse(run_start: CliRunner) -> None:
     layout_path = Path('templates') / '_layout.html'
     with layout_path.open('r') as layout_file:
         contents = layout_file.read()
@@ -721,13 +759,18 @@ def test_sse(run_start: CliRunner) -> None:  # noqa: ARG001
     changes: list[str] = []
     started = threading.Event()
     ended = threading.Event()
-    with run_preview() as base_url:
+    with run_preview(
+        run_start,
+        # So that SSE thread doesn't block preview threads from running
+        threaded=True,
+    ) as base_url:
         response = requests.get(base_url, timeout=1)
         assert expected_js in response.text
 
         thread = threading.Thread(
             target=in_thread,
             args=(started, ended, base_url + '/changes', changes),
+            daemon=True,
         )
         thread.start()
 

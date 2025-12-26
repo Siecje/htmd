@@ -4,6 +4,7 @@ import threading
 import types
 
 import click
+from flask import Flask
 from watchdog.events import (
     DirCreatedEvent,
     DirModifiedEvent,
@@ -110,6 +111,28 @@ def watch_disk(
         observer.join()
 
 
+def start_webserver(
+    app: Flask,
+    host: str,
+    port: int,
+) -> None:  # pragma: no cover
+    app.run(debug=True, host=host, port=port, use_reloader=False)
+
+
+def setup_stop_thread_on_signal(
+    stop_event: threading.Event,
+) -> None:  # pragma: no cover
+    def handle_signal(
+        _signum: int,
+        _frame: types.FrameType | None,
+    ) -> None:
+        stop_event.set()
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
+
+
 @click.command('preview', short_help='Serve files to preview site.')
 @click.pass_context
 @click.option(
@@ -157,15 +180,7 @@ def preview(
 
     stop_event = threading.Event()
 
-    def handle_sigterm(
-        _signum: int,
-        _frame: types.FrameType | None,
-    ) -> None:  # pragma: no cover
-        stop_event.set()
-        raise KeyboardInterrupt
-
-    signal.signal(signal.SIGTERM, handle_sigterm)
-    signal.signal(signal.SIGINT, handle_sigterm)
+    setup_stop_thread_on_signal(stop_event)
 
     refresh_event = threading.Event()
     app.config['refresh_event'] = refresh_event
@@ -177,12 +192,13 @@ def preview(
             stop_event,
             refresh_event,
         ),
+        daemon=True,
     )
     watch_thread.start()
 
     app.jinja_env.globals['PREVIEW'] = True
     try:
-        app.run(debug=True, host=host, port=port)
+        start_webserver(app, host, port)
     finally:
         # After Flask has been stopped stop watchdog
         stop_event.set()
