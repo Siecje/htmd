@@ -46,7 +46,7 @@ def run_preview(
     runner: CliRunner,
     args: list[str] | None = None,
     *,
-    max_tries: int = 100,
+    max_tries: int = 1_000,
     threaded:  bool = False,
 ) -> Generator[str]:
     # global keyword is required for tests to pass
@@ -143,17 +143,20 @@ def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
         js_file.write('document.getElementsByTagName("body");')
 
     combined_js_path = Path('static') / 'combined.min.js'
+    combined_css_path = Path('static') / 'combined.min.css'
     assert not combined_js_path.exists()
+    assert not combined_css_path.exists()
 
     # When preview starts combined.min.js should be created
     with run_preview(run_start, args) as base_url:
         assert combined_js_path.exists()
+        assert combined_css_path.exists()
         for status, url in urls:
             response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
 
 
-def test_preview_no_css_minify(run_start: CliRunner) -> None:
+def test_preview_no_css_minify_js_minify(run_start: CliRunner) -> None:
     args = ['--no-css-minify', '--js-minify']
     urls = (
         (404, '/static/combined.min.css'),
@@ -163,7 +166,14 @@ def test_preview_no_css_minify(run_start: CliRunner) -> None:
     with js_path.open('w') as js_file:
         js_file.write('document.getElementsByTagName("body");')
 
+    combined_js_path = Path('static') / 'combined.min.js'
+    combined_css_path = Path('static') / 'combined.min.css'
+    assert not combined_js_path.exists()
+    assert not combined_css_path.exists()
+
     with run_preview(run_start, args) as base_url:
+        assert combined_js_path.exists()
+        assert not combined_css_path.exists()
         for status, url in urls:
             response = requests.get(base_url + url, timeout=1)
             assert response.status_code == status
