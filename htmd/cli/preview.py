@@ -53,7 +53,7 @@ class PostsCreatedHandler(FileSystemEventHandler):
         super().__init__()
         self.event = event
 
-    def handle_event(self, event: FileSystemEvent, is_new_post: bool) -> None:  # noqa: FBT001
+    def handle_event(self, event: FileSystemEvent, *, is_new_post: bool) -> None:
         if event.is_directory:
             return
         src_path = event.src_path
@@ -165,9 +165,10 @@ def preview(
     _ctx: click.Context,
     host: str,
     port: int,
-    css_minify: bool,  # noqa: FBT001
-    js_minify: bool,  # noqa: FBT001
-    drafts: bool,  # noqa: FBT001
+    *,
+    css_minify: bool,
+    js_minify: bool,
+    drafts: bool,
 ) -> None:
     app = site.create_app(drafts)
 

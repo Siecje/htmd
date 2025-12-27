@@ -12,7 +12,7 @@ from ..utils import copy_missing_templates, copy_site_file, create_directory
     default=False,
     help='Include all templates.',
 )
-def start(all_templates: bool) -> None:  # noqa: FBT001
+def start(*, all_templates: bool) -> None:
     dir_templates = create_directory('templates/')
     if all_templates:
         copy_missing_templates()

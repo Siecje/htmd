@@ -63,8 +63,9 @@ def set_posts_datetime(app: Flask, posts: Iterable[Page]) -> None:
 )
 def build(
     ctx: click.Context,
-    css_minify: bool,  # noqa: FBT001
-    js_minify: bool,  # noqa: FBT001
+    *,
+    css_minify: bool,
+    js_minify: bool,
 ) -> None:
     app = ctx.invoke(verify)
     # If verify fails sys.exit(1) will run
