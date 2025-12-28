@@ -7,7 +7,7 @@ from htmd.cli.start import start
 import pytest
 
 
-@pytest.fixture(scope='function')  # noqa: PT003
+@pytest.fixture(scope='function')
 def run_start() -> Generator[CliRunner]:
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -27,7 +27,7 @@ def run_start_module() -> Generator[CliRunner]:
         yield runner
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def flask_app(run_start_module: CliRunner) -> Flask:  # noqa: ARG001
     app = site.create_app()
     app.config.update({

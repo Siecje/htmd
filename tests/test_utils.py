@@ -153,5 +153,8 @@ def test_validate_post_invalid_draft_value(
     )
     is_valid = validate_post(post, [])
     assert not is_valid
-    expected = 'Draft field foo for example is not valid. It must be True, False, "build", or "build|<UUID4>".\n' # noqa: E501
+    expected = (
+        f'Draft field {invalid_draft} for example is not valid. '
+        + 'It must be True, False, "build", or "build|<UUID4>".\n'
+    )
     assert expected == capsys.readouterr().err

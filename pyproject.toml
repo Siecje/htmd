@@ -72,6 +72,8 @@ src = [".", "tests"]
 [tool.ruff.lint]
 ignore = [
   "D100", "D101", "D102", "D103", "D104", "D105", "D107", "D203", "D212",
+  "ISC003", # Principle of least surprise
+  "PT003",  # Explicit is better than implicit
   "RET504", # Easier to debug
   "S101",   # Used for typehints
   "TID252", # Parent package can be renamed without changing import
