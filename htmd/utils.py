@@ -174,14 +174,13 @@ def set_post_metadata(
             i += 1
 
 
-
-def valid_uuid(string: str) -> bool:
+def valid_uuid(string: int) -> bool:
     try:
         uuid.UUID(string, version=4)
     except ValueError:
         return False
     else:
-        return True
+        return True 
 
 
 def send_stderr(message: str) -> None:
