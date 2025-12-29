@@ -85,20 +85,28 @@ Only if the correct private key is provided will the contents be shown.
 
 ## Development
 
+```shell
+git clone https://github.com/Siecje/htmd.git
+cd htmd
+python3 -m venv venv
+venv/bin/python -m pip install pip setuptools --upgrade
+venv/bin/python -m pip install -e ".[dev]"
+# You can now make changes without having to re-install
+venv/bin/pre-commit install
+venv/bin/pre-commit run --all-files
+```
+
 ### Running the development version locally
 
 ```shell
-git clone https://github.com/Siecje/htmd.git
-python3 -m venv venv
-venv/bin/python -m pip install pip setuptools --upgrade
-venv/bin/python -m pip install -e "htmd/[dev]"
-# You can now make changes inside htmd/ without having to re-install
+# from htmd directory
+cd ..
 mkdir my_site
 cd my_site
-../venv/bin/htmd start
+../htmd/venv/bin/htmd start
+../htmdvenv/bin/htmd build
 # You can also create a symlink to htmd
 # somewhere on your $PATH and just use `htmd start`
-../venv/bin/htmd build
 ```
 
 ### Running mypy

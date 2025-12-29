@@ -37,6 +37,7 @@ version = "6.1.0"
 dev = [
   "coverage",
   "mypy",
+  "pre-commit",
   "pytest",
   "PyYAML",
   "requests",
