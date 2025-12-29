@@ -180,7 +180,7 @@ def valid_uuid(string: int) -> bool:
     except ValueError:
         return False
     else:
-        return True 
+        return True
 
 
 def send_stderr(message: str) -> None:
