@@ -51,7 +51,7 @@ def test_verify_published_invalid_year(run_start: CliRunner) -> None:
         lines = post.readlines()
     with example_post_path.open('w') as post:
         for line in lines:
-            if 'published' in line:
+            if 'published:' in line:
                 post.write('published: 14-10-30\n')
             else:
                 post.write(line)
@@ -71,7 +71,7 @@ def test_verify_published_invalid_month(run_start: CliRunner) -> None:
         lines = post.readlines()
     with example_post_path.open('w') as post:
         for line in lines:
-            if 'published' in line:
+            if 'published:' in line:
                 post.write('published: 2014-1-30\n')
             else:
                 post.write(line)
@@ -91,7 +91,7 @@ def test_verify_published_invalid_day(run_start: CliRunner) -> None:
         lines = post.readlines()
     with example_post_path.open('w') as post:
         for line in lines:
-            if 'published' in line:
+            if 'published:' in line:
                 post.write('published: 2014-01-3\n')
             else:
                 post.write(line)

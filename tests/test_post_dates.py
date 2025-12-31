@@ -392,7 +392,7 @@ def test_build_with_post_in_each_month(run_start: CliRunner) -> None:
     for month in range(1, 13):
         with post_path.open('w') as post_file:
             for line in lines:
-                if 'published' in line:
+                if 'published:' in line:
                     post_file.write(f'published: 2014-{month:02}-03\n')
                 else:
                     post_file.write(line)
