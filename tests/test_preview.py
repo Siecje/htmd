@@ -706,7 +706,8 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
 
 def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     event = threading.Event()
-    posts_handler = preview_module.PostsCreatedHandler(event)
+    app = Flask(__name__)
+    posts_handler = preview_module.PostsCreatedHandler(app, event)
 
     # Add non .md file
     non_md_path = Path('posts') / 'not_markdown.txt'

@@ -126,7 +126,8 @@ def create_app(show_drafts: bool = False) -> Flask: # noqa: FBT001,FBT002
 
     posts.init_app(app)
     # Without .reload() posts are from first test
-    reload_posts(show_drafts)
+    with app.app_context():
+        reload_posts(show_drafts)
 
     freezer.init_app(app)
 

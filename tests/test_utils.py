@@ -64,10 +64,11 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     old_post = site.posts.get('example')
     set_post_metadata(flask_app, old_post, 'password', password)
     site.posts.reload()
-    post = site.posts.get('example')
+    with flask_app.app_context():
+        post = site.posts.get('example')
+        assert post.html == old_post.html
     assert post.meta['password'].rstrip() == password
     assert post.meta['author'] == old_post.meta['author']
-    assert post.html == old_post.html
     assert post.meta['published'] == old_post.meta['published']
     assert post.meta['tags'] == old_post.meta['tags']
     assert post.meta['title'] == old_post.meta['title']
@@ -77,10 +78,11 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     new_password = password + 'A'
     set_post_metadata(flask_app, post, 'password', new_password)
     site.posts.reload()
-    post = site.posts.get('example')
+    with flask_app.app_context():
+        post = site.posts.get('example')
+        assert post.html == old_post.html
     assert post.meta['password'].rstrip() == new_password
     assert post.meta['author'] == old_post.meta['author']
-    assert post.html == old_post.html
     assert post.meta['published'] == old_post.meta['published']
     assert post.meta['tags'] == old_post.meta['tags']
     assert post.meta['title'] == old_post.meta['title']
@@ -91,11 +93,12 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     set_post_metadata(flask_app, post, 'draft', 'true')
     set_post_metadata(flask_app, post, 'password', new_password)
     site.posts.reload()
-    post = site.posts.get('example')
+    with flask_app.app_context():
+        post = site.posts.get('example')
+        assert post.html == old_post.html
     assert post.meta['password'].rstrip() == new_password
     assert post.meta['author'] == old_post.meta['author']
     assert post.meta['draft'] is True
-    assert post.html == old_post.html
     assert post.meta['published'] == old_post.meta['published']
     assert post.meta['tags'] == old_post.meta['tags']
     assert post.meta['title'] == old_post.meta['title']

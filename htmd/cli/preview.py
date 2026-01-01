@@ -49,8 +49,9 @@ class StaticHandler(FileSystemEventHandler):
 
 
 class PostsCreatedHandler(FileSystemEventHandler):
-    def __init__(self, event: threading.Event) -> None:
+    def __init__(self, app: Flask, event: threading.Event) -> None:
         super().__init__()
+        self.app = app
         self.event = event
 
     def handle_event(self, event: FileSystemEvent, *, is_new_post: bool) -> None:
@@ -62,7 +63,8 @@ class PostsCreatedHandler(FileSystemEventHandler):
         if not src_path.endswith('.md'):
             return
 
-        site.reload_posts()
+        with self.app.app_context():
+            site.reload_posts()
         for post in site.posts:
             validate_post(post, [])
 
@@ -79,6 +81,7 @@ class PostsCreatedHandler(FileSystemEventHandler):
 
 
 def watch_disk(
+    app: Flask,
     static_folder: str,
     posts_path: Path,
     exit_event: threading.Event,
@@ -94,7 +97,7 @@ def watch_disk(
         recursive=True,
     )
 
-    posts_handler = PostsCreatedHandler(refresh_event)
+    posts_handler = PostsCreatedHandler(app, refresh_event)
     observer.schedule(
         posts_handler,
         path=str(posts_path),
@@ -188,6 +191,7 @@ def preview(
     watch_thread = threading.Thread(
         target=watch_disk,
         args=(
+            app,
             app.static_folder,
             app.config['FLATPAGES_ROOT'],
             stop_event,
