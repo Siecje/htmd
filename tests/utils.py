@@ -75,3 +75,17 @@ def set_example_contents(text: str) -> None:
         for line in lines:
             post_file.write(line)
 
+
+def set_example_subtitle(value: str) -> None:
+    remove_fields_from_post('example', ('subtitle',))
+    post_path = Path('posts') / 'example.md'
+
+    with post_path.open('r') as post_file:
+        lines = post_file.readlines()
+
+    with post_path.open('w') as post_file:
+        for line in lines:
+            if line == '...\n':
+                subtitle_line = f'subtitle: {value}\n'
+                post_file.write(subtitle_line)
+            post_file.write(line)

@@ -7,10 +7,12 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 def encrypt_post(
     html: str,
     title: str,
+    subtitle: str | None,
     password: str | None,
-) -> tuple[str, str, str]:
+) -> tuple[str, str, str, str]:
     html_b = html.encode('utf-8')
     title_b = title.encode('utf-8')
+    subtitle_b = (subtitle or '').encode('utf-8')
 
     if password is not None:
         pem_str = (
@@ -59,4 +61,14 @@ def encrypt_post(
     )
     title_cipher_base64 = base64.b64encode(title_cipher_b).decode('utf-8')
 
-    return password, html_cipher_base64, title_cipher_base64
+    subtitle_cipher_b = public_key.encrypt(
+        subtitle_b,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None,
+        ),
+    )
+    subtitle_cipher_base64 = base64.b64encode(subtitle_cipher_b).decode('utf-8')
+
+    return password, html_cipher_base64, title_cipher_base64, subtitle_cipher_base64

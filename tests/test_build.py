@@ -10,6 +10,7 @@ import yaml
 from utils import (
     remove_fields_from_post,
     set_example_password_value,
+    set_example_subtitle,
     set_example_to_draft,
     set_example_to_draft_build,
     SUCCESS_REGEX,
@@ -335,6 +336,8 @@ def test_build_contains_favicon(run_start: CliRunner) -> None:
 
 
 def test_build_password_protect(run_start: CliRunner) -> None:
+    subtitle = 'This is a subtitle'
+    set_example_subtitle(subtitle)
     set_example_password_value('')
     with (Path('posts') / 'example.md').open('r') as md_file:
         md_str = md_file.read()
@@ -344,9 +347,7 @@ def test_build_password_protect(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
-    post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
-    with post_path.open('r') as post_file:
-        contents = post_file.read()
+
     with (Path('posts') / 'example.md').open('r') as md_file:
         md_str = md_file.read()
 
@@ -354,10 +355,19 @@ def test_build_password_protect(run_start: CliRunner) -> None:
     data = yaml.safe_load(md_str[:md_str.find('...')])
     password = data['password']
 
+    # Verify post page
+    post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
+    with post_path.open('r') as post_file:
+        contents = post_file.read()
+
     assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
     title = 'Example Post'
     assert title in md_str
     assert title not in contents
+
+    assert subtitle in md_str
+    assert subtitle not in contents
+
     body = 'This is the post'
     assert body in md_str
     assert body not in contents
@@ -421,9 +431,11 @@ def test_build_draft_password_protect(run_start: CliRunner) -> None:
     password = data['password']
 
     assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
+
     title = 'Example Post'
     assert title in md_str
     assert title not in contents
+
     body = 'This is the post'
     assert body in md_str
     assert body not in contents

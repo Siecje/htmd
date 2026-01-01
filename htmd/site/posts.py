@@ -110,9 +110,15 @@ def draft_and_not_shown(post: Page) -> bool:
 
 
 def render_password_protected_post(post: Page) -> ResponseReturnValue:
-    password, encrypted_content, encrypted_title = encrypt_post(
+    (
+        password,
+        encrypted_content,
+        encrypted_title,
+        encrypted_subtitle,
+    ) = encrypt_post(
         post.html,
         post.meta['title'],
+        post.meta.get('subtitle'),
         post.meta['password'],
     )
     if password != post.meta['password']:
@@ -123,8 +129,8 @@ def render_password_protected_post(post: Page) -> ResponseReturnValue:
         post=post,
         encrypted_content=encrypted_content,
         encrypted_title=encrypted_title,
+        encrypted_subtitle=encrypted_subtitle,
     )
-
 
 
 # If month and day are ints then Flask removes leading zeros

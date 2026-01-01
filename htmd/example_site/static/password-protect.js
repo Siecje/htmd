@@ -49,7 +49,12 @@ async function decrypt(ciphertext, privateKey) {
   return new TextDecoder().decode(decrypted);
 }
 
-async function decryptPost(pemEncodedPrivateKey, cipherHTML, cipherTitle) {
+async function decryptPost(
+  pemEncodedPrivateKey,
+  cipherHTML,
+  cipherTitle,
+  cipherSubtitle,
+) {
   const privateKey = await importPrivateKey(pemEncodedPrivateKey);
   try {
     const decryptedHTML = await decrypt(cipherHTML, privateKey);
@@ -60,6 +65,10 @@ async function decryptPost(pemEncodedPrivateKey, cipherHTML, cipherTitle) {
     const titleSpan = document.getElementById('post-title');
     titleSpan.textContent = decryptedTitle;
     document.title = decryptedTitle + ' ' + document.title;
+
+    const decryptedSubtitle = await decrypt(cipherSubtitle, privateKey);
+    const subtitleSpan = document.getElementById('post-subtitle');
+    subtitleSpan.textContent = decryptedSubtitle;
   } catch (e) {
     console.error('Decryption failed:', e);
   }
