@@ -1,14 +1,19 @@
 <div class="post-preview">
   <a href="{{ url_for("posts.post", year=post.meta['published'].year, month=post.meta['published'].strftime('%m'), day=post.meta['published'].strftime('%d'), path=post.path) }}" class="post-preview-link">
+    {% set is_protected = ('password' in post.meta and post.meta['password'] != false) %}
     <h2 class="post-title">
-      {{ post.title }}
+      {% if is_protected %}
+        Protected Post
+      {% else %}
+        {{ post.title }}
+      {% endif %}
     </h2>
-    {% if post.subtitle %}
+    {% if post.subtitle and not is_protected %}
       <h3 class="post-subtitle">
         {{ post.subtitle }}
       </h3>
     {% endif %}
-    {% if show_text %}
+    {% if show_text and not is_protected %}
       {{ truncate_post_html(post.html)|safe }}
     {% endif %}
   </a>

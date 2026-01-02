@@ -7,6 +7,7 @@
 
 ### Fixed
 - Protected post subtitles are encrypted
+- Hide protected post data on list pages
 ### Breaking
 - Anchor elements in templates need to update `url_for` argument
     - `index` -> `main.index`

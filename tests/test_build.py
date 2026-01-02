@@ -372,6 +372,31 @@ def test_build_password_protect(run_start: CliRunner) -> None:
     assert body in md_str
     assert body not in contents
 
+    # Verify list pages
+    home_path = Path('build') / 'index.html'
+    all_path = Path('build') / 'all' / 'index.html'
+    tag_path = Path('build') / 'tags' / 'first' / 'index.html'
+    author_path = Path('build') / 'author' / 'Taylor' / 'index.html'
+    year_path = Path('build') / '2014' / 'index.html'
+    month_path = Path('build') / '2014' / '10' / 'index.html'
+    day_path = Path('build') / '2014' / '10' / '30' / 'index.html'
+    list_paths = [
+        home_path,
+        all_path,
+        tag_path,
+        author_path,
+        year_path,
+        month_path,
+        day_path,
+    ]
+    for path in list_paths:
+        with path.open('r') as list_file:
+            contents = list_file.read()
+        assert title not in contents
+        assert 'Protected Post' in contents
+        assert subtitle not in contents
+        assert body[:5] not in contents
+
     # build again and verify that the password has not changed
     result = run_start.invoke(build)
     assert result.exit_code == 0
