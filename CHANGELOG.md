@@ -2,7 +2,7 @@
 
 ## [7.0.0] - 
 ### Added
-
+- Works with Flask-FlatPages 0.9.0
 ### Changed
 
 ### Fixed
@@ -15,12 +15,12 @@
     - `all_posts` -> `posts.all_posts`
     - `all_tags` -> `posts.all_tags`
     - `author` -> `posts.author`
-    - `day_view` -> `posts.all_ags`
+    - `day_view` -> `posts.day_view`
     - `feed` -> `posts.feed`
-    - `month_view` -> `posts.all_ags`
+    - `month_view` -> `posts.month_view`
     - `post` -> `posts.post`
     - `tag` -> `posts.tag`
-    - `year_view` -> `posts.all_ags`
+    - `year_view` -> `posts.year_view`
 
 ## [6.1.0] - 2025-12-20
 ### Added
