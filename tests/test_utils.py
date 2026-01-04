@@ -72,7 +72,6 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     assert post.meta['published'] == old_post.meta['published']
     assert post.meta['tags'] == old_post.meta['tags']
     assert post.meta['title'] == old_post.meta['title']
-    assert post.meta['updated'] == old_post.meta['updated']
 
     # Old multi line value needs to be replaced
     new_password = password + 'A'
@@ -86,7 +85,6 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     assert post.meta['published'] == old_post.meta['published']
     assert post.meta['tags'] == old_post.meta['tags']
     assert post.meta['title'] == old_post.meta['title']
-    assert post.meta['updated'] == old_post.meta['updated']
 
     # Add another field so password is not last
     new_password = password + 'AB'
@@ -102,7 +100,6 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     assert post.meta['published'] == old_post.meta['published']
     assert post.meta['tags'] == old_post.meta['tags']
     assert post.meta['title'] == old_post.meta['title']
-    assert post.meta['updated'] == old_post.meta['updated']
 
 
 def test_validate_post_invalid_updated(

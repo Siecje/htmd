@@ -20,6 +20,21 @@ def remove_fields_from_post(path: str, field_names: tuple[str, ...]) -> None:
                 post.write(line)
 
 
+def set_example_field(field: str, value: str) -> None:
+    remove_fields_from_post('example', (field,))
+    post_path = Path('posts') / 'example.md'
+
+    with post_path.open('r') as post_file:
+        lines = post_file.readlines()
+
+    with post_path.open('w') as post_file:
+        for line in lines:
+            if line == '...\n':
+                field_line = f'{field}: {value}\n'
+                post_file.write(field_line)
+            post_file.write(line)
+
+
 def set_example_draft_status(draft_status: str) -> None:
     remove_fields_from_post('example', ('draft',))
     post_path = Path('posts') / 'example.md'
@@ -89,3 +104,16 @@ def set_example_subtitle(value: str) -> None:
                 subtitle_line = f'subtitle: {value}\n'
                 post_file.write(subtitle_line)
             post_file.write(line)
+
+
+def get_example_field(field: str) -> None | str:
+    example_path = Path('posts') / 'example.md'
+    with example_path.open('r') as post_file:
+        lines = post_file.readlines()
+    value = None
+    for line in lines:
+        if line.startswith(f'{field}:'):
+            value = line.split(f'{field}:')[1].strip()
+            break
+
+    return value

@@ -21,32 +21,68 @@ from .verify import verify
 warnings.filterwarnings('ignore', '.*Nothing frozen for endpoints.*')
 
 
+def get_published(
+    published: None | datetime.date,
+    updated: None | datetime.date,
+    now: datetime.datetime,
+) -> datetime.datetime:
+    current_time = now.time()
+    if isinstance(published, datetime.datetime):
+        return published
+
+    if isinstance(published, datetime.date):
+        if isinstance(updated, datetime.datetime):
+            new_published = datetime.datetime.combine(
+                published, updated.time(),
+            ).replace(tzinfo=datetime.UTC)
+            return new_published
+
+        new_published = datetime.datetime.combine(
+            published, current_time,
+        ).replace(tzinfo=datetime.UTC)
+        return new_published
+
+    if isinstance(updated, datetime.datetime):
+        return updated
+    if isinstance(updated, datetime.date):
+        new_published = datetime.datetime.combine(
+            updated, current_time,
+        ).replace(tzinfo=datetime.UTC)
+        return new_published
+
+    return now
+
+
 def set_posts_datetime(app: Flask, posts: Iterable[Page]) -> None:
-    # Ensure each post has a published date
-    # set time for correct date field
+    """
+    Set published and updated for each post.
+
+    Ensure each post has published.
+    if missing, published will be set to current datetime
+    Atom feed needs a datetime
+    so if published is date, convert to datetime
+    by keeping date and adding current time
+    if published is already datetime
+    set updated field to current datetime
+    """
+    now = datetime.datetime.now(tz=datetime.UTC)
     for post in posts:
         if post.meta.get('draft', False):
             continue
-        if 'updated' not in post.meta:
-            published = post.meta.get('published')
-            if isinstance(published, datetime.datetime):
-                field = 'updated'
-            else:
-                field = 'published'
-        else:
-            field = 'updated'
 
-        post_datetime = post.meta.get(field)
-        now = datetime.datetime.now(tz=datetime.UTC)
-        current_time = now.time()
-        if isinstance(post_datetime, datetime.date):
-            post_datetime = datetime.datetime.combine(
-                post_datetime, current_time,
-            ).replace(tzinfo=datetime.UTC)
-        else:
-            post_datetime = now
-        post.meta[field] = post_datetime
-        set_post_metadata(app, post, field, post_datetime.isoformat())
+        current_published = post.meta.get('published')
+        current_updated = post.meta.get('updated')
+        published = get_published(
+            current_published,
+            current_updated,
+            now,
+        )
+        if current_published != published:
+            post.meta['published'] = published
+            set_post_metadata(app, post, 'published', published.isoformat())
+        if current_updated or isinstance(current_published, datetime.datetime):
+            post.meta['updated'] = now
+            set_post_metadata(app, post, 'updated', now.isoformat())
 
 
 @click.command('build', short_help='Create static version of the site.')
