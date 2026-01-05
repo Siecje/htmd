@@ -9,6 +9,7 @@ import yaml
 
 from utils import (
     remove_fields_from_post,
+    set_config_field,
     set_example_password_value,
     set_example_subtitle,
     set_example_to_draft,
@@ -90,16 +91,7 @@ def test_build_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
 
 
 def test_build_html_pretty_true(run_start: CliRunner) -> None:
-    config_path = Path('config.toml')
-    with config_path.open('r') as config_file:
-        lines = config_file.readlines()
-
-    with config_path.open('w') as config_file:
-        for line in lines:
-            if 'pretty =' in line:
-                config_file.write('pretty = true\n')
-            else:
-                config_file.write(line)
+    set_config_field('pretty', 'true')
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -107,16 +99,7 @@ def test_build_html_pretty_true(run_start: CliRunner) -> None:
 
 
 def test_build_html_minify_true(run_start: CliRunner) -> None:
-    config_path = Path('config.toml')
-    with config_path.open('r') as config_file:
-        lines = config_file.readlines()
-
-    with config_path.open('w') as config_file:
-        for line in lines:
-            if 'minify =' in line:
-                config_file.write('minify = true\n')
-            else:
-                config_file.write(line)
+    set_config_field('minify', 'true')
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -300,16 +283,7 @@ def test_build_vcs_repo(run_start: CliRunner) -> None:
 
 
 def test_build_with_default_author(run_start: CliRunner) -> None:
-    config_path = Path('config.toml')
-    with config_path.open('r') as config_file:
-        lines = config_file.readlines()
-
-    with config_path.open('w') as config_file:
-        for line in lines:
-            if 'default_name' in line:
-                config_file.write('default_name = "Taylor"\n')
-            else:
-                config_file.write(line)
+    set_config_field('default_name', 'Taylor')
 
     remove_fields_from_post('example', ('draft',))
 

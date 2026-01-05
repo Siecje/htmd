@@ -17,6 +17,7 @@ from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileModifiedEvent
 from werkzeug.serving import BaseWSGIServer, make_server
 
 from utils import (
+    set_config_field,
     set_example_contents,
     set_example_to_draft,
     set_example_to_draft_build,
@@ -209,18 +210,7 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
 ])
 def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
     if static_dir != 'static':
-        # Change static directory in config.toml
-        config_path = Path('config.toml')
-        with config_path.open('r') as config_file:
-            lines = config_file.readlines()
-
-        with config_path.open('w') as config_file:
-            for line in lines:
-                if 'static = ' in line:
-                    config_file.write(f'static = "{static_dir}"\n')
-                else:
-                    config_file.write(line)
-
+        set_config_field('static', static_dir)
         # Ensure directory exists
         Path(static_dir).mkdir(exist_ok=True)
 
@@ -297,17 +287,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
 def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
     js_path = Path(static_dir) / 'script.js'
     if static_dir != 'static':
-        # Change static directory in config.toml
-        config_path = Path('config.toml')
-        with config_path.open('r') as config_file:
-            lines = config_file.readlines()
-
-        with config_path.open('w') as config_file:
-            for line in lines:
-                if 'static = ' in line:
-                    config_file.write(f'static = "{static_dir}"\n')
-                else:
-                    config_file.write(line)
+        set_config_field('static', static_dir)
 
         # Ensure directory exists
         Path(static_dir).mkdir(exist_ok=True)
@@ -388,16 +368,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
 def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None:
     if posts_dir != 'posts':
         # Change static directory in config.toml
-        config_path = Path('config.toml')
-        with config_path.open('r') as config_file:
-            lines = config_file.readlines()
-
-        with config_path.open('w') as config_file:
-            for line in lines:
-                if 'posts = ' in line:
-                    config_file.write(f'posts = "{posts_dir}"\n')
-                else:
-                    config_file.write(line)
+        set_config_field('posts', posts_dir)
 
         # Ensure directory exists
         Path(posts_dir).mkdir(exist_ok=True)
@@ -456,16 +427,7 @@ def test_preview_shows_pages_change_without_reload(
 ) -> None:
     if pages_dir != 'pages':
         # Change static directory in config.toml
-        config_path = Path('config.toml')
-        with config_path.open('r') as config_file:
-            lines = config_file.readlines()
-
-        with config_path.open('w') as config_file:
-            for line in lines:
-                if 'pages = ' in line:
-                    config_file.write(f'pages = "{pages_dir}"\n')
-                else:
-                    config_file.write(line)
+        set_config_field('pages', pages_dir)
 
         # Ensure directory exists
         Path(pages_dir).mkdir(exist_ok=True)

@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from pathlib import Path
 
 
@@ -7,17 +8,19 @@ SUCCESS_REGEX = (
 )
 
 
-def remove_fields_from_post(path: str, field_names: tuple[str, ...]) -> None:
+def remove_fields_from_post(
+    path: str,
+    field_names: Iterable[str],
+) -> None:
     example_post_path = Path('posts') / f'{path}.md'
     with example_post_path.open('r') as post:
         lines = post.readlines()
     with example_post_path.open('w') as post:
         for line in lines:
-            for field_name in field_names:
-                if field_name in line:
-                    break
-            else:
-                post.write(line)
+            skip = any(line.startswith(f'{field}:') for field in field_names)
+            if skip:
+                continue
+            post.write(line)
 
 
 def set_example_field(field: str, value: str) -> None:
@@ -36,33 +39,11 @@ def set_example_field(field: str, value: str) -> None:
 
 
 def set_example_draft_status(draft_status: str) -> None:
-    remove_fields_from_post('example', ('draft',))
-    post_path = Path('posts') / 'example.md'
-
-    with post_path.open('r') as post_file:
-        lines = post_file.readlines()
-
-    with post_path.open('w') as post_file:
-        for line in lines:
-            if line == '...\n':
-                draft_line = f'draft: {draft_status}\n'
-                post_file.write(draft_line)
-            post_file.write(line)
+    set_example_field('draft', draft_status)
 
 
 def set_example_password_value(value: str) -> None:
-    remove_fields_from_post('example', ('password',))
-    post_path = Path('posts') / 'example.md'
-
-    with post_path.open('r') as post_file:
-        lines = post_file.readlines()
-
-    with post_path.open('w') as post_file:
-        for line in lines:
-            if line == '...\n':
-                password_line = f'password: {value}\n'
-                post_file.write(password_line)
-            post_file.write(line)
+    set_example_field('password', value)
 
 
 def set_example_to_draft() -> None:
@@ -92,18 +73,20 @@ def set_example_contents(text: str) -> None:
 
 
 def set_example_subtitle(value: str) -> None:
-    remove_fields_from_post('example', ('subtitle',))
-    post_path = Path('posts') / 'example.md'
+    set_example_field('subtitle', value)
 
-    with post_path.open('r') as post_file:
-        lines = post_file.readlines()
 
-    with post_path.open('w') as post_file:
+def set_config_field(field: str, value: str) -> None:
+    config_path = Path('config.toml')
+    with config_path.open('r') as config_file:
+        lines = config_file.readlines()
+
+    with config_path.open('w') as config_file:
         for line in lines:
-            if line == '...\n':
-                subtitle_line = f'subtitle: {value}\n'
-                post_file.write(subtitle_line)
-            post_file.write(line)
+            if line.startswith(f'{field} ='):
+                config_file.write(f'{field} = "{value}"\n')
+            else:
+                config_file.write(line)
 
 
 def get_example_field(field: str) -> None | str:

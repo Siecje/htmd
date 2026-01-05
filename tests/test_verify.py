@@ -3,7 +3,11 @@ from pathlib import Path
 from click.testing import CliRunner
 from htmd.cli.verify import verify
 
-from utils import remove_fields_from_post
+from utils import (
+    remove_fields_from_post,
+    set_config_field,
+    set_example_field,
+)
 
 
 def test_verify(run_start: CliRunner) -> None:
@@ -46,15 +50,7 @@ def test_verify_published_missing(run_start: CliRunner) -> None:
 
 
 def test_verify_published_invalid_year(run_start: CliRunner) -> None:
-    example_post_path = Path('posts') / 'example.md'
-    with example_post_path.open('r') as post:
-        lines = post.readlines()
-    with example_post_path.open('w') as post:
-        for line in lines:
-            if 'published:' in line:
-                post.write('published: 14-10-30\n')
-            else:
-                post.write(line)
+    set_example_field('published', '14-10-30')
 
     result = run_start.invoke(verify)
     assert result.exit_code == 1
@@ -66,15 +62,7 @@ def test_verify_published_invalid_year(run_start: CliRunner) -> None:
 
 
 def test_verify_published_invalid_month(run_start: CliRunner) -> None:
-    example_post_path = Path('posts') / 'example.md'
-    with example_post_path.open('r') as post:
-        lines = post.readlines()
-    with example_post_path.open('w') as post:
-        for line in lines:
-            if 'published:' in line:
-                post.write('published: 2014-1-30\n')
-            else:
-                post.write(line)
+    set_example_field('published', '2014-1-30')
 
     result = run_start.invoke(verify)
     assert result.exit_code == 1
@@ -86,15 +74,7 @@ def test_verify_published_invalid_month(run_start: CliRunner) -> None:
 
 
 def test_verify_published_invalid_day(run_start: CliRunner) -> None:
-    example_post_path = Path('posts') / 'example.md'
-    with example_post_path.open('r') as post:
-        lines = post.readlines()
-    with example_post_path.open('w') as post:
-        for line in lines:
-            if 'published:' in line:
-                post.write('published: 2014-01-3\n')
-            else:
-                post.write(line)
+    set_example_field('published', '2014-01-3')
 
     result = run_start.invoke(verify)
     assert result.exit_code == 1
@@ -111,18 +91,7 @@ def test_verify_site_name_empty(run_start: CliRunner) -> None:
         '[site] name is not set in config.toml.\n'
     )
 
-    config_path = Path('config.toml')
-    with config_path.open('r') as post:
-        lines = post.readlines()
-    with config_path.open('w') as post:
-        seen = False
-        for line in lines:
-            if 'name' in line and not seen:
-                # [site] name is the first name
-                seen = True
-                post.write("name = ''\n")
-            else:
-                post.write(line)
+    set_config_field('name', '')
 
     result = run_start.invoke(verify)
     # [site] name isn't required
@@ -136,12 +105,15 @@ def test_verify_site_name_missing(run_start: CliRunner) -> None:
         '[site] name is not set in config.toml.\n'
     )
     config_path = Path('config.toml')
+    assert 'name = "htmd"' in config_path.read_text()
     with config_path.open('r') as post:
         lines = post.readlines()
     with config_path.open('w') as post:
         for line in lines:
-            if 'name' not in line:
+            if not line.startswith('name = '):
                 post.write(line)
+
+    assert 'name = "htmd"' not in config_path.read_text()
 
     result = run_start.invoke(verify)
 
