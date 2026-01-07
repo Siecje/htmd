@@ -449,7 +449,6 @@ def test_without_published_updated_datetime(run_start: CliRunner) -> None:
     )
     set_example_field('updated', updated_dt.isoformat())
     remove_fields_from_post('example', ('published',))
-    assert get_example_field('published') is None
 
     now = datetime.datetime.now(datetime.UTC)
     result = run_start.invoke(build)

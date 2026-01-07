@@ -1,6 +1,10 @@
-from ._compat import implements_to_string as implements_to_string, string_types as string_types
-from _typeshed import Incomplete
 from collections.abc import Generator
+import datetime
+
+from _typeshed import Incomplete
+
+from ._compat import implements_to_string as implements_to_string, string_types as string_types
+
 
 XHTML_NAMESPACE: str
 
@@ -38,11 +42,11 @@ class FeedEntry:
     content_type: Incomplete
     url: Incomplete
     id: Incomplete
-    updated: Incomplete
+    updated: datetime.datetime
     summary: Incomplete
     summary_type: Incomplete
     author: Incomplete
-    published: Incomplete
+    published: datetime.datetime
     rights: Incomplete
     links: Incomplete
     categories: Incomplete

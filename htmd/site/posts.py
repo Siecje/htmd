@@ -65,9 +65,11 @@ def on_load(state: BlueprintSetupState) -> None:
 def feed() -> Response:
     name = current_app.config.get('SITE_NAME')
     subtitle = current_app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
-    url = current_app.config.get('URL')
+    feed_url = url_for('posts.feed', _external=True)
+    url = url_for('posts.all_posts', _external=True)
     atom = AtomFeed(
-        feed_url=url_for('posts.all_posts'),
+        feed_url=feed_url,
+        generator=(None, None, None),
         subtitle=subtitle,
         title=name,
         url=url,
@@ -79,16 +81,20 @@ def feed() -> Response:
             month=post.meta['published'].strftime('%m'),
             day=post.meta['published'].strftime('%d'),
             path=post.path,
+            _external=True,
         )
 
-        post_datetime = post.meta.get('updated') or post.meta['published']
+        # published and updated need to be datetime
+        published = post.meta['published']
+        post_datetime = post.meta.get('updated') or published
         atom.add(
             post.meta.get('title'),
             post.html,
-            content_type='html',
             author=post.meta.get('author', current_app.config.get('DEFAULT_AUTHOR')),
-            url=url,
+            content_type='html',
+            published=published,
             updated=post_datetime,
+            url=url,
         )
     ret = atom.get_response()
     return ret
