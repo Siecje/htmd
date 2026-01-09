@@ -4,7 +4,11 @@
 ### Added
 - Works with Flask-FlatPages 0.9.0
 ### Changed
-
+- Improve Atom feed
+    - Use fully qualified URLs
+    - Unique feed id
+    - Add <published>
+    - Remove <generator>
 ### Fixed
 - Protected post subtitles are encrypted
 - Hide protected post data on list pages
