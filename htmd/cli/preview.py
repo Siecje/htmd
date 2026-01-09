@@ -19,6 +19,7 @@ from .. import site
 from ..utils import (
     combine_and_minify_css,
     combine_and_minify_js,
+    sync_posts,
     validate_post,
 )
 
@@ -181,6 +182,8 @@ def preview(
 
     if js_minify and combine_and_minify_js(Path(app.static_folder)):
         app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
+
+    sync_posts(app, site.posts)
 
     stop_event = threading.Event()
 

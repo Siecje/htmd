@@ -44,6 +44,7 @@ def validate_example_feed(
     if updated:
         assert updated_str == updated
     else:
+        # <updated> in feed will be post.published
         assert updated_str.startswith('2014-10-30')
     # Check for ISO 8601 format (YYYY-MM-DDTHH:MM:SS...)
     iso_regex = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}'
@@ -62,7 +63,7 @@ def validate_example_feed(
     assert entry.find('content').text == expected
 
 
-def test_without_updated(run_start: CliRunner) -> None:
+def test_without_updated_build(run_start: CliRunner) -> None:
     remove_fields_from_post('example', ('updated',))
     path = Path('posts') / 'example.md'
     with path.open('r') as post_file:
@@ -83,10 +84,57 @@ def test_without_updated(run_start: CliRunner) -> None:
     base_url = f'http://{server_name}'
     validate_example_feed(base_url, feed_contents)
 
+
+def test_without_updated_preview(run_start: CliRunner) -> None:
+    remove_fields_from_post('example', ('updated',))
+    path = Path('posts') / 'example.md'
+    with path.open('r') as post_file:
+        contents = post_file.read()
+    assert 'updated:' not in contents
+
+    server_name = 'example.com'
+    set_config_field('url', server_name)
+
+    base_url = f'http://{server_name}'
     with run_preview(run_start) as preview_base_url:
         response = requests.get(preview_base_url + '/feed.atom', timeout=1)
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(base_url, response.text)
+
+
+def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
+    remove_fields_from_post('example', ('updated',))
+    path = Path('posts') / 'example.md'
+    with path.open('r') as post_file:
+        contents = post_file.read()
+    assert 'updated:' not in contents
+
+    server_name = 'example.com'
+    set_config_field('url', server_name)
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+    published = get_example_field('published')
+
+    feed_path = Path('build') / 'feed.atom'
+    with feed_path.open('r') as feed_file:
+        feed_contents = feed_file.read()
+
+    base_url = f'http://{server_name}'
+    validate_example_feed(base_url, feed_contents)
+
+    with run_preview(run_start) as preview_base_url:
+        updated = get_example_field('updated')
+        response = requests.get(preview_base_url + '/feed.atom', timeout=1)
+        assert response.status_code == 200  # noqa: PLR2004
+        validate_example_feed(
+            base_url,
+            response.text,
+            published=published,
+            updated=updated,
+        )
 
 
 def test_with_updated(run_start: CliRunner) -> None:
@@ -119,6 +167,30 @@ def test_with_updated(run_start: CliRunner) -> None:
     )
 
     with run_preview(run_start) as preview_base_url:
+        response = requests.get(preview_base_url + '/feed.atom', timeout=1)
+        assert response.status_code == 200  # noqa: PLR2004
+        validate_example_feed(
+            base_url,
+            response.text,
+            published=published,
+            updated=updated,
+        )
+
+
+def test_without_updated_no_build_preview(run_start: CliRunner) -> None:
+    # Set published as datetime so updated will be set
+    published = '2014-10-30T10:29:00+00:00'
+    set_example_field('published', published)
+
+    assert 'updated:' not in (Path('posts') / 'example.md').read_text()
+
+    server_name = 'example.com'
+    set_config_field('url', server_name)
+
+    base_url = f'http://{server_name}'
+    with run_preview(run_start) as preview_base_url:
+        updated = get_example_field('updated')
+        assert updated is not None
         response = requests.get(preview_base_url + '/feed.atom', timeout=1)
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(

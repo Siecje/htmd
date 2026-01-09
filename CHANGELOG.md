@@ -9,9 +9,12 @@
     - Unique feed id
     - Add <published>
     - Remove <generator>
+- Added `_hash` post metadata field
+- Set post dates when `htmd preview` is run
 ### Fixed
 - Protected post subtitles are encrypted
 - Hide protected post data on list pages
+- Only update post updated if there are changes
 ### Breaking
 - Anchor elements in templates need to update `url_for` argument
     - `index` -> `main.index`

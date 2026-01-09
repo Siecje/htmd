@@ -1,3 +1,6 @@
+from collections.abc import Iterable
+import datetime
+import hashlib
 from importlib.resources import as_file, files
 from pathlib import Path
 import shutil
@@ -236,3 +239,110 @@ def validate_post(post: Page, required_fields: list[str]) -> bool: # noqa: C901
             send_stderr(msg)
 
     return correct
+
+
+def _get_published(
+    published: None | datetime.date,
+    updated: None | datetime.date,
+    now: datetime.datetime,
+) -> datetime.datetime:
+    if isinstance(published, datetime.datetime):
+        return published
+
+    if isinstance(published, datetime.date):
+        new_published = datetime.datetime.combine(
+            published,
+            datetime.time.min,
+            tzinfo=datetime.UTC,
+        )
+        return new_published
+
+    if isinstance(updated, datetime.datetime):
+        return updated
+    if isinstance(updated, datetime.date):
+        new_published = datetime.datetime.combine(
+            updated,
+            datetime.time.min,
+            tzinfo=datetime.UTC,
+        )
+        return new_published
+
+    return now
+
+
+def _get_post_hash(title: str, contents: str) -> str:
+    hash_obj = hashlib.sha256()
+
+    separator = b'\x00'
+
+    hash_obj.update(title.encode('utf-8'))
+    hash_obj.update(separator)
+    hash_obj.update(contents.encode('utf-8'))
+
+    hex_result = hash_obj.hexdigest()
+    return hex_result
+
+
+def sync_posts(
+    app: Flask,
+    posts: Iterable[Page],
+) -> None:
+    """
+    Sync published, updated, and _hash for each post.
+
+    Ensure each post has published:
+    If published is missing set to current datetime
+    Atom feed needs a datetime
+    so if published is date, convert to datetime
+    if published is already datetime
+    set updated field to current datetime
+
+    If updated is a date, convert to datetime.
+
+    Set hash using title and post contents.
+    """
+    now = datetime.datetime.now(tz=datetime.UTC)
+    for post in posts:
+        if post.meta.get('draft', False):
+            continue
+
+        current_published = post.meta.get('published')
+        current_updated = post.meta.get('updated')
+        current_hash = post.meta.get('_hash', '')
+        published = _get_published(
+            current_published,
+            current_updated,
+            now,
+        )
+        with app.app_context():
+            post_hash = _get_post_hash(
+                post.meta.get('title') or '',
+                post.html,
+            )
+
+        hash_changed = current_hash != post_hash
+
+        if hash_changed:
+            post.meta['_hash'] = post_hash
+            set_post_metadata(app, post, '_hash', post_hash)
+        if published != current_published:
+            post.meta['published'] = published
+            set_post_metadata(app, post, 'published', published.isoformat())
+        post_already_published = (
+            isinstance(current_published, datetime.datetime)
+            or isinstance(current_updated, datetime.datetime)
+        )
+        if hash_changed and post_already_published:
+            post.meta['updated'] = now
+            set_post_metadata(app, post, 'updated', now.isoformat())
+        elif (
+            not isinstance(current_updated, datetime.datetime)
+            and isinstance(current_updated, datetime.date)
+        ):
+            updated = datetime.datetime.combine(
+                current_updated,
+                datetime.time.min,
+                tzinfo=datetime.UTC,
+            )
+            post.meta['updated'] = updated
+            set_post_metadata(app, post, 'updated', updated.isoformat())

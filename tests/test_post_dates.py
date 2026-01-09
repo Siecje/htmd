@@ -216,61 +216,54 @@ def test_build_day_404_no_posts(run_start: CliRunner) -> None:
 
 def test_build_time_is_added_to_dates(run_start: CliRunner) -> None:
     # published and updated are dates without times
-    # both field should have time
-    # published date will stay
-    # updated will be set to current datetime
-    set_example_field('published', '2014-10-30')
-    set_example_field('updated', '2026-01-03')
+    # both field should have time 00:00 added
+    before_published = '2014-10-30'
+    before_updated = '2026-01-03'
+    set_example_field('published', before_published)
+    set_example_field('updated', before_updated)
     example_path = Path('posts') / 'example.md'
-    with example_path.open('r') as post_file:
-        b_lines = post_file.readlines()
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
 
     with example_path.open('r') as post_file:
         a_lines = post_file.readlines()
-    for b_line, a_line in zip(b_lines, a_lines, strict=True):
-        if 'updated' in b_line:
-            b_updated = b_line
-            a_updated = a_line
-        if 'published' in b_line:
-            b_published = b_line
-            a_published = a_line
+    after_published = next(
+        line.replace('published: ', '').strip()
+        for line in a_lines
+        if 'published: ' in line
+    )
+    after_updated = next(
+        line.replace('updated: ', '').strip()
+        for line in a_lines
+        if 'updated: ' in line
+    )
 
     # Time should be added to published
-    assert a_published is not None
-    assert a_published.startswith(b_published.strip())
-    assert 'T' in a_published
-    assert len(a_published) > len(b_published)
-    b_published_datetime_str = b_published.replace('published:', '').strip()
-    a_published_datetime_str = a_published.replace('published:', '').strip()
-    b_published_datetime = datetime.datetime.fromisoformat(b_published_datetime_str)
-    a_published_datetime = datetime.datetime.fromisoformat(a_published_datetime_str)
+    assert after_published is not None
+    assert after_published.startswith(before_published)
+    assert 'T' in after_published
+    assert len(after_published) > len(before_published)
+    b_published_datetime = datetime.datetime.fromisoformat(before_published)
+    a_published_datetime = datetime.datetime.fromisoformat(after_published)
 
     # Before didn't have a time
     assert b_published_datetime.hour == 0
     assert b_published_datetime.minute == 0
     assert b_published_datetime.second == 0
 
-    published_date_with_current_time = datetime.datetime.now(tz=datetime.UTC).replace(
-        year=a_published_datetime.year,
-        month=a_published_datetime.month,
-        day=a_published_datetime.day,
+    assert a_published_datetime == datetime.datetime.combine(
+        b_published_datetime.date(),
+        datetime.time.min,
+        tzinfo=datetime.UTC,
     )
-    time_difference = abs(a_published_datetime - published_date_with_current_time)
-
-    # Verify updated time is close to now
-    threshold_seconds = 60
-    assert time_difference.total_seconds() < threshold_seconds
 
     # Time should be added to updated
-    assert a_updated is not None
-    assert 'T' in a_updated
-    assert not a_updated.startswith(b_updated.strip())
-    assert len(a_updated) > len(b_updated)
-    b_updated_datetime_str = b_updated.replace('updated:', '').strip()
-    a_updated_datetime_str = a_updated.replace('updated:', '').strip()
+    assert after_updated is not None
+    assert 'T' in after_updated
+    assert len(after_updated) > len(before_updated)
+    b_updated_datetime_str = before_updated.replace('updated:', '').strip()
+    a_updated_datetime_str = after_updated.replace('updated:', '').strip()
     b_updated_datetime = datetime.datetime.fromisoformat(b_updated_datetime_str)
     a_updated_datetime = datetime.datetime.fromisoformat(a_updated_datetime_str)
 
@@ -279,12 +272,11 @@ def test_build_time_is_added_to_dates(run_start: CliRunner) -> None:
     assert b_updated_datetime.minute == 0
     assert b_updated_datetime.second == 0
 
-    updated_date_with_current_time = datetime.datetime.now(tz=datetime.UTC)
-    time_difference = abs(a_updated_datetime - updated_date_with_current_time)
-
-    # Verify updated time is close to now
-    threshold_seconds = 60
-    assert time_difference.total_seconds() < threshold_seconds
+    assert a_updated_datetime == datetime.datetime.combine(
+        b_updated_datetime,
+        datetime.time.min,
+        tzinfo=datetime.UTC,
+    )
 
 
 def test_build_published_time_is_added(run_start: CliRunner) -> None:
@@ -296,40 +288,40 @@ def test_build_published_time_is_added(run_start: CliRunner) -> None:
     example_path = Path('posts') / 'example.md'
     with example_path.open('r') as post_file:
         b_lines = post_file.readlines()
+    before_published = next(
+        line.replace('published: ', '').strip()
+        for line in b_lines
+        if 'published: ' in line
+    )
+
     result = run_start.invoke(build)
     assert result.exit_code == 0
     with example_path.open('r') as post_file:
         a_lines = post_file.readlines()
-    for b_line, a_line in zip(b_lines, a_lines, strict=True):
-        if 'published' in b_line:
-            b_published = b_line
-            a_published = a_line
 
-    assert a_published.startswith(b_published.strip())
-    assert len(a_published) > len(b_published)
-    b_datetime_str = b_published.replace('published:', '').strip()
-    a_datetime_str = a_published.replace('published:', '').strip()
-    b_datetime = datetime.datetime.fromisoformat(b_datetime_str)
-    a_datetime = datetime.datetime.fromisoformat(a_datetime_str)
+    after_published = next(
+        line.replace('published: ', '').strip()
+        for line in a_lines
+        if 'published: ' in line
+    )
+    # verify updated is not added
+    assert 'updated' not in ''.join(a_lines)
+
+    assert after_published.startswith(before_published)
+    assert len(after_published) > len(before_published)
+    b_datetime = datetime.datetime.fromisoformat(before_published)
+    a_datetime = datetime.datetime.fromisoformat(after_published)
 
     # Before didn't have a time
     assert b_datetime.hour == 0
     assert b_datetime.minute == 0
     assert b_datetime.second == 0
 
-    date_with_current_time = datetime.datetime.now(datetime.UTC).replace(
-        year=a_datetime.year,
-        month=a_datetime.month,
-        day=a_datetime.day,
+    assert a_datetime == datetime.datetime.combine(
+        b_datetime.date(),
+        datetime.time.min,
+        tzinfo=datetime.UTC,
     )
-    time_difference = abs(a_datetime - date_with_current_time)
-
-    # Verify published time is close to now
-    threshold_seconds = 60
-    assert time_difference.total_seconds() < threshold_seconds
-
-    # verify updated is not added
-    assert 'updated' not in ''.join(a_lines)
 
 
 def test_build_updated_is_added(run_start: CliRunner) -> None:
@@ -345,6 +337,9 @@ def test_build_updated_is_added(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0
 
+    # Change post so that updated will be added.
+    set_example_field('title', 'test_build_updated_is_added')
+
     # Second build adds updated with time
     result2 = run_start.invoke(build)
     assert result2.exit_code == 0
@@ -352,11 +347,12 @@ def test_build_updated_is_added(run_start: CliRunner) -> None:
     example_path = Path('posts') / 'example.md'
     with example_path.open('r') as post_file:
         a_lines = post_file.readlines()
-    for a_line in a_lines:
-        if 'updated' in a_line:
+    for a_line in a_lines:  # pragma: no branch
+        if 'updated: ' in a_line:
             a_updated = a_line
+            break
 
-    a_datetime_str = a_updated.replace('updated:', '').strip()
+    a_datetime_str = a_updated.replace('updated: ', '').strip()
     a_datetime = datetime.datetime.fromisoformat(a_datetime_str)
 
     date_with_current_time = datetime.datetime.now(datetime.UTC).replace(
@@ -377,6 +373,9 @@ def test_build_updated_is_added_once(run_start: CliRunner) -> None:
     # First build adds published time
     result = run_start.invoke(build)
     assert result.exit_code == 0
+
+    with (Path('posts') / 'example.md').open('a') as example_file:
+        example_file.write('\nAnother line to change the hash.\n')
 
     # Second build adds updated
     result2 = run_start.invoke(build)
@@ -427,17 +426,23 @@ def test_build_with_post_in_each_month(run_start: CliRunner) -> None:
 
 
 def test_published_date_updated_datetime(run_start: CliRunner) -> None:
+    before_published = get_example_field('published')
+    assert isinstance(before_published, str)
+    before_dt = datetime.date.fromisoformat(before_published)
+    assert not isinstance(before_dt, datetime.datetime)
+
     utc_now = datetime.datetime.now(datetime.UTC)
     set_example_field('updated', utc_now.isoformat())
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
 
-    # published now has time from updated
+    # published time was added
     published_str = get_example_field('published')
     assert isinstance(published_str, str)
     published = datetime.datetime.fromisoformat(published_str)
-    assert published.time() == utc_now.time()
+    assert isinstance(published, datetime.datetime)
+    assert published.time() == datetime.time.min
 
 
 def test_without_published_updated_datetime(run_start: CliRunner) -> None:
@@ -449,6 +454,12 @@ def test_without_published_updated_datetime(run_start: CliRunner) -> None:
     )
     set_example_field('updated', updated_dt.isoformat())
     remove_fields_from_post('example', ('published',))
+
+    # Change hash so post is considered updated
+    set_example_field(
+        '_hash',
+        'testwithoutpublishedupdateddatetime',
+    )
 
     now = datetime.datetime.now(datetime.UTC)
     result = run_start.invoke(build)
@@ -472,18 +483,43 @@ def test_without_published_updated_date(run_start: CliRunner) -> None:
     set_example_field('updated', updated_date.isoformat())
     remove_fields_from_post('example', ('published',))
 
-    now = datetime.datetime.now(datetime.UTC)
     result = run_start.invoke(build)
     assert result.exit_code == 0
 
-    # published is set to updated
+    # published is set to updated date with time 00:00
     published_str = get_example_field('published')
     assert isinstance(published_str, str)
     published = datetime.datetime.fromisoformat(published_str)
     assert published.date() == updated_date
+    assert published.time() == datetime.time.min
 
-    # updated is set to now
+    # updated date is unchanged and time is set to 00:00
     updated_str = get_example_field('updated')
     assert isinstance(updated_str, str)
     updated = datetime.datetime.fromisoformat(updated_str)
-    assert updated.date() == now.date()
+    assert updated.date() == updated_date
+    assert updated.time() == datetime.time.min
+
+
+def test_without_published_updated_date_hash_changed(run_start: CliRunner) -> None:
+    updated_date = datetime.date(year=2026, month=1, day=4)
+    set_example_field('updated', updated_date.isoformat())
+    remove_fields_from_post('example', ('published',))
+
+    set_example_field('_hash', 'testwithoutpublishedupdateddatehashchanged')
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    # published is set to updated date with time 00:00
+    published_str = get_example_field('published')
+    assert isinstance(published_str, str)
+    published = datetime.datetime.fromisoformat(published_str)
+    assert published.date() == updated_date
+    assert published.time() == datetime.time.min
+
+    # updated date is unchanged and time is set to 00:00
+    updated_str = get_example_field('updated')
+    assert isinstance(updated_str, str)
+    updated = datetime.datetime.fromisoformat(updated_str)
+    assert updated.date() == updated_date
+    assert updated.time() == datetime.time.min

@@ -459,7 +459,6 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:
 
 
 def test_preview_drafts(run_start: CliRunner) -> None:
-    args = ['--drafts']
     set_example_to_draft()
     success = 200
 
@@ -487,6 +486,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
             assert 'Example Post' not in response.text
 
     # drafts should appear
+    args = ['--drafts']
     with run_preview(run_start, args) as base_url:
         for _status, url in urls:
             response = requests.get(base_url + url, timeout=1)
@@ -680,8 +680,11 @@ def test_sse(run_start: CliRunner) -> None:
         set_example_contents('Different1.')
         start_time = int(time.time())
         wait_s = 10
-        while started.is_set() and (int(time.time()) - start_time) < wait_s:
-            time.sleep(0.1)
+        while (
+            started.is_set()
+            and (int(time.time()) - start_time) < wait_s
+        ):  # pragma: no branch
+            time.sleep(0.1)  # pragma: no cover
 
         set_example_contents('Different2.')
         ended.wait(timeout=10)

@@ -1,4 +1,5 @@
 import calendar
+import datetime
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
@@ -86,7 +87,7 @@ def feed() -> Response:
 
         # published and updated need to be datetime
         published = post.meta['published']
-        post_datetime = post.meta.get('updated') or published
+        post_datetime = post.meta.get('updated', published)
         atom.add(
             post.meta.get('title'),
             post.html,
@@ -148,7 +149,10 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     if draft_and_not_shown(post):
         abort(404)
     date_str = f'{year}-{month}-{day}'
-    if post.meta.get('published').strftime('%Y-%m-%d') != date_str:
+    published = post.meta.get('published')
+    if (not isinstance(published, (datetime.date))
+        or published.strftime('%Y-%m-%d') != date_str
+    ):
         abort(404)
     if 'password' in post.meta and post.meta['password'] is not False:
         return render_password_protected_post(post)
