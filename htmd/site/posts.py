@@ -129,7 +129,11 @@ def render_password_protected_post(post: Page) -> ResponseReturnValue:
         post.meta['password'],
     )
     if password != post.meta['password']:
-        set_post_metadata(current_app, post, 'password', password)
+        set_post_metadata(
+            current_app,
+            post,
+            {'password': password},
+        )
     return render_template(
         'post.html',
         active=post.path,

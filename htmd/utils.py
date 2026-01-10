@@ -129,53 +129,64 @@ def copy_site_file(directory: Path, filename: str) -> None:
         copy_file(file, destination_path)
 
 
+def format_yaml_value(value: str) -> str:
+    """Return a single-line value or a YAML literal block if newlines are present."""
+    if '\n' in value:
+        # YAML Literal Block Scalar: indent each line by 4 spaces
+        indented = value.replace('\n', '\n    ')
+        return f'|\n    {indented}'
+    return value
+
+
 def set_post_metadata(
     app: Flask,
     post: Page,
-    field: str,
-    value: str,
+    updates: dict[str, str],
 ) -> None:
-    file_path = (
-        Path(app.config['FLATPAGES_ROOT'])
-        / (post.path + app.config['FLATPAGES_EXTENSION'])
-    )
+    post_folder = Path(app.config['FLATPAGES_ROOT']) / post.folder
+    file_extension = app.config['FLATPAGES_EXTENSION']
+    file_path = post_folder / (post.path + file_extension)
     with file_path.open('r') as file:
         lines = file.readlines()
 
-    # Format multi-line value
-    if value.count('\n') > 0:
-        value_lines = value.split('\n')
-        value_formatted = '|\n'
-        for line in value_lines:
-            value_formatted += '    ' + line + '\n'
-        value = value_formatted.rstrip()
+    applied_keys = set()
+    new_lines = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        key_match = None
+        for key in updates:
+            if line.startswith(f'{key}:'):
+                key_match = key
+                break
 
-    # Write updated file
-    found = False
+        if key_match:
+            val = updates[key]
+            formatted_val = format_yaml_value(val)
+            new_lines.append(f'{key}: {formatted_val}\n')
+            applied_keys.add(key)
+
+            # Skip existing multi-line values in the source
+            if line.strip().endswith('|'):
+                i += 1
+                while i < len(lines) and lines[i].startswith('    '):
+                    i += 1
+                continue
+        elif line.strip() == '...' and (set(updates.keys()) - applied_keys):
+            # If we hit the end of metadata and have new keys to add
+            for key, val in updates.items():
+                if key not in applied_keys:
+                    formatted_val = format_yaml_value(val)
+                    new_lines.append(f'{key}: {formatted_val}\n')
+            new_lines.append(line)
+            applied_keys.update(updates.keys())
+        else:
+            new_lines.append(line)
+
+        i += 1
+
     with file_path.open('w') as file:
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            if not found and line.startswith(f'{field}:'):
-                # Field already exists, check if it's a multi-line value
-                if line.strip().endswith('|'):
-                    # Multi-line value, skip lines for value
-                    j = i + 1
-                    while j < len(lines) and lines[j].startswith('    '):
-                        j += 1
-                    i = j - 1
-
-                file.write(f'{field}: {value}\n')
-                found = True
-            elif not found and line == '...\n':
-                # Write field and value before '...'
-                file.write(f'{field}: {value}\n')
-                file.write(line)
-                found = True
-            else:
-                file.write(line)
-            i += 1
-
+        file.writelines(new_lines)
 
 
 def valid_uuid(string: str) -> bool:
@@ -322,19 +333,20 @@ def sync_posts(
 
         hash_changed = current_hash != post_hash
 
+        file_updates = {}
         if hash_changed:
             post.meta['_hash'] = post_hash
-            set_post_metadata(app, post, '_hash', post_hash)
+            file_updates['_hash'] = post.meta['_hash']
         if published != current_published:
             post.meta['published'] = published
-            set_post_metadata(app, post, 'published', published.isoformat())
+            file_updates['published'] = published.isoformat()
         post_already_published = (
             isinstance(current_published, datetime.datetime)
             or isinstance(current_updated, datetime.datetime)
         )
         if hash_changed and post_already_published:
             post.meta['updated'] = now
-            set_post_metadata(app, post, 'updated', now.isoformat())
+            file_updates['updated'] = now.isoformat()
         elif (
             not isinstance(current_updated, datetime.datetime)
             and isinstance(current_updated, datetime.date)
@@ -345,4 +357,11 @@ def sync_posts(
                 tzinfo=datetime.UTC,
             )
             post.meta['updated'] = updated
-            set_post_metadata(app, post, 'updated', updated.isoformat())
+            file_updates['updated'] = updated.isoformat()
+
+        if file_updates:
+            set_post_metadata(
+                app,
+                post,
+                file_updates,
+            )

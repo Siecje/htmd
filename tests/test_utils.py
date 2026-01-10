@@ -24,7 +24,11 @@ def test_set_post_metadata_with_field_in_title(flask_app: Flask) -> None:
 
     post = site.posts.get('example')
     post.meta['draft'] = 'build|' + str(uuid.uuid4())
-    set_post_metadata(flask_app, post, 'draft', post.meta['draft'])
+    set_post_metadata(
+        flask_app,
+        post,
+        {'draft': post.meta['draft']},
+    )
 
     with example_path.open('r') as example_file:
         contents = example_file.read()
@@ -62,7 +66,11 @@ tn4eotA4itJskbKscvxLLhOkokWxz5+itKtp47bfAoGBAKBTLFXAikBjRpkpg5NX
 I6UzQGcHpLQFzw2AV6rcA1RlVLrNpPQXgq1vFZAiOJotkn9oj6/3BZSPDPjkw2f5
 gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     old_post = site.posts.get('example')
-    set_post_metadata(flask_app, old_post, 'password', password)
+    set_post_metadata(
+        flask_app,
+        old_post,
+        {'password': password},
+    )
     site.posts.reload()
     with flask_app.app_context():
         post = site.posts.get('example')
@@ -75,7 +83,11 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
 
     # Old multi line value needs to be replaced
     new_password = password + 'A'
-    set_post_metadata(flask_app, post, 'password', new_password)
+    set_post_metadata(
+        flask_app,
+        post,
+        {'password': new_password},
+    )
     site.posts.reload()
     with flask_app.app_context():
         post = site.posts.get('example')
@@ -88,8 +100,16 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
 
     # Add another field so password is not last
     new_password = password + 'AB'
-    set_post_metadata(flask_app, post, 'draft', 'true')
-    set_post_metadata(flask_app, post, 'password', new_password)
+    set_post_metadata(
+        flask_app,
+        post,
+        {'draft': 'true'},
+    )
+    set_post_metadata(
+        flask_app,
+        post,
+        {'password': new_password},
+    )
     site.posts.reload()
     with flask_app.app_context():
         post = site.posts.get('example')
@@ -118,7 +138,6 @@ def test_validate_post_invalid_updated(
     assert not is_valid
     exp = f'Updated date {invalid_date} for example is not in the format YYYY-MM-DD.\n'
     assert exp == capsys.readouterr().err
-
 
 
 def test_validate_post_invalid_draft_uuid(

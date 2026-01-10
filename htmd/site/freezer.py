@@ -66,7 +66,11 @@ def draft() -> Iterator[tuple[str, dict[str, str]]]:
     for post in draft_posts:
         if not valid_uuid(post.meta['draft'].replace('build|', '')):
             post.meta['draft'] = 'build|' + str(uuid.uuid4())
-            set_post_metadata(current_app, post, 'draft', post.meta['draft'])
+            set_post_metadata(
+                current_app,
+                post,
+                {'draft': post.meta['draft']},
+            )
         yield 'posts.draft', {
             'post_uuid': post.meta['draft'].replace('build|', ''),
         }
