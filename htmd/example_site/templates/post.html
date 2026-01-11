@@ -57,10 +57,16 @@
         {% endif %}
       </h2>
     {% endif %}
-    {% if SHOW_AUTHOR %}
-        <span class="meta">
-          Posted by <a href="{{ url_for('posts.author', author = post.author or DEFAULT_AUTHOR) }}">{{ post.author }}</a> on {% if post.published %}{{ post.published.strftime('%Y-%m-%d') }}{% endif %}
-        </span>
+    {% if SHOW_AUTHOR or post.published -%}
+      <span class="meta">
+        Posted
+        {%- if SHOW_AUTHOR -%}
+          {{ " " }}by <a href="{{ url_for('posts.author', author = post.author or DEFAULT_AUTHOR) }}">{{ post.author or DEFAULT_AUTHOR }}</a>
+        {%- endif -%}
+        {%- if post.published -%}
+          {{ " " }}on {{ post.published.strftime('%Y-%m-%d') }}
+        {%- endif %}
+      </span>
     {% endif %}
 
     {% if encrypted_content %}

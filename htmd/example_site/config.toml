@@ -30,7 +30,7 @@ pretty = false
 minify = false
 
 [author]
-# Show author and date at the top of every post?
+# Show author at the top of every post?
 show = true
 # Author to use if author is not specified in the post file
 default_name = ""

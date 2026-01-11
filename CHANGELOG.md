@@ -11,6 +11,7 @@
     - Remove <generator>
 - Added `_hash` post metadata field
 - Set post dates when `htmd preview` is run
+- Show date on post page when there is no author
 ### Fixed
 - Protected post subtitles are encrypted
 - Hide protected post data on list pages

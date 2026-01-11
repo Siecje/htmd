@@ -76,7 +76,7 @@ def set_example_subtitle(value: str) -> None:
     set_example_field('subtitle', value)
 
 
-def set_config_field(field: str, value: str) -> None:
+def set_config_field(field: str, value: str | bool) -> None: # noqa: FBT001
     config_path = Path('config.toml')
     with config_path.open('r') as config_file:
         lines = config_file.readlines()
@@ -84,7 +84,10 @@ def set_config_field(field: str, value: str) -> None:
     with config_path.open('w') as config_file:
         for line in lines:
             if line.startswith(f'{field} ='):
-                config_file.write(f'{field} = "{value}"\n')
+                if isinstance(value, bool):
+                    config_file.write(f'{field} = {str(value).lower()}\n')
+                else:
+                    config_file.write(f'{field} = "{value}"\n')
             else:
                 config_file.write(line)
 

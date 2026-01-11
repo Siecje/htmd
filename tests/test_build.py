@@ -495,3 +495,28 @@ def test_build_doesnt_have_sse(run_start: CliRunner) -> None:
         contents = post_file.read()
 
     assert sse_js_line not in contents
+
+
+def test_post_without_published_and_without_author(run_start: CliRunner) -> None:
+    set_config_field('show', value=False)
+    set_example_to_draft_build()
+    remove_fields_from_post('example', ('published', 'updated'))
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert re.search(SUCCESS_REGEX, result.output)
+
+    with (Path('posts') / 'example.md').open('r') as md_file:
+        md_str = md_file.read()
+    data = yaml.safe_load(md_str[:md_str.find('...')])
+    build_uuid = data['draft'].replace('build|', '')
+
+    post_path = Path('build') / 'draft' / build_uuid / 'index.html'
+    with post_path.open('r') as post_file:
+        contents = post_file.read()
+
+    assert (
+        'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30'
+        not in contents
+    )
+    assert '<span class="meta">' not in contents
