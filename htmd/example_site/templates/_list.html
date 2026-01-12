@@ -1,5 +1,19 @@
 <div class="post-preview">
-  <a href="{{ url_for("posts.post", year=post.meta['published'].year, month=post.meta['published'].strftime('%m'), day=post.meta['published'].strftime('%d'), path=post.path) }}" class="post-preview-link">
+  {% if not post.published %}
+    <a href="{{ url_for(
+      "posts.draft",
+      post_uuid=post.meta['draft'].split('|')[1]
+      ) }}" class="post-preview-link"
+    >
+  {% else %}
+    <a href="{{ url_for(
+      "posts.post",
+      year=post.meta['published'].year,
+      month=post.meta['published'].strftime('%m'),
+      day=post.meta['published'].strftime('%d'),
+      path=post.path) }}" class="post-preview-link"
+    >
+  {% endif %}
     {% set is_protected = ('password' in post.meta and post.meta['password'] != false) %}
     <h2 class="post-title">
       {% if is_protected %}
@@ -21,7 +35,9 @@
     {% if SHOW_AUTHOR %}
     by <a href="{{ url_for('posts.author', author=post.author or DEFAULT_AUTHOR) }}">{{ post.author }}</a>
     {% endif %}
-    on {{ post.published.strftime('%Y-%m-%d') }}.
+    {% if post.published %}
+      on {{ post.published.strftime('%Y-%m-%d') }}.
+    {% endif %}
   </p>
   {% if post.meta.tags|length %}
     <p>

@@ -78,6 +78,8 @@ def create_app(show_drafts: bool = False) -> Flask: # noqa: FBT001,FBT002
     for flask_key, (table, key, default) in config_keys.items():
         app.config[flask_key] = htmd_config.get(table, {}).get(key, default)
     app.config['SERVER_NAME'] = app.config['SITE_URL']
+    app.config['SHOW_DRAFTS'] = show_drafts
+
     app.static_folder = project_dir / app.config['STATIC_FOLDER']
     assert app.static_folder is not None
     # To avoid full paths in config.toml

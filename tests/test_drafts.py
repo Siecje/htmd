@@ -6,13 +6,15 @@ from click.testing import CliRunner
 from htmd.cli.build import build
 from htmd.cli.start import start
 import pytest
+import requests
 
 from utils import (
-  remove_fields_from_post,
-  set_example_to_draft,
-  set_example_to_draft_build,
-  SUCCESS_REGEX,
+    remove_fields_from_post,
+    set_example_to_draft,
+    set_example_to_draft_build,
+    SUCCESS_REGEX,
 )
+from utils_preview import run_preview
 
 
 def copy_example_as_draft_build() -> None:
@@ -134,3 +136,19 @@ def test_draft_build_and_without_published(run_start: CliRunner) -> None:
     draft_uuid = get_draft_uuid('example')
     draft_path = Path('build') / 'draft' / draft_uuid / 'index.html'
     assert draft_path.is_file() is True
+
+    anchor_text = f'<a href="/draft/{draft_uuid}/" class="post-preview-link"'
+    with run_preview(run_start, ['--drafts']) as base_url:
+        response = requests.get(base_url + '/author/Taylor/', timeout=1)
+        contents = response.text
+        assert response.status_code == 200  # noqa: PLR2004
+        assert 'Example Post' in contents
+        assert anchor_text in contents
+
+    with run_preview(run_start) as base_url:
+        response = requests.get(base_url + '/author/Taylor/', timeout=1)
+        contents = response.text
+        # draft post is in build and links to author so author page exists
+        assert response.status_code == 200  # noqa: PLR2004
+        assert 'Example Post' not in contents
+        assert anchor_text not in contents

@@ -3,6 +3,7 @@
 ## [7.0.0] - 
 ### Added
 - Works with Flask-FlatPages 0.9.0
+- Show drafts without published on list pages during `htmd preview --drafts`
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs
