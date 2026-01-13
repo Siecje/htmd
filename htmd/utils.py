@@ -299,9 +299,12 @@ def sync_posts(
     posts: Iterable[Page],
 ) -> None:
     """
-    Sync published, updated, and _hash for each post.
+    Sync draft, published, updated, and _hash for each post.
 
-    Ensure each post has published:
+    Ensure each draft build post has a uuid.
+    Don't change published, updated, or _hash for drafts.
+
+    Ensure each non draft post has published:
     If published is missing set to current datetime
     Atom feed needs a datetime
     so if published is date, convert to datetime
@@ -315,6 +318,16 @@ def sync_posts(
     now = datetime.datetime.now(tz=datetime.UTC)
     for post in posts:
         if post.meta.get('draft', False):
+            if (
+                'build' in str(post.meta['draft'])
+                and not valid_uuid(post.meta['draft'].replace('build|', ''))
+            ):
+                post.meta['draft'] = 'build|' + str(uuid.uuid4())
+                set_post_metadata(
+                    app,
+                    post,
+                    {'draft': post.meta['draft']},
+                )
             continue
 
         current_published = post.meta.get('published')

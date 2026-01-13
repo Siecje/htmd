@@ -9,6 +9,7 @@ import pytest
 import requests
 
 from utils import (
+    get_example_field,
     remove_fields_from_post,
     set_example_to_draft,
     set_example_to_draft_build,
@@ -34,7 +35,7 @@ def get_draft_uuid(path: str) -> str:
     draft_path = Path('posts') / f'{path}.md'
     with draft_path.open('r') as draft_file:
         for line in draft_file.readlines():
-            if 'draft: build' in line:
+            if 'draft: build|' in line:
                 return line.replace('draft: build|', '').strip()
     return ''
 
@@ -152,3 +153,36 @@ def test_draft_build_and_without_published(run_start: CliRunner) -> None:
         assert response.status_code == 200  # noqa: PLR2004
         assert 'Example Post' not in contents
         assert anchor_text not in contents
+
+
+def test_draft_build_preview(run_start: CliRunner) -> None:
+    set_example_to_draft_build()
+    draft_value = get_example_field('draft')
+    assert draft_value == 'build'
+    draft_uuid = get_draft_uuid('example')
+    assert draft_uuid == ''
+
+    with run_preview(run_start) as base_url:
+        draft_uuid = get_draft_uuid('example')
+        assert draft_uuid != ''
+        response = requests.get(base_url + f'/draft/{draft_uuid}/', timeout=1)
+        assert response.status_code == 200  # noqa: PLR2004
+        contents = response.text
+        assert 'Example Post' in contents
+
+
+def test_draft_build_preview_without_published(run_start: CliRunner) -> None:
+    remove_fields_from_post('example', ('published', 'updated'))
+    set_example_to_draft_build()
+    draft_value = get_example_field('draft')
+    assert draft_value == 'build'
+    draft_uuid = get_draft_uuid('example')
+    assert draft_uuid == ''
+
+    with run_preview(run_start) as base_url:
+        draft_uuid = get_draft_uuid('example')
+        assert draft_uuid != ''
+        response = requests.get(base_url + f'/draft/{draft_uuid}/', timeout=1)
+        assert response.status_code == 200  # noqa: PLR2004
+        contents = response.text
+        assert 'Example Post' in contents

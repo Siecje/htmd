@@ -1,12 +1,10 @@
 from collections.abc import Iterator
 from pathlib import Path
-import uuid
 
-from flask import Blueprint, current_app, render_template
+from flask import Blueprint, render_template
 from flask.typing import ResponseReturnValue
 from flask_frozen import Freezer
 
-from ..utils import set_post_metadata, valid_uuid
 from .pages import pages
 from .posts import posts
 
@@ -61,16 +59,9 @@ def day_view() -> Iterator[tuple[str, dict[str, int | str]]]:
 def draft() -> Iterator[tuple[str, dict[str, str]]]:
     draft_posts = [
         p for p in posts
-        if 'draft' in p.meta and 'build' in str(p.meta['draft'])
+        if 'draft' in p.meta and 'build|' in str(p.meta['draft'])
     ]
     for post in draft_posts:
-        if not valid_uuid(post.meta['draft'].replace('build|', '')):
-            post.meta['draft'] = 'build|' + str(uuid.uuid4())
-            set_post_metadata(
-                current_app,
-                post,
-                {'draft': post.meta['draft']},
-            )
         yield 'posts.draft', {
             'post_uuid': post.meta['draft'].replace('build|', ''),
         }

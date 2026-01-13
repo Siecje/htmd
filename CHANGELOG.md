@@ -4,6 +4,8 @@
 ### Added
 - Works with Flask-FlatPages 0.9.0
 - Show drafts without published on list pages during `htmd preview --drafts`
+- `htmd preview` will show draft build posts without `--drafts`
+    - The UUID will not change on `htmd build`.
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs
