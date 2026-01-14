@@ -11,14 +11,16 @@ import requests
 from utils import (
     get_example_field,
     remove_fields_from_post,
+    set_example_draft_status,
     set_example_to_draft,
     set_example_to_draft_build,
     SUCCESS_REGEX,
+    wait_for_str_in_file,
 )
 from utils_preview import run_preview
 
 
-def copy_example_as_draft_build() -> None:
+def copy_example_as_draft_build() -> Path:
     post_path = Path('posts') / 'example.md'
     copy_path = Path('posts') / 'copy.md'
     with post_path.open('r') as post_file:
@@ -29,6 +31,7 @@ def copy_example_as_draft_build() -> None:
                 copy_file.write('draft: build\n')
             else:
                 copy_file.write(line)
+    return copy_path
 
 
 def get_draft_uuid(path: str) -> str:
@@ -183,6 +186,34 @@ def test_draft_build_preview_without_published(run_start: CliRunner) -> None:
         draft_uuid = get_draft_uuid('example')
         assert draft_uuid != ''
         response = requests.get(base_url + f'/draft/{draft_uuid}/', timeout=1)
+        assert response.status_code == 200  # noqa: PLR2004
+        contents = response.text
+        assert 'Example Post' in contents
+
+
+def test_draft_during_preview(run_start: CliRunner) -> None:
+    post_path = Path('posts') / 'example.md'
+    with run_preview(run_start) as base_url:
+        set_example_to_draft_build()
+        wait_for_str_in_file(post_path, 'build|')
+        post_uuid = get_draft_uuid('example')
+        assert post_uuid != ''
+        response = requests.get(base_url + f'/draft/{post_uuid}/', timeout=1)
+        assert response.status_code == 200  # noqa: PLR2004
+        contents = response.text
+        assert 'Example Post' in contents
+
+
+def test_new_draft_during_preview(run_start: CliRunner) -> None:
+    # put draft line in example so that when we copy it we can set it to build
+    set_example_draft_status('false')
+    with run_preview(run_start) as base_url:
+        # Create new draft build post
+        post_path = copy_example_as_draft_build()
+        wait_for_str_in_file(post_path, 'build|')
+        post_uuid = get_draft_uuid(post_path.stem)
+        assert post_uuid != ''
+        response = requests.get(base_url + f'/draft/{post_uuid}/', timeout=1)
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
         assert 'Example Post' in contents

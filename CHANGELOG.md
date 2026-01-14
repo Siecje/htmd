@@ -6,6 +6,7 @@
 - Show drafts without published on list pages during `htmd preview --drafts`
 - `htmd preview` will show draft build posts without `--drafts`
     - The UUID will not change on `htmd build`.
+- `htmd preview` will set UUIDs for new draft build posts
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

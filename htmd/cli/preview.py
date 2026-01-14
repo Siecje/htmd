@@ -66,6 +66,7 @@ class PostsCreatedHandler(FileSystemEventHandler):
 
         with self.app.app_context():
             site.reload_posts()
+        sync_posts(self.app, site.posts)
         for post in site.posts:
             validate_post(post, [])
 

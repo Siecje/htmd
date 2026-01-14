@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from pathlib import Path
+import time
 
 
 SUCCESS_REGEX = (
@@ -92,8 +93,8 @@ def set_config_field(field: str, value: str | bool) -> None: # noqa: FBT001
                 config_file.write(line)
 
 
-def get_example_field(field: str) -> None | str:
-    example_path = Path('posts') / 'example.md'
+def get_post_field(url_path: str, field: str) -> None | str:
+    example_path = Path('posts') / f'{url_path}.md'
     with example_path.open('r') as post_file:
         lines = post_file.readlines()
     value = None
@@ -103,3 +104,16 @@ def get_example_field(field: str) -> None | str:
             break
 
     return value
+
+
+def get_example_field(field: str) -> None | str:
+    return get_post_field('example', field)
+
+
+def wait_for_str_in_file(path: Path, value: str, timeout_s: int = 5) -> None:
+    start_time = time.monotonic()
+    while value not in path.read_text():  # pragma: no branch
+        if time.monotonic() - start_time > timeout_s:  # pragma: no branch
+            msg = f'{value} not found in {path} after {timeout_s}s.'  # pragma: no cover
+            raise TimeoutError(msg)  # pragma: no cover
+        time.sleep(0.1)  # pragma: no cover
