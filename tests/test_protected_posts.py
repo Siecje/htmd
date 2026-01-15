@@ -38,7 +38,7 @@ def test_new_protected_post_during_preview(run_start: CliRunner) -> None:
     set_example_password_value('')
     shutil.copy(Path('posts') / 'example.md', Path('copy.md'))
     with run_preview(run_start) as base_url:
-        post_path = Path('copy.md').move(Path('posts') / 'copy.md')
+        post_path = Path('copy.md').rename(Path('posts') / 'copy.md')
         wait_for_str_not_in_file(post_path, 'password: \n')
         password = get_post_field(post_path.stem, 'password')
         assert password != ''
