@@ -12,6 +12,8 @@ from flask import Flask
 from flask_flatpages import Page
 from jsmin import jsmin
 
+from .password_protect import generate_private_key
+
 
 def create_directory(name: str) -> Path:
     directory = Path(name)
@@ -317,16 +319,23 @@ def sync_posts(
     """
     now = datetime.datetime.now(tz=datetime.UTC)
     for post in posts:
+        file_updates: dict[str, str] = {}
+        if 'password' in post.meta and post.meta['password'] is None:
+            _, post.meta['password'] = generate_private_key()
+            assert isinstance(post.meta['password'], str)
+            file_updates['password'] = post.meta['password']
+
         if post.meta.get('draft', False):
             if (
                 'build' in str(post.meta['draft'])
                 and not valid_uuid(post.meta['draft'].replace('build|', ''))
             ):
                 post.meta['draft'] = 'build|' + str(uuid.uuid4())
+                file_updates['draft'] = post.meta['draft']
                 set_post_metadata(
                     app,
                     post,
-                    {'draft': post.meta['draft']},
+                    file_updates,
                 )
             continue
 
@@ -346,7 +355,6 @@ def sync_posts(
 
         hash_changed = current_hash != post_hash
 
-        file_updates = {}
         if hash_changed:
             post.meta['_hash'] = post_hash
             file_updates['_hash'] = post.meta['_hash']

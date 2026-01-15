@@ -16,7 +16,6 @@ from flask.typing import ResponseReturnValue
 from flask_flatpages import FlatPages, Page
 
 from ..password_protect import encrypt_post
-from ..utils import set_post_metadata
 
 
 posts_bp = Blueprint('posts', __name__)
@@ -118,7 +117,6 @@ def draft_and_not_shown(post: Page) -> bool:
 
 def render_password_protected_post(post: Page) -> ResponseReturnValue:
     (
-        password,
         encrypted_content,
         encrypted_title,
         encrypted_subtitle,
@@ -128,12 +126,6 @@ def render_password_protected_post(post: Page) -> ResponseReturnValue:
         post.meta.get('subtitle'),
         post.meta['password'],
     )
-    if password != post.meta['password']:
-        set_post_metadata(
-            current_app,
-            post,
-            {'password': password},
-        )
     return render_template(
         'post.html',
         active=post.path,
@@ -158,7 +150,7 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
         or published.strftime('%Y-%m-%d') != date_str
     ):
         abort(404)
-    if 'password' in post.meta and post.meta['password'] is not False:
+    if post.meta.get('password'):
         return render_password_protected_post(post)
     return render_template('post.html', active=path, post=post)
 
@@ -170,7 +162,7 @@ def draft(post_uuid: str) -> ResponseReturnValue:
             break
     else:
         abort(404)
-    if 'password' in post.meta and post.meta['password'] is not False:
+    if post.meta.get('password'):
         return render_password_protected_post(post)
     return render_template(
         'post.html',

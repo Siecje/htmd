@@ -7,6 +7,7 @@
 - `htmd preview` will show draft build posts without `--drafts`
     - The UUID will not change on `htmd build`.
 - `htmd preview` will set UUIDs for new draft build posts
+- `htmd preview` will populate password field for protected posts
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

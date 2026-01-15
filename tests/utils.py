@@ -117,3 +117,12 @@ def wait_for_str_in_file(path: Path, value: str, timeout_s: int = 5) -> None:
             msg = f'{value} not found in {path} after {timeout_s}s.'  # pragma: no cover
             raise TimeoutError(msg)  # pragma: no cover
         time.sleep(0.1)  # pragma: no cover
+
+
+def wait_for_str_not_in_file(path: Path, value: str, timeout_s: int = 5) -> None:
+    start_time = time.monotonic()
+    while value in path.read_text():  # pragma: no branch
+        if time.monotonic() - start_time > timeout_s:  # pragma: no branch
+            msg = f'{value} not found in {path} after {timeout_s}s.'  # pragma: no cover
+            raise TimeoutError(msg)  # pragma: no cover
+        time.sleep(0.1)  # pragma: no cover
