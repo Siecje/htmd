@@ -80,4 +80,6 @@ def run_preview(
         finally:
             if WEBSERVER:  # pragma: no branch
                 WEBSERVER.shutdown()
-            thread.join(timeout=1.0)
+            # Give time for the watchdog thread inside preview
+            # to stop, it won't know to stop right away
+            thread.join(timeout=2.0)

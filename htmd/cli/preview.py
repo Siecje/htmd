@@ -1,3 +1,4 @@
+import contextlib
 from pathlib import Path
 import signal
 import threading
@@ -106,11 +107,10 @@ def watch_disk(
         recursive=True,
     )
 
-    observer.start()
-
     try:
+        observer.start()
         while not exit_event.is_set():
-            observer.join(1)
+            observer.join(0.5)
     finally:
         observer.stop()
         observer.join()
@@ -203,11 +203,14 @@ def preview(
         ),
         daemon=True,
     )
-    watch_thread.start()
 
     app.jinja_env.globals['PREVIEW'] = True
     try:
+        watch_thread.start()
         start_webserver(app, host, port)
     finally:
-        # After Flask has been stopped stop watchdog
+        # Trigger watchdog thread to stop
         stop_event.set()
+        # wait for thread to stop
+        with contextlib.suppress(RuntimeError):  # if thread never started
+            watch_thread.join()
