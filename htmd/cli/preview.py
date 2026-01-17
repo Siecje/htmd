@@ -90,30 +90,34 @@ def watch_disk(
     exit_event: threading.Event,
     refresh_event: threading.Event,
 ) -> None:
-    observer = Observer()
-
     static_directory = Path(static_folder)
     static_handler = StaticHandler(static_directory, refresh_event)
-    observer.schedule(
-        static_handler,
-        path=str(static_directory),
-        recursive=True,
-    )
 
     posts_handler = PostsCreatedHandler(app, refresh_event)
-    observer.schedule(
-        posts_handler,
-        path=str(posts_path),
-        recursive=True,
-    )
+
+    observer = Observer()
+    observer.daemon = True
 
     try:
+        observer.schedule(
+            static_handler,
+            path=str(static_directory),
+            recursive=True,
+        )
+        observer.schedule(
+            posts_handler,
+            path=str(posts_path),
+            recursive=True,
+        )
         observer.start()
         while not exit_event.is_set():
-            observer.join(0.5)
+            observer.join(timeout=0.1)
     finally:
         observer.stop()
-        observer.join()
+        with contextlib.suppress(RuntimeError):
+            observer.join(timeout=0.2)
+        with contextlib.suppress(Exception):
+            observer.unschedule_all()
 
 
 def start_webserver(
