@@ -14,19 +14,16 @@ from werkzeug.serving import BaseWSGIServer, make_server
 BASE_URL = 'http://[::1]:9090'
 
 
-WEBSERVER: None | BaseWSGIServer = None
 WEBSERVER_THREADED = False
-def start_webserver(app: Flask, host: str, port: int) -> None:
-    # global keyword is required for tests to pass
-    global WEBSERVER # noqa: PLW0603
-    WEBSERVER = make_server(
+def create_webserver(app: Flask, host: str, port: int) -> BaseWSGIServer:
+    webserver = make_server(
         host,
         port,
         app,
         threaded=WEBSERVER_THREADED,
     )
-    assert WEBSERVER is not None
-    WEBSERVER.serve_forever()
+    assert webserver is not None
+    return webserver
 
 
 @contextmanager
@@ -39,22 +36,26 @@ def run_preview(
 ) -> Generator[str]:
     # global keyword is required for tests to pass
     global WEBSERVER_THREADED  # noqa: PLW0603
-    global WEBSERVER  # noqa: PLW0603
-    WEBSERVER = None
 
     if threaded:
         WEBSERVER_THREADED = True
 
-    # start_webserver is replaced so it can be stopped for the thread to stop
-    # since we can't send signals (ctrl+c) to a thread
-    # setup_stop_thread_on_signal is replaced because threads can't receive signals
+    stop_event = threading.Event()
     with (
+        # start_webserver is replaced so it can handle each request in a thread
         patch(
-            'htmd.cli.preview.start_webserver',
-            side_effect=start_webserver,
+            'htmd.cli.preview.create_webserver',
+            side_effect=create_webserver,
         ),
+        # create_stop_event is replace so we can stop preview
+        # since we can't send signals (ctrl+c) to a thread
         patch(
-            'htmd.cli.preview.setup_stop_thread_on_signal',
+            'htmd.cli.preview.create_stop_event',
+            return_value=stop_event,
+        ),
+        # setup_stop_thread_on_signal is replaced because threads can't receive signals
+        patch(
+            'htmd.cli.preview.set_stop_event_on_signal',
             side_effect=lambda _x: None,
         ),
     ):
@@ -67,22 +68,21 @@ def run_preview(
         thread.start()
         try:
             for _ in range(max_tries):  # pragma: no branch
-                if WEBSERVER is not None:
-                    try:
-                        requests.head(BASE_URL, timeout=1)
-                        break
-                    except (
-                        requests.exceptions.ConnectionError,
-                        requests.exceptions.Timeout,
-                    ):  # pragma: no cover
-                        pass
+                try:
+                    requests.head(BASE_URL, timeout=1)
+                    break
+                except (
+                    requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout,
+                ):  # pragma: no cover
+                    pass
 
                 time.sleep(0.1)
 
             yield BASE_URL
         finally:
-            if WEBSERVER:  # pragma: no branch
-                WEBSERVER.shutdown()
+            # Trigger preview to stop
+            stop_event.set()
             # Give time for the watchdog thread inside preview
             # to stop, it won't know to stop right away
             thread.join(timeout=2.0)

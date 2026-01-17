@@ -1,7 +1,9 @@
 import contextlib
+import os
 from pathlib import Path
 import signal
 import threading
+import time
 import types
 
 import click
@@ -15,6 +17,7 @@ from watchdog.events import (
     FileSystemEventHandler,
 )
 from watchdog.observers import Observer
+from werkzeug.serving import BaseWSGIServer, make_server
 
 from .. import site
 from ..utils import (
@@ -23,6 +26,29 @@ from ..utils import (
     sync_posts,
     validate_post,
 )
+
+
+def create_stop_event() -> threading.Event:
+    """
+    Provide event which when set will cause all threads to stop.
+
+    This is a function so that tests can patch it
+    and set the event to make preview stop.
+    """
+    return threading.Event()  # pragma: no cover
+
+
+def set_stop_event_on_signal(
+    stop_event: threading.Event,
+) -> None:  # pragma: no cover
+    def handle_signal(
+        _signum: int,
+        _frame: types.FrameType | None,
+    ) -> None:
+        stop_event.set()
+
+    signal.signal(signal.SIGTERM, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
 
 
 class StaticHandler(FileSystemEventHandler):
@@ -91,19 +117,19 @@ def watch_disk(
     refresh_event: threading.Event,
 ) -> None:
     static_directory = Path(static_folder)
-    static_handler = StaticHandler(static_directory, refresh_event)
-
-    posts_handler = PostsCreatedHandler(app, refresh_event)
 
     observer = Observer()
     observer.daemon = True
 
     try:
-        observer.schedule(
-            static_handler,
-            path=str(static_directory),
-            recursive=True,
-        )
+        if static_directory.exists():
+            static_handler = StaticHandler(static_directory, refresh_event)
+            observer.schedule(
+                static_handler,
+                path=str(static_directory),
+                recursive=True,
+            )
+        posts_handler = PostsCreatedHandler(app, refresh_event)
         observer.schedule(
             posts_handler,
             path=str(posts_path),
@@ -114,32 +140,49 @@ def watch_disk(
             observer.join(timeout=0.1)
     finally:
         observer.stop()
+        # Stop other threads
+        exit_event.set()
         with contextlib.suppress(RuntimeError):
             observer.join(timeout=0.2)
         with contextlib.suppress(Exception):
             observer.unschedule_all()
 
 
-def start_webserver(
-    app: Flask,
-    host: str,
-    port: int,
-) -> None:  # pragma: no cover
-    app.run(debug=True, host=host, port=port, use_reloader=False)
+def create_webserver(
+        app: Flask,
+        host: str,
+        port: int,
+) -> BaseWSGIServer:  # pragma: no cover
+    webserver = make_server(
+        host,
+        port,
+        app,
+    )
+    # Periodically check for signals
+    webserver.timeout = 0.2
+    return webserver
 
 
-def setup_stop_thread_on_signal(
+def trigger_webserver_shutdown(
     stop_event: threading.Event,
-) -> None:  # pragma: no cover
-    def handle_signal(
-        _signum: int,
-        _frame: types.FrameType | None,
-    ) -> None:
-        stop_event.set()
-        raise KeyboardInterrupt
+    webserver: BaseWSGIServer,
+) -> None:
+    stop_event.wait()
+    webserver.shutdown()
 
-    signal.signal(signal.SIGTERM, handle_signal)
-    signal.signal(signal.SIGINT, handle_signal)
+
+def exit_if_parent_pid_changes() -> None:
+    """
+    Insurance if the tests don't cleanup preview as a subprocess.
+
+    If the tests didn't call .terminate()
+    this was being re-parented to PID 1.
+    If that happens the process will exit.
+    """
+    parent_pid = os.getppid()
+    while os.getppid() == parent_pid: # pragma: no branch
+        time.sleep(1)
+    os._exit(0)  # pragma: no cover
 
 
 @click.command('preview', short_help='Serve files to preview site.')
@@ -190,10 +233,12 @@ def preview(
 
     sync_posts(app, site.posts)
 
-    stop_event = threading.Event()
+    stop_event = create_stop_event()
+    set_stop_event_on_signal(stop_event)
 
-    setup_stop_thread_on_signal(stop_event)
-
+    ##
+    # Thread: Watchdog on file changes
+    ##
     refresh_event = threading.Event()
     app.config['refresh_event'] = refresh_event
     watch_thread = threading.Thread(
@@ -208,13 +253,39 @@ def preview(
         daemon=True,
     )
 
+    ##
+    # Thread: Shutdown Webserver
+    ##
     app.jinja_env.globals['PREVIEW'] = True
+    app.jinja_env.auto_reload = True
+    webserver = create_webserver(app, host, port)
+    stop_webserver_thread = threading.Thread(
+        target=trigger_webserver_shutdown,
+        args=(stop_event, webserver),
+        daemon=True,
+    )
+
+    ##
+    # Thread: Force exit if parent process changes
+    ##
+    parent_pid_thread = threading.Thread(
+        target=exit_if_parent_pid_changes,
+        daemon=True,
+    )
+
+    ##
+    # Thread: Main Thread
+    ##
     try:
+        parent_pid_thread.start()
         watch_thread.start()
-        start_webserver(app, host, port)
+        stop_webserver_thread.start()
+        webserver.serve_forever()
     finally:
-        # Trigger watchdog thread to stop
+        # Trigger threads to stop
         stop_event.set()
-        # wait for thread to stop
-        with contextlib.suppress(RuntimeError):  # if thread never started
+        # Wait for threads to stop
+        with contextlib.suppress(RuntimeError):  # if a thread didn't start
+            stop_webserver_thread.join()
             watch_thread.join()
+        click.echo('Preview stopped.')
