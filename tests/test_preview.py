@@ -33,21 +33,27 @@ def run_preview_subprocess(
     if args:  # pragma: no branch
         cmd += args  # pragma: no cover
 
-    task = subprocess.Popen(cmd)  # noqa: S603
-    for _ in range(max_tries):  # pragma: no branch
-        try:
-            requests.head(BASE_URL, timeout=1)
-        except requests.exceptions.ConnectionError:
-            continue
-        else:
-            break
-    yield BASE_URL
-    task.terminate()
+    task = subprocess.Popen(  # noqa: S603
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     try:
-        task.wait(5)
-    except subprocess.TimeoutExpired:  # pragma: no cover
-        if task.poll() is None:
+        for _ in range(max_tries):  # pragma: no branch
+            try:
+                requests.head(BASE_URL, timeout=1)
+            except requests.exceptions.ConnectionError:
+                continue
+            else:
+                break
+        yield BASE_URL
+    finally:
+        task.terminate()
+        try:
+            task.wait(timeout=2.0)
+        except subprocess.TimeoutExpired:  # pragma: no cover
             task.kill()
+            task.wait()
 
 
 def test_preview(run_start: CliRunner) -> None:

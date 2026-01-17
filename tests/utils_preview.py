@@ -65,17 +65,20 @@ def run_preview(
             daemon=True,
         )
         thread.start()
-
-        for _ in range(max_tries):  # pragma: no branch
-            if WEBSERVER is not None:
-                try:
-                    requests.head(BASE_URL, timeout=1)
-                    break
-                except requests.exceptions.ConnectionError:  # pragma: no cover
-                    pass
-            time.sleep(0.1)
-
         try:
+            for _ in range(max_tries):  # pragma: no branch
+                if WEBSERVER is not None:
+                    try:
+                        requests.head(BASE_URL, timeout=1)
+                        break
+                    except (
+                        requests.exceptions.ConnectionError,
+                        requests.exceptions.Timeout,
+                    ):  # pragma: no cover
+                        pass
+
+                time.sleep(0.1)
+
             yield BASE_URL
         finally:
             if WEBSERVER:  # pragma: no branch
