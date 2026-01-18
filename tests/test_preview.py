@@ -13,6 +13,7 @@ import htmd.cli.preview as preview_module
 import pytest
 import requests
 from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileModifiedEvent
+from werkzeug.serving import BaseWSGIServer  # noqa: TC002
 
 from utils import (
     set_config_field,
@@ -695,3 +696,30 @@ def test_sse(run_start: CliRunner) -> None:
         set_example_contents('Different2.')
         ended.wait(timeout=10)
     assert changes == ['data: refresh', 'data: refresh']
+
+
+def test_webserver_will_be_restarted(run_start: CliRunner) -> None:
+    # everytime the webserver is created it will be added to webservers
+    webservers: list[BaseWSGIServer] = []
+
+    with run_preview(run_start, webserver_collector=webservers) as base_url:
+        response = requests.get(base_url, timeout=2)
+        assert response.status_code == 200  # noqa: PLR2004
+
+        assert len(webservers) == 1
+        first_server = webservers[0]
+        first_server.shutdown()
+
+        timeout_s = 1.5
+        start_time = time.time()
+        while len(webservers) < 2:  # noqa: PLR2004
+            if time.time() - start_time > timeout_s:  # pragma: no branch
+                break  # pragma: no cover
+            time.sleep(0.1)
+
+        # The main thread should have called create_webserver again
+        assert len(webservers) == 2  # noqa: PLR2004
+
+        # Verify the new server is up and responding
+        response = requests.get(base_url, timeout=2)
+        assert response.status_code == 200  # noqa: PLR2004

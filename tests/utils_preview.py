@@ -14,18 +14,6 @@ from werkzeug.serving import BaseWSGIServer, make_server
 BASE_URL = 'http://[::1]:9090'
 
 
-WEBSERVER_THREADED = False
-def create_webserver(app: Flask, host: str, port: int) -> BaseWSGIServer:
-    webserver = make_server(
-        host,
-        port,
-        app,
-        threaded=WEBSERVER_THREADED,
-    )
-    assert webserver is not None
-    return webserver
-
-
 @contextmanager
 def run_preview(
     runner: CliRunner,
@@ -33,12 +21,19 @@ def run_preview(
     *,
     max_tries: int = 1_000,
     threaded:  bool = False,
+    webserver_collector: list | None = None,
 ) -> Generator[str]:
-    # global keyword is required for tests to pass
-    global WEBSERVER_THREADED  # noqa: PLW0603
-
-    if threaded:
-        WEBSERVER_THREADED = True
+    def create_webserver(app: Flask, host: str, port: int) -> BaseWSGIServer:
+        webserver = make_server(
+            host,
+            port,
+            app,
+            threaded=threaded,
+        )
+        assert webserver is not None
+        if webserver_collector is not None:
+            webserver_collector.append(webserver)
+        return webserver
 
     stop_event = threading.Event()
     with (

@@ -158,17 +158,7 @@ def create_webserver(
         port,
         app,
     )
-    # Periodically check for signals
-    webserver.timeout = 0.2
     return webserver
-
-
-def trigger_webserver_shutdown(
-    stop_event: threading.Event,
-    webserver: BaseWSGIServer,
-) -> None:
-    stop_event.wait()
-    webserver.shutdown()
 
 
 def exit_if_parent_pid_changes() -> None:
@@ -254,19 +244,18 @@ def preview(
     )
 
     ##
-    # Thread: Shutdown Webserver
+    # -- Thread: Webserver
     ##
     app.jinja_env.globals['PREVIEW'] = True
     app.jinja_env.auto_reload = True
     webserver = create_webserver(app, host, port)
-    stop_webserver_thread = threading.Thread(
-        target=trigger_webserver_shutdown,
-        args=(stop_event, webserver),
+    webserver_thread = threading.Thread(
+        target=webserver.serve_forever,
         daemon=True,
     )
 
     ##
-    # Thread: Force exit if parent process changes
+    # -- Thread: Force exit if parent process changes
     ##
     parent_pid_thread = threading.Thread(
         target=exit_if_parent_pid_changes,
@@ -274,18 +263,32 @@ def preview(
     )
 
     ##
-    # Thread: Main Thread
+    # -- Thread: Main Thread
     ##
     try:
-        parent_pid_thread.start()
         watch_thread.start()
-        stop_webserver_thread.start()
-        webserver.serve_forever()
+        webserver_thread.start()
+        parent_pid_thread.start()
+
+        while not stop_event.is_set():
+            if not webserver_thread.is_alive():
+                click.echo('Webserver crashed! Restarting...')
+                webserver = create_webserver(app, host, port)
+                webserver_thread = threading.Thread(
+                    target=webserver.serve_forever,
+                    daemon=True,
+                )
+                webserver_thread.start()
+
+            # Wait a bit before checking again
+            stop_event.wait(timeout=1)
+
     finally:
-        # Trigger threads to stop
+        webserver.shutdown()
+        # Trigger watch_thread to stop
         stop_event.set()
         # Wait for threads to stop
         with contextlib.suppress(RuntimeError):  # if a thread didn't start
-            stop_webserver_thread.join()
+            webserver_thread.join()
             watch_thread.join()
         click.echo('Preview stopped.')
