@@ -26,7 +26,7 @@ def get_project_dir() -> Path:
     return current_directory
 
 
-def create_app(show_drafts: bool = False) -> Flask: # noqa: FBT001,FBT002
+def create_app(*, show_drafts: bool = False) -> Flask:
     this_dir = Path(__file__).parent
     app = Flask(
         __name__,

@@ -212,7 +212,7 @@ def preview(
     js_minify: bool,
     drafts: bool,
 ) -> None:
-    app = site.create_app(drafts)
+    app = site.create_app(show_drafts=drafts)
 
     assert app.static_folder is not None
     if css_minify and combine_and_minify_css(Path(app.static_folder)):
