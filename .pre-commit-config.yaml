@@ -16,3 +16,12 @@ repos:
           types-requests,
         ]
         files: .
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run Pytest
+        entry: pytest tests/
+        language: python
+        additional_dependencies: [".[dev]"]
+        pass_filenames: false
+        files: ^(htmd/|tests/|pyproject\.toml)
