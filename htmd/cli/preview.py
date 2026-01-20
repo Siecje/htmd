@@ -92,9 +92,10 @@ class PostsCreatedHandler(FileSystemEventHandler):
             return
 
         with self.app.app_context():
-            site.reload_posts()
-        sync_posts(self.app, site.posts)
-        for post in site.posts:
+            site.reload_posts(self.app)
+        sync_posts(self.app)
+        posts = self.app.extensions['flatpages'][None]
+        for post in posts:
             validate_post(post, [])
 
         self.event.set()
@@ -221,7 +222,7 @@ def preview(
     if js_minify and combine_and_minify_js(Path(app.static_folder)):
         app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
 
-    sync_posts(app, site.posts)
+    sync_posts(app)
 
     stop_event = create_stop_event()
     set_stop_event_on_signal(stop_event)

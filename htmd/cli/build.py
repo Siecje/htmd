@@ -46,7 +46,7 @@ def build(
     if js_minify and combine_and_minify_js(static_path):
         app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
 
-    sync_posts(app, site.posts)
+    sync_posts(app)
 
     freezer = site.freezer
     try:

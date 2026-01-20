@@ -16,7 +16,8 @@ def verify() -> Flask:
     # Only check author if there is no default
     if not app.config.get('DEFAULT_AUTHOR'):
         required_fields.append('author')
-    for post in site.posts:
+    posts = app.extensions['flatpages'][None]
+    for post in posts:
         if not validate_post(post, required_fields):
             correct = False
             break

@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 import datetime
 import hashlib
 from importlib.resources import as_file, files
@@ -298,7 +297,6 @@ def _get_post_hash(title: str, contents: str) -> str:
 
 def sync_posts(
     app: Flask,
-    posts: Iterable[Page],
 ) -> None:
     """
     Sync draft, published, updated, and _hash for each post.
@@ -318,71 +316,73 @@ def sync_posts(
     Set hash using title and post contents.
     """
     now = datetime.datetime.now(tz=datetime.UTC)
-    for post in posts:
-        file_updates: dict[str, str] = {}
-        if 'password' in post.meta and post.meta['password'] is None:
-            _, post.meta['password'] = generate_private_key()
-            assert isinstance(post.meta['password'], str)
-            file_updates['password'] = post.meta['password']
+    _posts = app.extensions['flatpages'][None]
+    with app.app_context():
+        for post in _posts.pages.values():
+            file_updates: dict[str, str] = {}
+            if 'password' in post.meta and post.meta['password'] is None:
+                _, post.meta['password'] = generate_private_key()
+                assert isinstance(post.meta['password'], str)
+                file_updates['password'] = post.meta['password']
 
-        if post.meta.get('draft', False):
-            if (
-                'build' in str(post.meta['draft'])
-                and not valid_uuid(post.meta['draft'].replace('build|', ''))
-            ):
-                post.meta['draft'] = 'build|' + str(uuid.uuid4())
-                file_updates['draft'] = post.meta['draft']
-                set_post_metadata(
-                    app,
-                    post,
-                    file_updates,
-                )
-            continue
+            if post.meta.get('draft', False):
+                if (
+                    'build' in str(post.meta['draft'])
+                    and not valid_uuid(post.meta['draft'].replace('build|', ''))
+                ):
+                    post.meta['draft'] = 'build|' + str(uuid.uuid4())
+                    file_updates['draft'] = post.meta['draft']
+                    set_post_metadata(
+                        app,
+                        post,
+                        file_updates,
+                    )
+                continue
 
-        current_published = post.meta.get('published')
-        current_updated = post.meta.get('updated')
-        current_hash = post.meta.get('_hash', '')
-        published = _get_published(
-            current_published,
-            current_updated,
-            now,
-        )
-        with app.app_context():
+            current_published = post.meta.get('published')
+            current_updated = post.meta.get('updated')
+            current_hash = post.meta.get('_hash', '')
+            published = _get_published(
+                current_published,
+                current_updated,
+                now,
+            )
+
             post_hash = _get_post_hash(
                 post.meta.get('title') or '',
                 post.html,
             )
 
-        hash_changed = current_hash != post_hash
+            hash_changed = current_hash != post_hash
 
-        if hash_changed:
-            post.meta['_hash'] = post_hash
-            file_updates['_hash'] = post.meta['_hash']
-        if published != current_published:
-            post.meta['published'] = published
-            file_updates['published'] = published.isoformat()
-        post_already_published = (
-            isinstance(current_published, datetime.datetime)
-            or isinstance(current_updated, datetime.datetime)
-        )
-        if hash_changed and post_already_published:
-            post.meta['updated'] = now
-            file_updates['updated'] = now.isoformat()
-        elif (
-            not isinstance(current_updated, datetime.datetime)
-            and isinstance(current_updated, datetime.date)
-        ):
-            updated = datetime.datetime.combine(
-                current_updated,
-                datetime.time.min,
-                tzinfo=datetime.UTC,
+            if hash_changed:
+                post.meta['_hash'] = post_hash
+                file_updates['_hash'] = post.meta['_hash']
+            if published != current_published:
+                post.meta['published'] = published
+                file_updates['published'] = published.isoformat()
+            post_already_published = (
+                isinstance(current_published, datetime.datetime)
+                or isinstance(current_updated, datetime.datetime)
             )
-            post.meta['updated'] = updated
-            file_updates['updated'] = updated.isoformat()
+            if hash_changed and post_already_published:
+                post.meta['updated'] = now
+                file_updates['updated'] = now.isoformat()
+            elif (
+                not isinstance(current_updated, datetime.datetime)
+                and isinstance(current_updated, datetime.date)
+            ):
+                updated = datetime.datetime.combine(
+                    current_updated,
+                    datetime.time.min,
+                    tzinfo=datetime.UTC,
+                )
+                post.meta['updated'] = updated
+                file_updates['updated'] = updated.isoformat()
 
-        if file_updates:
-            set_post_metadata(
-                app,
-                post,
-                file_updates,
-            )
+            if file_updates:
+                set_post_metadata(
+                    app,
+                    post,
+                    file_updates,
+                )

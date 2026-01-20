@@ -52,7 +52,7 @@ def test_tag_does_not_exist(client: FlaskClient) -> None:
     assert response.status_code == not_found
 
     with client.application.app_context():
-        site.reload_posts(show_drafts=True)
+        site.reload_posts(client.application, show_drafts=True)
     response = client.get('/tags/first/')
     assert response.status_code == found
     response = client.get('/author/Taylor/')

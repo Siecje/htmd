@@ -13,8 +13,6 @@ from flask.typing import ResponseReturnValue
 from flask_flatpages import pygments_style_defs
 from htmlmin import minify
 
-from .posts import posts
-
 
 main_bp = Blueprint('main', __name__)
 
@@ -64,8 +62,9 @@ def static_password_protect() -> ResponseReturnValue:
 
 @main_bp.route('/')
 def index() -> ResponseReturnValue:
+    _posts = current_app.extensions['flatpages'][None]
     latest = sorted(
-        posts.published_posts,
+        _posts.published_posts,
         reverse=True,
         key=lambda p: p.meta['published'],
     )

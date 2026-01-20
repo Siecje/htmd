@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import time
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
@@ -7,6 +8,7 @@ from flask import (
     abort,
     Blueprint,
     current_app,
+    Flask,
     render_template,
     Response,
     url_for,
@@ -22,33 +24,38 @@ posts_bp = Blueprint('posts', __name__)
 
 
 class Posts(FlatPages):
-    def __init__(self) -> None:
+    def __init__(self, app: Flask | None = None) -> None:
         super().__init__()
         self.show_drafts: bool = False
         self.published_posts: list[Page] = []
+        self._app = app
+
+    @property
+    def pages(self) -> dict[str, Page]:
+        """
+        Public access to the underlying _pages dictionary.
+
+        Required for thread-safe iteration/copying without accessing private members.
+        """
+        return self._pages  # type: ignore[attr-defined]
 
 
 posts = Posts()
 
 
-def reload_posts(show_drafts: bool | None = None) -> None: # noqa: FBT001
-    posts.reload()
-    if show_drafts is not None:
-        posts.show_drafts = show_drafts
-    if posts.show_drafts:
-        posts.published_posts = [
-            p for p in posts
-            if 'published' in p.meta and hasattr(p.meta['published'], 'year')
-        ]
-    else:
-        posts.published_posts = [
-            p for p in posts
-            if (
-                not p.meta.get('draft', False)
-                and 'published' in p.meta
-                and hasattr(p.meta['published'], 'year')
-            )
-        ]
+def reload_posts(app: Flask, *, show_drafts: bool | None = None) -> None:
+    _posts = app.extensions['flatpages'][None]
+    time.sleep(0.01)
+    _posts.reload()
+    target_show_drafts = show_drafts if show_drafts is not None else _posts.show_drafts
+
+    new_published_posts = [
+        p for p in _posts.pages.values()
+        if 'published' in p.meta and hasattr(p.meta['published'], 'year')
+        and (target_show_drafts or not p.meta.get('draft', False))
+    ]
+    _posts.published_posts = new_published_posts
+    _posts.show_drafts = target_show_drafts
 
 
 def truncate_post_html(post_html: str) -> str:
@@ -74,7 +81,8 @@ def feed() -> Response:
         title=name,
         url=url,
     )
-    for post in posts.published_posts:
+    _posts = current_app.extensions['flatpages'][None]
+    for post in _posts.published_posts:
         url = url_for(
             'posts.post',
             year=post.meta['published'].strftime('%Y'),
@@ -102,8 +110,9 @@ def feed() -> Response:
 
 @posts_bp.route('/all/')
 def all_posts() -> ResponseReturnValue:
+    _posts = current_app.extensions['flatpages'][None]
     latest = sorted(
-        posts.published_posts,
+        _posts.published_posts,
         reverse=True,
         key=lambda p: p.meta['published'],
     )
@@ -111,8 +120,10 @@ def all_posts() -> ResponseReturnValue:
 
 
 def draft_and_not_shown(post: Page) -> bool:
+    _posts = current_app.extensions['flatpages'][None]
+    show_drafts = _posts.show_drafts
     is_draft = 'draft' in post.meta
-    return is_draft and not posts.show_drafts and 'build' not in str(post.meta['draft'])
+    return is_draft and not show_drafts and 'build' not in str(post.meta['draft'])
 
 
 def render_password_protected_post(post: Page) -> ResponseReturnValue:
@@ -141,7 +152,8 @@ def render_password_protected_post(post: Page) -> ResponseReturnValue:
 def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     if len(year) != 4 or len(month) != 2 or len(day) != 2:  # noqa: PLR2004
         abort(404)
-    post = posts.get_or_404(path)
+    _posts = current_app.extensions['flatpages'][None]
+    post = _posts.get_or_404(path)
     if draft_and_not_shown(post):
         abort(404)
     date_str = f'{year}-{month}-{day}'
@@ -157,7 +169,9 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
 
 @posts_bp.route('/draft/<post_uuid>/')
 def draft(post_uuid: str) -> ResponseReturnValue:
-    for post in posts:
+    _posts = current_app.extensions['flatpages'][None]
+    posts_copy = _posts.pages
+    for post in posts_copy.values():
         if str(post.meta.get('draft', '')).replace('build|', '') == post_uuid:
             break
     else:
@@ -174,7 +188,8 @@ def draft(post_uuid: str) -> ResponseReturnValue:
 @posts_bp.route('/tags/')
 def all_tags() -> ResponseReturnValue:
     tag_counts: dict[str, int] = {}
-    for post in posts.published_posts:
+    _posts = current_app.extensions['flatpages'][None]
+    for post in _posts.published_posts:
         for tag in post.meta.get('tags', []):
             if tag not in tag_counts:
                 tag_counts[tag] = 0
@@ -191,12 +206,18 @@ def no_posts_shown(post_list: list[Page]) -> bool:
 
 @posts_bp.route('/tags/<string:tag>/')
 def tag(tag: str) -> ResponseReturnValue:
-    tagged = [p for p in posts if tag in p.meta.get('tags', [])]
+    _posts = current_app.extensions['flatpages'][None]
+    posts_copy = _posts.pages
+    tagged = [
+        p
+        for p in posts_copy.values()
+        if tag in p.meta.get('tags', [])
+    ]
     if not tagged:
         abort(404)
-    if not posts.show_drafts and no_posts_shown(tagged):
+    if not _posts.show_drafts and no_posts_shown(tagged):
         abort(404)
-    if posts.show_drafts:
+    if _posts.show_drafts:
         tagged_published = tagged
     else:
         tagged_published = [p for p in tagged if 'draft' not in p.meta]
@@ -213,14 +234,20 @@ def author(author: str) -> ResponseReturnValue:
     # if the author has a draft build
     # page is served without displaying posts
     # so no 404 when for the link from the draft
-    posts_author = [p for p in posts if author == p.meta.get('author', '')]
+    _posts = current_app.extensions['flatpages'][None]
+    posts_copy = _posts.pages
+    posts_author = [
+        p
+        for p in posts_copy.values()
+        if author == p.meta.get('author', '')
+    ]
 
     if not posts_author:
         abort(404)
 
-    if not posts.show_drafts and no_posts_shown(posts_author):
+    if not _posts.show_drafts and no_posts_shown(posts_author):
         abort(404)
-    if posts.show_drafts:
+    if _posts.show_drafts:
         posts_author_published = posts_author
     else:
         posts_author_published = [p for p in posts_author if 'draft' not in p.meta]
@@ -243,8 +270,10 @@ def year_view(year: int) -> ResponseReturnValue:
     year_str = str(year)
     if len(year_str) != len('YYYY'):
         abort(404)
+    _posts = current_app.extensions['flatpages'][None]
     year_posts = [
-        p for p in posts.published_posts
+        p
+        for p in _posts.published_posts
         if year_str == p.meta['published'].strftime('%Y')
     ]
     if not year_posts:
@@ -264,8 +293,11 @@ def year_view(year: int) -> ResponseReturnValue:
 
 @posts_bp.route('/<year>/<month>/')
 def month_view(year: str, month: str) -> ResponseReturnValue:
+    _posts = current_app.extensions['flatpages'][None]
     month_posts = [
-        p for p in posts.published_posts if year == p.meta['published'].strftime('%Y')
+        p
+        for p in _posts.published_posts
+        if year == p.meta['published'].strftime('%Y')
         and month == p.meta['published'].strftime('%m')
     ]
     if not month_posts:
@@ -287,8 +319,11 @@ def month_view(year: str, month: str) -> ResponseReturnValue:
 
 @posts_bp.route('/<year>/<month>/<day>/')
 def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
+    _posts = current_app.extensions['flatpages'][None]
     day_posts = [
-        p for p in posts.published_posts if year == p.meta['published'].strftime('%Y')
+        p
+        for p in _posts.published_posts
+        if year == p.meta['published'].strftime('%Y')
         and month == p.meta['published'].strftime('%m')
         and day == p.meta['published'].strftime('%d')
     ]

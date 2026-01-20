@@ -128,9 +128,9 @@ def create_app(*, show_drafts: bool = False) -> Flask:
     ])
 
     posts.init_app(app)
-    # Without .reload() posts are from first test
+    # populate publish_posts
     with app.app_context():
-        reload_posts(show_drafts)
+        reload_posts(app, show_drafts=show_drafts)
 
     freezer.init_app(app)
 

@@ -3,7 +3,6 @@ import uuid
 
 from flask import Flask
 from flask_flatpages import Page
-from htmd import site
 from htmd.utils import set_post_metadata, validate_post
 import pytest
 
@@ -22,7 +21,8 @@ def test_set_post_metadata_with_field_in_title(flask_app: Flask) -> None:
             else:
                 example_file.write(line)
 
-    post = site.posts.get('example')
+    posts = flask_app.extensions['flatpages'][None]
+    post = posts.get('example')
     post.meta['draft'] = 'build|' + str(uuid.uuid4())
     set_post_metadata(
         flask_app,
@@ -65,15 +65,16 @@ tn4eotA4itJskbKscvxLLhOkokWxz5+itKtp47bfAoGBAKBTLFXAikBjRpkpg5NX
 +Bo9eUZiDMoKiK2/zSishCmn12WUQE4FSSl/xttRtpS8TQplv9hdFkYUQSTxdbZk
 I6UzQGcHpLQFzw2AV6rcA1RlVLrNpPQXgq1vFZAiOJotkn9oj6/3BZSPDPjkw2f5
 gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
-    old_post = site.posts.get('example')
+    posts = flask_app.extensions['flatpages'][None]
+    old_post = posts.get('example')
     set_post_metadata(
         flask_app,
         old_post,
         {'password': password},
     )
-    site.posts.reload()
+    posts.reload()
     with flask_app.app_context():
-        post = site.posts.get('example')
+        post = posts.get('example')
         assert post.html == old_post.html
     assert post.meta['password'].rstrip() == password
     assert post.meta['author'] == old_post.meta['author']
@@ -88,9 +89,9 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
         post,
         {'password': new_password},
     )
-    site.posts.reload()
+    posts.reload()
     with flask_app.app_context():
-        post = site.posts.get('example')
+        post = posts.get('example')
         assert post.html == old_post.html
     assert post.meta['password'].rstrip() == new_password
     assert post.meta['author'] == old_post.meta['author']
@@ -110,9 +111,9 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
         post,
         {'password': new_password},
     )
-    site.posts.reload()
+    posts.reload()
     with flask_app.app_context():
-        post = site.posts.get('example')
+        post = posts.get('example')
         assert post.html == old_post.html
     assert post.meta['password'].rstrip() == new_password
     assert post.meta['author'] == old_post.meta['author']
