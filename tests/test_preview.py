@@ -12,7 +12,12 @@ from flask import Flask
 import htmd.cli.preview as preview_module
 import pytest
 import requests
-from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileModifiedEvent
+from watchdog.events import (
+    DirCreatedEvent,
+    DirMovedEvent,
+    FileCreatedEvent,
+    FileModifiedEvent,
+)
 from werkzeug.serving import BaseWSGIServer  # noqa: TC002
 
 from utils import (
@@ -617,6 +622,10 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     posts_path = Path('posts')
     new_dir_event = DirCreatedEvent(bytes(posts_path), '', is_synthetic=True)
     posts_handler.on_created(new_dir_event)
+    assert not event.is_set()
+
+    moved_dir_event = DirMovedEvent(bytes(posts_path), '', is_synthetic=True)
+    posts_handler.on_moved(moved_dir_event)
     assert not event.is_set()
 
 

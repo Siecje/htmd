@@ -1,8 +1,10 @@
 import datetime
 import hashlib
 from importlib.resources import as_file, files
+import os
 from pathlib import Path
 import shutil
+import tempfile
 import uuid
 
 import click
@@ -12,6 +14,34 @@ from flask_flatpages import Page
 from jsmin import jsmin
 
 from .password_protect import generate_private_key
+
+
+def atomic_write(path: Path, content: str) -> None:
+    """
+    Write content to a file using an atomic move.
+
+    This prevents other processes (like Flask or a Watchdog)
+    from seeing a truncated or empty file.
+    """
+    # Create the temp file in the same directory as the target
+    # to ensure os.replace works across the same file system partition.
+    fd, temp_path = tempfile.mkstemp(
+        dir=path.parent,
+        text=True,
+        suffix='.tmp',
+    )
+    try:
+        with os.fdopen(fd, 'w') as tmp:
+            tmp.write(content)
+            tmp.flush()
+            # Force write to disk
+            os.fsync(tmp.fileno())
+
+        # Atomically swap the new file into the old one's place
+        os.replace(temp_path, path)  # noqa: PTH105
+    except Exception:  # pragma: no cover
+        Path(temp_path).unlink(missing_ok=True)
+        raise
 
 
 def create_directory(name: str) -> Path:
@@ -186,8 +216,7 @@ def set_post_metadata(
 
         i += 1
 
-    with file_path.open('w') as file:
-        file.writelines(new_lines)
+    atomic_write(file_path, ''.join(new_lines))
 
 
 def valid_uuid(string: str) -> bool:

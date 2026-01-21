@@ -11,9 +11,10 @@ from flask import Flask
 from watchdog.events import (
     DirCreatedEvent,
     DirModifiedEvent,
+    DirMovedEvent,
     FileCreatedEvent,
     FileModifiedEvent,
-    FileSystemEvent,
+    FileMovedEvent,
     FileSystemEventHandler,
 )
 from watchdog.observers import Observer
@@ -82,13 +83,10 @@ class PostsCreatedHandler(FileSystemEventHandler):
         self.app = app
         self.event = event
 
-    def handle_event(self, event: FileSystemEvent, *, is_new_post: bool) -> None:
-        if event.is_directory:
-            return
-        src_path = event.src_path
-        if isinstance(src_path, bytes):
-            src_path = src_path.decode('utf-8')
-        if not src_path.endswith('.md'):
+    def handle_event(self, file_path: str | bytes, *, is_new_post: bool) -> None:
+        if isinstance(file_path, bytes):
+            file_path = file_path.decode('utf-8')
+        if not file_path.endswith('.md'):
             return
 
         with self.app.app_context():
@@ -101,13 +99,23 @@ class PostsCreatedHandler(FileSystemEventHandler):
         self.event.set()
 
         action = 'created' if is_new_post else 'updated'
-        click.echo(f'Post {action} {src_path}.')
+        click.echo(f'Post {action} {file_path}.')
 
     def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
-        self.handle_event(event, is_new_post=True)
+        if event.is_directory:
+            return
+        self.handle_event(event.src_path, is_new_post=True)
 
     def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
-        self.handle_event(event, is_new_post=False)
+        if event.is_directory:
+            return
+        self.handle_event(event.src_path, is_new_post=False)
+
+    def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
+        if event.is_directory:
+            return
+        # A move/replace is essentially an update to the destination file
+        self.handle_event(event.dest_path, is_new_post=False)
 
 
 def watch_disk(
