@@ -10,6 +10,7 @@ import time
 from click.testing import CliRunner
 from flask import Flask
 import htmd.cli.preview as preview_module
+from htmd.utils import atomic_write
 import pytest
 import requests
 from watchdog.events import (
@@ -156,18 +157,19 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
     url = '/static/combined.min.css'
     new_style = 'p {color: red;}'
     expected = new_style.replace(' ', '').replace(';', '')
+    css_path = Path(static_dir) / 'style.css'
+    if css_path.exists():
+        existing_content = css_path.read_text()
+    else:
+        assert static_dir != 'static'
+        existing_content = ''
+    new_content = existing_content + '\n' + expected + '\n'
     with run_preview(run_start) as base_url:
         response = requests.get(base_url + url, timeout=1)
         before = response.text
         assert expected not in before
 
-        css_path = Path(static_dir) / 'style.css'
-        # When static_dir != 'static' this will be a new file
-        if static_dir != 'static':
-            assert css_path.exists() is False
-
-        with css_path.open('a') as css_file:
-            css_file.write('\n' + expected + '\n')
+        atomic_write(css_path, new_content)
 
         # Ensure new style is served
         read_timeout = False
@@ -246,8 +248,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
         if static_dir != 'static':
             assert js_path.exists()
 
-        with js_path.open('w') as js_file:
-            js_file.write(expected)
+        atomic_write(js_path, expected)
 
         # Ensure new script is served
         read_timeout = False
@@ -314,6 +315,14 @@ def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None
 
     title = 'Test Title'
     expected = 'This is the content.'
+    post_file_contents = (
+        '---\n' +
+        f'title: {title}\n' +
+        'published: 2025-11-05\n' +
+        '...\n' +
+        f'{expected}\n'
+    )
+    post_path = Path(posts_dir) / 'example.md'
     with run_preview(run_start) as base_url:
         response = requests.get(base_url, timeout=1)
         before = response.text
@@ -321,13 +330,7 @@ def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None
         assert title not in before
 
         # file will be new when posts_dir != 'posts'
-        post_path = Path(posts_dir) / 'example.md'
-        with post_path.open('w') as post_file:
-            post_file.write('---\n')
-            post_file.write(f'title: {title}\n')
-            post_file.write('published: 2025-11-05\n')
-            post_file.write('...\n')
-            post_file.write(f'{expected}\n')
+        atomic_write(post_path, post_file_contents)
 
         # Ensure new sentence is available after reload
         read_timeout = False
@@ -376,8 +379,7 @@ def test_preview_shows_pages_change_without_reload(
     url = '/about/'
     expected = 'This is new.'
     page_path = Path(pages_dir) / 'about.html'
-    with page_path.open('r') as page_file:
-        contents = page_file.read()
+    contents = page_path.read_text()
 
     contents = contents.replace(
         '</p>',
@@ -390,8 +392,7 @@ def test_preview_shows_pages_change_without_reload(
         before = response.text
         assert expected not in before
 
-        with page_path.open('w') as page_file:
-            page_file.write(contents)
+        atomic_write(page_path, contents)
 
         # Ensure new sentence is available after change
         read_timeout = False
@@ -439,8 +440,7 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:
         assert response.status_code == 404  # noqa: PLR2004
         assert expected not in before
 
-        with new_path_path.open('w') as page_file:
-            page_file.write(contents)
+        atomic_write(new_path_path, contents)
 
         # Ensure new sentence is available after change
         read_timeout = False
@@ -602,6 +602,14 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     event.clear()
     # Verify exit early when .js file event but no changes
     static_handler.on_modified(js_file_event)
+    assert not event.is_set()
+
+    moved_dir_event = DirMovedEvent(bytes(new_js_path), '', is_synthetic=True)
+    static_handler.on_moved(moved_dir_event)
+    assert not event.is_set()
+
+    created_dir_event = DirCreatedEvent(bytes(new_js_path), '', is_synthetic=True)
+    static_handler.on_created(created_dir_event)
     assert not event.is_set()
 
 

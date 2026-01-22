@@ -5,6 +5,7 @@ import re
 from click.testing import CliRunner
 from htmd.cli.build import build
 from htmd.cli.start import start
+from htmd.utils import atomic_write
 import pytest
 import requests
 
@@ -25,12 +26,14 @@ def copy_example_as_draft_build() -> Path:
     copy_path = Path('posts') / 'copy.md'
     with post_path.open('r') as post_file:
         lines = post_file.readlines()
-    with copy_path.open('w') as copy_file:
-        for line in lines:
-            if 'draft' in line:
-                copy_file.write('draft: build\n')
-            else:
-                copy_file.write(line)
+
+    new_lines = []
+    for line in lines:
+        if 'draft' in line:
+            new_lines.append('draft: build\n')
+        else:
+            new_lines.append(line)
+    atomic_write(copy_path, ''.join(new_lines))
     return copy_path
 
 

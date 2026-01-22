@@ -2,6 +2,8 @@ from collections.abc import Iterable
 from pathlib import Path
 import time
 
+from htmd.utils import atomic_write
+
 
 SUCCESS_REGEX = (
     'All posts are correctly formatted.\n'
@@ -16,12 +18,14 @@ def remove_fields_from_post(
     example_post_path = Path('posts') / f'{path}.md'
     with example_post_path.open('r') as post:
         lines = post.readlines()
-    with example_post_path.open('w') as post:
-        for line in lines:
-            skip = any(line.startswith(f'{field}:') for field in field_names)
-            if skip:
-                continue
-            post.write(line)
+
+    new_lines = []
+    for line in lines:
+        skip = any(line.startswith(f'{field}:') for field in field_names)
+        if not skip:
+            new_lines.append(line)
+
+    atomic_write(example_post_path, ''.join(new_lines))
 
 
 def set_example_field(field: str, value: str) -> None:
@@ -31,12 +35,13 @@ def set_example_field(field: str, value: str) -> None:
     with post_path.open('r') as post_file:
         lines = post_file.readlines()
 
-    with post_path.open('w') as post_file:
-        for line in lines:
-            if line == '...\n':
-                field_line = f'{field}: {value}\n'
-                post_file.write(field_line)
-            post_file.write(line)
+    new_lines = []
+    for line in lines:
+        if line == '...\n':
+            new_lines.append(f'{field}: {value}\n')
+        new_lines.append(line)
+
+    atomic_write(post_path, ''.join(new_lines))
 
 
 def set_example_draft_status(draft_status: str) -> None:
@@ -63,14 +68,12 @@ def set_example_contents(text: str) -> None:
 
     new_lines = []
     for line in lines:  # pragma: no branch
+        new_lines.append(line)
         if line == '...\n':
             break
-        new_lines.append(line)
     new_lines.append(text)
 
-    with post_path.open('w') as post_file:
-        for line in lines:
-            post_file.write(line)
+    atomic_write(post_path, ''.join(new_lines))
 
 
 def set_example_subtitle(value: str) -> None:

@@ -78,9 +78,10 @@ def combine_and_minify_css(static_folder: Path) -> bool:
             file_contents.append(css_file.read())
     combined_str = '\n'.join(file_contents)
 
+    dst_path = static_folder / 'combined.min.css'
+
     try:
-        with (static_folder / 'combined.min.css').open('r') as combined_file:
-            current_combined = combined_file.read()
+        current_combined = dst_path.read_text()
     except FileNotFoundError:
         current_combined = ''
 
@@ -88,8 +89,7 @@ def combine_and_minify_css(static_folder: Path) -> bool:
     if new_combined == current_combined:
         return False
 
-    with (static_folder / 'combined.min.css').open('w') as combined_file:
-        combined_file.write(new_combined)
+    atomic_write(dst_path, new_combined)
     return True
 
 
@@ -116,9 +116,9 @@ def combine_and_minify_js(static_folder: Path) -> bool:
             file_contents.append(js_file.read())
     combined_str = '\n'.join(file_contents)
 
+    dst_path = static_folder / 'combined.min.js'
     try:
-        with (static_folder / 'combined.min.js').open('r') as combined_file:
-            current_combined = combined_file.read()
+        current_combined = dst_path.read_text()
     except FileNotFoundError:
         current_combined = ''
 
@@ -126,8 +126,7 @@ def combine_and_minify_js(static_folder: Path) -> bool:
     if new_combined == current_combined:
         return False
 
-    with (static_folder / 'combined.min.js').open('w') as combined_file:
-        combined_file.write(new_combined)
+    atomic_write(dst_path, new_combined)
     return True
 
 

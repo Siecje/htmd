@@ -58,23 +58,37 @@ class StaticHandler(FileSystemEventHandler):
         self.static_directory = static_directory
         self.event = event
 
+    def handle_event(self, file_path: str | bytes) -> None:
+        if isinstance(file_path, bytes):
+            file_path = file_path.decode('utf-8')
+        dst_css = 'combined.min.css'
+        dst_js = 'combined.min.js'
+        skips = [dst_css, dst_js, '.swp', '.tmp']
+        for ending in skips:
+            if file_path.endswith(ending):
+                return
+
+        if file_path.endswith('.css') and combine_and_minify_css(self.static_directory):
+            self.event.set()
+            click.echo(f'Changes in {file_path}. Recreating {dst_css}...')
+        elif file_path.endswith('.js') and combine_and_minify_js(self.static_directory):
+            self.event.set()
+            click.echo(f'Changes in {file_path}. Recreating {dst_js}...')
+
+    def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
+        if event.is_directory:
+            return
+        self.handle_event(event.src_path)
+
     def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
         if event.is_directory:
             return
-        src_path = event.src_path
-        if isinstance(src_path, bytes):
-            src_path = src_path.decode('utf-8')
-        dst_css = 'combined.min.css'
-        dst_js = 'combined.min.js'
-        if dst_css in src_path or dst_js in src_path or '.swp' in src_path:
-            return
+        self.handle_event(event.src_path)
 
-        if src_path.endswith('.css') and combine_and_minify_css(self.static_directory):
-            self.event.set()
-            click.echo(f'Changes in {src_path}. Recreating {dst_css}...')
-        elif src_path.endswith('.js') and combine_and_minify_js(self.static_directory):
-            self.event.set()
-            click.echo(f'Changes in {src_path}. Recreating {dst_js}...')
+    def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
+        if event.is_directory:
+            return
+        self.handle_event(event.dest_path)
 
 
 class PostsCreatedHandler(FileSystemEventHandler):
