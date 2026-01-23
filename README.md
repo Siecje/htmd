@@ -51,7 +51,7 @@ Pages are other webpages on the site, for example the About page.
 ## How do I edit the layout of the site?
 
 Edit the `templates/_layout.html` file that was created when running `htmd start`.
-This a [Jinja](https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance) template that all other pages will use by default.
+This is a [Jinja](https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance) template that all other pages will use by default.
 You can add a link to CSS files that you have created in `static/`.
 To change other pages you will need to override the page template by creating a file with the same name in the `templates/` folder.
 The complete list of templates can be found [here](https://github.com/Siecje/htmd/tree/main/htmd/example_site/templates).
@@ -61,22 +61,21 @@ The complete list of templates can be found [here](https://github.com/Siecje/htm
 A post will be a draft if `draft: true` is set in the metadata and will not appear in the build folder.
 If `draft: build` is set then the post page will be in the build but the post will not appear in any list pages. When a draft is built the metadata value will contain a UUID of where the post is available.
 
-For example, if the draft metadata is `draft: build|f47d4d98-9d66-448a-9e08-7b5c2032e558` then the post will served at `/draft/f47d4d98-9d66-448a-9e08-7b5c2032e558/index.html`.
+For example, if the draft metadata is `draft: build|f47d4d98-9d66-448a-9e08-7b5c2032e558` then the post will available at `/draft/f47d4d98-9d66-448a-9e08-7b5c2032e558/index.html`.
 
 To view the site as if all drafts were published run `htmd preview --drafts`. 
 
 ## How do I password protect a post?
 
-A post will be password protected if `password:` exists in the post metadata.
+A post will be password protected if `password:` exists in the post metadata unless `password` has a value of false.
 
-On `htmd build` a password will be added as the value of the `password` metadata field.
+When  `htmd build` or `htmd preview` is run a password will be added as the value of the `password` metadata field.
 
 If publishing to a public repo the page contents and password should not be visible.
 Password protected posts can go into the `posts/password-protect/` directory
 which can be ignored by source control.
 
-When you open a password protect post in the browser there will be a password prompt
-if the correct password is entered you can read the post.
+When you open a password protected post in the browser there will be a password prompt and if the correct password is entered you can read the post.
 
 ## Since there is no backend server how are the contents hidden?
 
