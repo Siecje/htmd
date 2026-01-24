@@ -301,6 +301,47 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
     assert expected in after
 
 
+def test_preview_js_modified_but_no_changes(run_start: CliRunner) -> None:
+    js_path = Path('static') / 'script.js'
+
+    # Create file to test modified files update
+    with js_path.open('w') as js_file:
+        js_file.write('document.getElementByTagName("div")')
+
+    url = '/static/combined.min.js'
+    with run_preview(run_start) as base_url:
+        response = requests.get(base_url + url, timeout=1)
+        before = response.text
+
+        # Modify file without changes
+        atomic_write(js_path, 'document.getElementByTagName("div")')
+
+        # Ensure webserver did not reload
+        read_timeout = False
+        after = before
+        max_attempts = 20
+        attempts = 1
+
+        while after == before and attempts < max_attempts:
+            try:
+                response = requests.get(base_url + url, timeout=1)
+            except (
+                requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.ReadTimeout,
+            ):  # pragma: no cover
+                # happens during restart
+                read_timeout = True
+                break
+            else:
+                after = response.text
+
+            attempts += 1
+
+    assert read_timeout is False, 'Preview did reload.'
+    assert before == after
+
+
 @pytest.mark.parametrize('posts_dir', [
     'posts',
     'bar',

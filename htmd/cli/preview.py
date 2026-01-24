@@ -57,6 +57,7 @@ class StaticHandler(FileSystemEventHandler):
         super().__init__()
         self.static_directory = static_directory
         self.event = event
+        self._seen_mtimes: dict[str, int] = {}
 
     def handle_event(self, file_path: str | bytes) -> None:
         if isinstance(file_path, bytes):
@@ -68,12 +69,18 @@ class StaticHandler(FileSystemEventHandler):
             if file_path.endswith(ending):
                 return
 
+        new_mtime = Path(file_path).stat().st_mtime_ns
+        if self._seen_mtimes.get(file_path) == new_mtime:
+            # This was likely a metadata event or a double-trigger
+            return
+
         if file_path.endswith('.css') and combine_and_minify_css(self.static_directory):
             self.event.set()
             click.echo(f'Changes in {file_path}. Recreating {dst_css}...')
         elif file_path.endswith('.js') and combine_and_minify_js(self.static_directory):
             self.event.set()
             click.echo(f'Changes in {file_path}. Recreating {dst_js}...')
+        self._seen_mtimes[file_path] = new_mtime
 
     def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
         if event.is_directory:
@@ -96,11 +103,17 @@ class PostsCreatedHandler(FileSystemEventHandler):
         super().__init__()
         self.app = app
         self.event = event
+        self._seen_mtimes: dict[str, int] = {}
 
     def handle_event(self, file_path: str | bytes, *, is_new_post: bool) -> None:
         if isinstance(file_path, bytes):
             file_path = file_path.decode('utf-8')
         if not file_path.endswith('.md'):
+            return
+
+        new_mtime = Path(file_path).stat().st_mtime_ns
+        if self._seen_mtimes.get(file_path) == new_mtime:
+            # This was likely a metadata event or a double-trigger
             return
 
         with self.app.app_context():
@@ -110,6 +123,7 @@ class PostsCreatedHandler(FileSystemEventHandler):
         for post in posts:
             validate_post(post, [])
 
+        self._seen_mtimes[file_path] = new_mtime
         self.event.set()
 
         action = 'created' if is_new_post else 'updated'
