@@ -173,6 +173,17 @@ def watch_disk(
             recursive=True,
         )
         observer.start()
+
+        # If webserver starts before watchdog then updates can be missed
+        # Ensure everything is current now that watchdogs are running
+        with app.app_context():
+            site.reload_posts(app)
+        sync_posts(app)
+        if app.config.get('INCLUDE_CSS'):
+            combine_and_minify_css(static_directory)
+        if app.config.get('INCLUDE_JS'):
+            combine_and_minify_js(static_directory)
+
         while not exit_event.is_set():
             observer.join(timeout=0.1)
     finally:
