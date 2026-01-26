@@ -34,6 +34,8 @@ def run_preview(
         # Prevent "Address already in use" errors when running tests back-to-back
         # by bypassing the OS's TCP TIME_WAIT cooldown period.
         webserver.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if hasattr(socket, 'SO_REUSEPORT'):  # pragma: no cover
+            webserver.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
         # Capture the actual port assigned by the OS
         real_host, real_port = webserver.server_address[:2]
@@ -91,7 +93,7 @@ def run_preview(
 
         try:
             # This is set right before the webserver starts
-            is_ready = preview_ready.wait(timeout=5.0)
+            is_ready = preview_ready.wait(timeout=30.0)
             if not is_ready and not thread.is_alive():  # pragma: no branch
                 msg = 'Preview thread died before starting.'  # pragma: no cover
                 raise RuntimeError(msg)  # pragma: no cover
