@@ -2,6 +2,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 import shutil
+import socket
 import subprocess
 import sys
 import threading
@@ -27,7 +28,14 @@ from utils import (
     set_example_to_draft,
     set_example_to_draft_build,
 )
-from utils_preview import BASE_URL, run_preview
+from utils_preview import run_preview
+
+
+@pytest.fixture
+def unused_port() -> int:
+    with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+        s.bind(('::1', 0))
+        return s.getsockname()[1]
 
 
 @contextmanager
@@ -45,15 +53,19 @@ def run_preview_subprocess(
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+    if args and '--port' in args:
+        base_url = 'http://[::1]:' + args[args.index('--port') + 1]
+    else:
+        base_url = 'http://[::1]:9090'
     try:
         for _ in range(max_tries):  # pragma: no branch
             try:
-                requests.head(BASE_URL, timeout=1)
+                requests.head(base_url, timeout=1)
             except requests.exceptions.ConnectionError:
                 continue
             else:
                 break
-        yield BASE_URL
+        yield base_url
     finally:
         task.terminate()
         try:
@@ -63,13 +75,16 @@ def run_preview_subprocess(
             task.wait()
 
 
-def test_preview(run_start: CliRunner) -> None:
+def test_preview_lifecycle(run_start: CliRunner) -> None:
+    saved_url = ''
+    with run_preview(run_start) as live_url:
+        response = requests.get(live_url, timeout=2)
+        assert response.status_code == 200  # noqa: PLR2004
+        saved_url = live_url
+
+    # After the 'with' block, the server should be shut down
     with pytest.raises(requests.exceptions.ConnectionError):
-        requests.get(BASE_URL, timeout=1)
-    success = 200
-    with run_preview(run_start):
-        response = requests.get(BASE_URL, timeout=1)
-        assert response.status_code == success
+        requests.get(saved_url, timeout=1)
 
 
 def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
@@ -400,12 +415,25 @@ def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None
         assert title in after
 
 
+def test_preview_subprocess_default_port(
+    run_start: CliRunner,  # noqa: ARG001
+) -> None:
+    with run_preview_subprocess() as base_url:
+        response = requests.get(
+            base_url,
+            timeout=2,
+            headers={'Connection': 'close'},
+        )
+        assert response.status_code == 200  # noqa: PLR2004
+
+
 @pytest.mark.parametrize('pages_dir', [
     'pages',
     'bar',
 ])
 def test_preview_shows_pages_change_without_reload(
     run_start: CliRunner,  # noqa: ARG001
+    unused_port: int,
     pages_dir: str,
 ) -> None:
     if pages_dir != 'pages':
@@ -426,10 +454,12 @@ def test_preview_shows_pages_change_without_reload(
         '</p>',
         f' {expected}</p>',
     )
-    # Using subprocess because pages are not being wathced
-    # reloading relies on app.run(deubg-true)
-    with run_preview_subprocess() as base_url:
-        response = requests.get(base_url + url, timeout=1)
+    with run_preview_subprocess(['--port', str(unused_port)]) as base_url:
+        response = requests.get(
+            base_url + url,
+            timeout=1,
+            headers={'Connection': 'close'},
+        )
         before = response.text
         assert expected not in before
 
@@ -779,5 +809,13 @@ def test_webserver_will_be_restarted(run_start: CliRunner) -> None:
         assert len(webservers) == 2  # noqa: PLR2004
 
         # Verify the new server is up and responding
+        response = requests.get(base_url, timeout=2)
+        assert response.status_code == 200  # noqa: PLR2004
+
+
+def test_preview_with_port(run_start: CliRunner, unused_port: int) -> None:
+    args = ['--port', str(unused_port)]
+    with run_preview(run_start, args) as base_url:
+        assert base_url == f'http://[::1]:{unused_port}'
         response = requests.get(base_url, timeout=2)
         assert response.status_code == 200  # noqa: PLR2004

@@ -297,6 +297,8 @@ def preview(
     app.jinja_env.globals['PREVIEW'] = True
     app.jinja_env.auto_reload = True
     webserver = create_webserver(app, host, port)
+    if port == 0:
+        port = webserver.server_port
     webserver_thread = threading.Thread(
         target=webserver.serve_forever,
         daemon=True,

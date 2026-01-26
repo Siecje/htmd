@@ -10,9 +10,6 @@ import htmd.cli.preview as preview_module
 from werkzeug.serving import BaseWSGIServer, make_server
 
 
-BASE_URL = 'http://[::1]:9090'
-
-
 @contextmanager
 def run_preview(
     runner: CliRunner,
@@ -22,6 +19,10 @@ def run_preview(
     webserver_collector: list | None = None,
 ) -> Generator[str]:
     preview_ready = threading.Event()
+
+    # A list is used to "leak" the dynamic URL out of the inner function
+    actual_url_container = []
+
     def create_webserver(app: Flask, host: str, port: int) -> BaseWSGIServer:
         webserver = make_server(
             host,
@@ -29,13 +30,18 @@ def run_preview(
             app,
             threaded=threaded,
         )
-        if webserver_collector is not None:
-            webserver_collector.append(webserver)
         assert webserver is not None
-
         # Prevent "Address already in use" errors when running tests back-to-back
         # by bypassing the OS's TCP TIME_WAIT cooldown period.
         webserver.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        # Capture the actual port assigned by the OS
+        real_host, real_port = webserver.server_address[:2]
+        if isinstance(real_host, bytes):  # pragma: no branch
+            real_host = real_host.decode('utf-8')  # pragma: no cover
+        # Format for IPv6 if necessary
+        url_host = f'[{real_host}]' if ':' in real_host else real_host
+        actual_url_container.append(f'http://{url_host}:{real_port}')
 
         # Replace serve_forever() so our event is set
         # as close to when the webserver is available
@@ -45,6 +51,8 @@ def run_preview(
             original_serve_forever(poll_interval=poll_interval)
         webserver.serve_forever = _serve_forever  # type: ignore[method-assign]
 
+        if webserver_collector is not None:
+            webserver_collector.append(webserver)
         return webserver
 
     stop_event = threading.Event()
@@ -69,9 +77,13 @@ def run_preview(
             side_effect=lambda _x: None,
         ),
     ):
+        if args and '--port' not in args:
+            args += ['--port', '0']
+        elif not args:
+            args = ['--port', '0']
         thread = threading.Thread(
             target=runner.invoke,
-            args=(preview_module.preview, args or []),
+            args=(preview_module.preview, args),
             kwargs={'catch_exceptions': False},
             daemon=True,
         )
@@ -79,8 +91,11 @@ def run_preview(
 
         try:
             # This is set right before the webserver starts
-            preview_ready.wait()
-            yield BASE_URL
+            is_ready = preview_ready.wait(timeout=5.0)
+            if not is_ready and not thread.is_alive():  # pragma: no branch
+                msg = 'Preview thread died before starting.'  # pragma: no cover
+                raise RuntimeError(msg)  # pragma: no cover
+            yield actual_url_container[0]
         finally:
             # Trigger preview to stop
             stop_event.set()
