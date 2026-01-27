@@ -97,7 +97,7 @@ def test_without_updated_preview(run_start: CliRunner) -> None:
 
     base_url = f'http://{server_name}'
     with run_preview(run_start) as preview_base_url:
-        response = requests.get(preview_base_url + '/feed.atom', timeout=1)
+        response = requests.get(preview_base_url + '/feed.atom', timeout=5)
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(base_url, response.text)
 

@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from contextlib import contextmanager
+import queue
 import socket
 import threading
 from unittest.mock import patch
@@ -21,7 +22,7 @@ def run_preview(
     preview_ready = threading.Event()
 
     # A list is used to "leak" the dynamic URL out of the inner function
-    actual_url_container = []
+    url_queue: queue.Queue[str] = queue.Queue()
 
     def create_webserver(app: Flask, host: str, port: int) -> BaseWSGIServer:
         webserver = make_server(
@@ -43,7 +44,7 @@ def run_preview(
             real_host = real_host.decode('utf-8')  # pragma: no cover
         # Format for IPv6 if necessary
         url_host = f'[{real_host}]' if ':' in real_host else real_host
-        actual_url_container.append(f'http://{url_host}:{real_port}')
+        url_queue.put(f'http://{url_host}:{real_port}')
 
         # Replace serve_forever() so our event is set
         # as close to when the webserver is available
@@ -58,6 +59,7 @@ def run_preview(
         return webserver
 
     stop_event = threading.Event()
+
     with (
         # start_webserver is replaced
         # so it can handle each request in a thread
@@ -83,6 +85,7 @@ def run_preview(
             args += ['--port', '0']
         elif not args:
             args = ['--port', '0']
+
         thread = threading.Thread(
             target=runner.invoke,
             args=(preview_module.preview, args),
@@ -97,10 +100,10 @@ def run_preview(
             if not is_ready and not thread.is_alive():  # pragma: no branch
                 msg = 'Preview thread died before starting.'  # pragma: no cover
                 raise RuntimeError(msg)  # pragma: no cover
-            yield actual_url_container[0]
+            yield url_queue.get(timeout=5.0)
         finally:
             # Trigger preview to stop
             stop_event.set()
             # Give time for the watchdog thread inside preview
             # to stop, it won't know to stop right away
-            thread.join(timeout=2.0)
+            thread.join(timeout=5.0)

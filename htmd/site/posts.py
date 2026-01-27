@@ -1,6 +1,5 @@
 import calendar
 import datetime
-import time
 
 from bs4 import BeautifulSoup
 from feedwerk.atom import AtomFeed
@@ -45,7 +44,6 @@ posts = Posts()
 
 def reload_posts(app: Flask, *, show_drafts: bool | None = None) -> None:
     _posts = app.extensions['flatpages'][None]
-    time.sleep(0.01)
     _posts.reload()
     target_show_drafts = show_drafts if show_drafts is not None else _posts.show_drafts
 
