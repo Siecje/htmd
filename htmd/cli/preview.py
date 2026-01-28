@@ -2,6 +2,7 @@ import contextlib
 import os
 from pathlib import Path
 import signal
+import socket
 import threading
 import time
 import types
@@ -206,6 +207,8 @@ def create_webserver(
         port,
         app,
     )
+    # Allows immediate restart on the same port without OS lock-out
+    webserver.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     return webserver
 
 
