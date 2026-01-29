@@ -197,6 +197,8 @@ def test_draft_build_preview_without_published(run_start: CliRunner) -> None:
 def test_draft_during_preview(run_start: CliRunner) -> None:
     post_path = Path('posts') / 'example.md'
     with run_preview(run_start) as base_url:
+        # Wait for initial watchdog to finish
+        wait_for_str_in_file(post_path, '_hash')
         set_example_to_draft_build()
         wait_for_str_in_file(post_path, 'build|')
         post_uuid = get_draft_uuid('example')
@@ -209,8 +211,11 @@ def test_draft_during_preview(run_start: CliRunner) -> None:
 
 def test_new_draft_during_preview(run_start: CliRunner) -> None:
     # put draft line in example so that when we copy it we can set it to build
+    example_path = Path('posts') / 'example.md'
     set_example_draft_status('false')
     with run_preview(run_start) as base_url:
+        # Wait for initial watchdog to finish
+        wait_for_str_in_file(example_path, '_hash')
         # Create new draft build post
         post_path = copy_example_as_draft_build()
         wait_for_str_in_file(post_path, 'build|')

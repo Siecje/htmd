@@ -106,7 +106,7 @@ class PostsCreatedHandler(FileSystemEventHandler):
         self.event = event
         self._seen_mtimes: dict[str, int] = {}
 
-    def handle_event(self, file_path: str | bytes, *, is_new_post: bool) -> None:
+    def _handle_event(self, file_path: str | bytes, *, is_new_post: bool) -> None:
         if isinstance(file_path, bytes):
             file_path = file_path.decode('utf-8')
         if not file_path.endswith('.md'):
@@ -120,8 +120,10 @@ class PostsCreatedHandler(FileSystemEventHandler):
         with self.app.app_context():
             site.reload_posts(self.app)
         sync_posts(self.app)
+        # Refresh m_time in case it was changed during sync_posts
+        new_mtime = Path(file_path).stat().st_mtime_ns
         posts = self.app.extensions['flatpages'][None]
-        for post in posts:
+        for post in list(posts.pages.values()):
             validate_post(post, [])
 
         self._seen_mtimes[file_path] = new_mtime
@@ -133,18 +135,18 @@ class PostsCreatedHandler(FileSystemEventHandler):
     def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
         if event.is_directory:
             return
-        self.handle_event(event.src_path, is_new_post=True)
+        self._handle_event(event.src_path, is_new_post=True)
 
     def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
         if event.is_directory:
             return
-        self.handle_event(event.src_path, is_new_post=False)
+        self._handle_event(event.src_path, is_new_post=False)
 
     def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
         if event.is_directory:
             return
         # A move/replace is essentially an update to the destination file
-        self.handle_event(event.dest_path, is_new_post=False)
+        self._handle_event(event.dest_path, is_new_post=False)
 
 
 def watch_disk(

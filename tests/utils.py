@@ -113,19 +113,21 @@ def get_example_field(field: str) -> None | str:
     return get_post_field('example', field)
 
 
-def wait_for_str_in_file(path: Path, value: str, timeout_s: int = 5) -> None:
+def wait_for_str_in_file(path: Path, value: str, timeout: float = 5) -> None:
     start_time = time.monotonic()
-    while value not in path.read_text():  # pragma: no branch
-        if time.monotonic() - start_time > timeout_s:  # pragma: no branch
-            msg = f'{value} not found in {path} after {timeout_s}s.'  # pragma: no cover
-            raise TimeoutError(msg)  # pragma: no cover
-        time.sleep(0.1)  # pragma: no cover
+    content = path.read_text()
+    while value not in content:  # pragma: no cover
+        if time.monotonic() - start_time > timeout:
+            msg = f"'{value}' not found in {path} after {timeout}s.\n"
+            raise TimeoutError(msg)
+        time.sleep(0.1)
+        content = path.read_text()
 
 
-def wait_for_str_not_in_file(path: Path, value: str, timeout_s: int = 5) -> None:
+def wait_for_str_not_in_file(path: Path, value: str, timeout: float = 5) -> None:
     start_time = time.monotonic()
-    while value in path.read_text():  # pragma: no branch
-        if time.monotonic() - start_time > timeout_s:  # pragma: no branch
-            msg = f'{value} not found in {path} after {timeout_s}s.'  # pragma: no cover
-            raise TimeoutError(msg)  # pragma: no cover
-        time.sleep(0.1)  # pragma: no cover
+    while value in path.read_text():  # pragma: no cover
+        if time.monotonic() - start_time > timeout:
+            msg = f'{value} still in {path} after {timeout}s.'
+            raise TimeoutError(msg)
+        time.sleep(0.1)

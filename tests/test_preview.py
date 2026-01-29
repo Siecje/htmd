@@ -708,6 +708,24 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     assert not event.is_set()
 
 
+def test_posts_handler_double_event(flask_app: Flask) -> None:
+    # Verify file is processed once when editor triggers created and modified events
+    refresh_event = threading.Event()
+    handler = preview_module.PostsCreatedHandler(flask_app, refresh_event)
+    example_path = Path('posts') / 'example.md'
+    copy_path = Path('posts') / 'copy.md'
+    shutil.copy(example_path, copy_path)
+
+    # First call: Processes normally
+    handler.on_created(FileCreatedEvent(bytes(copy_path), '', is_synthetic=True))
+    assert refresh_event.is_set()
+
+    # Second call: Hits the 'return' because mtime is now in _seen_mtimes
+    refresh_event.clear()
+    handler.on_modified(FileModifiedEvent(bytes(copy_path), '', is_synthetic=True))
+    assert not refresh_event.is_set()
+
+
 def test_favicon(run_start: CliRunner) -> None:
     url = '/static/favicon.svg'
     success = 200
