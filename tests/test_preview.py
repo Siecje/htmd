@@ -650,7 +650,12 @@ def test_preview_when_combined_js_exists(run_start: CliRunner) -> None:
 
 def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     event = threading.Event()
-    static_handler = preview_module.StaticHandler(Path('static'), event)
+    static_handler = preview_module.StaticHandler(
+        event,
+        Path('static'),
+        css_minify=True,
+        js_minify=True,
+    )
 
     # Add new file to combined.min.css
     new_css = 'body { background-color: aqua;}'
@@ -687,7 +692,7 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
 def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     event = threading.Event()
     app = Flask(__name__)
-    posts_handler = preview_module.PostsCreatedHandler(app, event)
+    posts_handler = preview_module.PostsCreatedHandler(event, app)
 
     # Add non .md file
     non_md_path = Path('posts') / 'not_markdown.txt'
@@ -711,7 +716,7 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
 def test_posts_handler_double_event(flask_app: Flask) -> None:
     # Verify file is processed once when editor triggers created and modified events
     refresh_event = threading.Event()
-    handler = preview_module.PostsCreatedHandler(flask_app, refresh_event)
+    handler = preview_module.PostsCreatedHandler(refresh_event, flask_app)
     example_path = Path('posts') / 'example.md'
     copy_path = Path('posts') / 'copy.md'
     shutil.copy(example_path, copy_path)

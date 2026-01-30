@@ -54,11 +54,20 @@ def set_stop_event_on_signal(
 
 
 class StaticHandler(FileSystemEventHandler):
-    def __init__(self, static_directory: Path, event: threading.Event) -> None:
+    def __init__(
+        self,
+        event: threading.Event,
+        static_directory: Path,
+        *,
+        css_minify: bool,
+        js_minify: bool,
+    ) -> None:
         super().__init__()
-        self.static_directory = static_directory
-        self.event = event
         self._seen_mtimes: dict[str, int] = {}
+        self.event = event
+        self.static_directory = static_directory
+        self.css_minify = css_minify
+        self.js_minify = js_minify
 
     def handle_event(self, file_path: str | bytes) -> None:
         if isinstance(file_path, bytes):
@@ -75,10 +84,18 @@ class StaticHandler(FileSystemEventHandler):
             # This was likely a metadata event or a double-trigger
             return
 
-        if file_path.endswith('.css') and combine_and_minify_css(self.static_directory):
+        if (
+            file_path.endswith('.css')
+            and self.css_minify
+            and combine_and_minify_css(self.static_directory)
+        ):
             self.event.set()
             click.echo(f'Changes in {file_path}. Recreating {dst_css}...')
-        elif file_path.endswith('.js') and combine_and_minify_js(self.static_directory):
+        elif (
+            file_path.endswith('.js')
+            and self.js_minify
+            and combine_and_minify_js(self.static_directory)
+        ):
             self.event.set()
             click.echo(f'Changes in {file_path}. Recreating {dst_js}...')
         self._seen_mtimes[file_path] = new_mtime
@@ -100,11 +117,11 @@ class StaticHandler(FileSystemEventHandler):
 
 
 class PostsCreatedHandler(FileSystemEventHandler):
-    def __init__(self, app: Flask, event: threading.Event) -> None:
+    def __init__(self, event: threading.Event, app: Flask) -> None:
         super().__init__()
-        self.app = app
-        self.event = event
         self._seen_mtimes: dict[str, int] = {}
+        self.event = event
+        self.app = app
 
     def _handle_event(self, file_path: str | bytes, *, is_new_post: bool) -> None:
         if isinstance(file_path, bytes):
@@ -149,13 +166,37 @@ class PostsCreatedHandler(FileSystemEventHandler):
         self._handle_event(event.dest_path, is_new_post=False)
 
 
-def watch_disk(
-    app: Flask,
-    static_folder: str,
-    posts_path: Path,
+def watch_disk(  # noqa: PLR0913
     exit_event: threading.Event,
+    start_event: threading.Event,
     refresh_event: threading.Event,
+    # Static
+    static_folder: str,
+    css_minify: bool,  # noqa: FBT001
+    js_minify: bool,  # noqa: FBT001
+    # Posts
+    app: Flask,
+    posts_path: Path,
 ) -> None:
+    """
+    Watch static and posts folders for changes.
+
+    When changes are detected:
+        - combine and minify CSS and JS as needed.
+        - sync posts as needed.
+        - trigger refresh_event to notify browser to refresh.
+
+    Args:
+        exit_event: Event to signal thread to exit.
+        start_event: Event to signal thread has started.
+        refresh_event: Event to signal browser refresh.
+        static_folder: Path to static files.
+        css_minify: Whether to minify CSS on changes.
+        js_minify: Whether to minify JS on changes.
+        app: Flask application instance.
+        posts_path: Path to posts files.
+
+    """
     static_directory = Path(static_folder)
 
     observer = Observer()
@@ -163,13 +204,21 @@ def watch_disk(
 
     try:
         if static_directory.exists():
-            static_handler = StaticHandler(static_directory, refresh_event)
+            static_handler = StaticHandler(
+                refresh_event,
+                static_directory,
+                css_minify=css_minify,
+                js_minify=js_minify,
+            )
             observer.schedule(
                 static_handler,
                 path=str(static_directory),
                 recursive=True,
             )
-        posts_handler = PostsCreatedHandler(app, refresh_event)
+        posts_handler = PostsCreatedHandler(
+            refresh_event,
+            app,
+        )
         observer.schedule(
             posts_handler,
             path=str(posts_path),
@@ -182,10 +231,11 @@ def watch_disk(
         with app.app_context():
             site.reload_posts(app)
         sync_posts(app)
-        if app.config.get('INCLUDE_CSS'):
+        if css_minify:
             combine_and_minify_css(static_directory)
-        if app.config.get('INCLUDE_JS'):
+        if js_minify:
             combine_and_minify_js(static_directory)
+        start_event.set()
 
         while not exit_event.is_set():
             observer.join(timeout=0.1)
@@ -229,7 +279,6 @@ def exit_if_parent_pid_changes() -> None:
 
 
 @click.command('preview', short_help='Serve files to preview site.')
-@click.pass_context
 @click.option(
     '--host', '-h',
     default='::1',
@@ -257,7 +306,6 @@ def exit_if_parent_pid_changes() -> None:
     is_flag=True,
 )
 def preview(
-    _ctx: click.Context,
     host: str,
     port: int,
     *,
@@ -265,34 +313,40 @@ def preview(
     js_minify: bool,
     drafts: bool,
 ) -> None:
-    app = site.create_app(show_drafts=drafts)
-
-    assert app.static_folder is not None
-    if css_minify and combine_and_minify_css(Path(app.static_folder)):
-        app.config['INCLUDE_CSS'] = app.jinja_env.globals['INCLUDE_CSS'] = True
-
-    if js_minify and combine_and_minify_js(Path(app.static_folder)):
-        app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
-
-    sync_posts(app)
-
     stop_event = create_stop_event()
     set_stop_event_on_signal(stop_event)
+
+    app = site.create_app(show_drafts=drafts)
 
     ##
     # Thread: Watchdog on file changes
     ##
+    # event to signal browser refresh during preview
+    watch_thread_started = threading.Event()
     refresh_event = threading.Event()
     app.config['refresh_event'] = refresh_event
     watch_thread = threading.Thread(
         target=watch_disk,
         args=(
-            app,
-            app.static_folder,
-            app.config['FLATPAGES_ROOT'],
             stop_event,
+            watch_thread_started,
             refresh_event,
+            # static files
+            app.static_folder,
+            css_minify,
+            js_minify,
+            # posts files
+            app,
+            app.config['FLATPAGES_ROOT'],
         ),
+        daemon=True,
+    )
+
+    ##
+    # -- Thread: Force exit if parent process changes
+    ##
+    parent_pid_thread = threading.Thread(
+        target=exit_if_parent_pid_changes,
         daemon=True,
     )
 
@@ -310,20 +364,13 @@ def preview(
     )
 
     ##
-    # -- Thread: Force exit if parent process changes
-    ##
-    parent_pid_thread = threading.Thread(
-        target=exit_if_parent_pid_changes,
-        daemon=True,
-    )
-
-    ##
     # -- Thread: Main Thread
     ##
     try:
         watch_thread.start()
-        webserver_thread.start()
         parent_pid_thread.start()
+        watch_thread_started.wait()
+        webserver_thread.start()
 
         while not stop_event.is_set():
             if not webserver_thread.is_alive():
