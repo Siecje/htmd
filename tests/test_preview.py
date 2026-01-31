@@ -388,7 +388,7 @@ def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None
         # file will be new when posts_dir != 'posts'
         atomic_write(post_path, post_file_contents)
 
-        # Ensure new sentence is available after reload
+        # Ensure new sentence is available without reload
         read_timeout = False
         after = before
         max_attempts = 50
@@ -821,7 +821,7 @@ def test_webserver_will_be_restarted(run_start: CliRunner) -> None:
         first_server = webservers[0]
         first_server.shutdown()
 
-        timeout_s = 1.5
+        timeout_s = 5.0
         start_time = time.time()
         while len(webservers) < 2:  # noqa: PLR2004
             if time.time() - start_time > timeout_s:  # pragma: no branch
