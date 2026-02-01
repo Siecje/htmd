@@ -38,7 +38,6 @@ version = "6.1.0"
 [project.optional-dependencies]
 dev = [
   "coverage",
-  "lxml",
   "mypy",
   "pre-commit",
   "pytest",

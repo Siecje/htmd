@@ -1,8 +1,7 @@
 from pathlib import Path
 import re
-from typing import Any
+import xml.etree.ElementTree as ET
 
-from bs4 import BeautifulSoup
 from click.testing import CliRunner
 from htmd.cli.build import build
 import requests
@@ -17,6 +16,29 @@ from utils import (
 from utils_preview import run_preview
 
 
+def link_to_str(el: ET.Element) -> str:
+    href_value = el.get('href')
+    rel_value = el.get('rel')
+    if rel_value is not None:
+        result = f'<link href="{href_value}" rel="{rel_value}"/>'
+    else:
+        result = f'<link href="{href_value}"/>'
+    return result
+
+
+def assert_tag_text(
+    parent: ET.Element,
+    tag: str,
+    expected: str,
+) -> ET.Element:
+    ns = {'atom': 'http://www.w3.org/2005/Atom'}
+    el = parent.find(tag, ns)
+    assert el is not None, f'Expected tag <{tag}> was not found.'
+    assert el.text == expected, \
+        f'Tag <{tag}> text mismatch. Expected: {expected}, Got: {el.text}'
+    return el
+
+
 def validate_example_feed(
     base_url: str,
     feed_contents: str,
@@ -24,43 +46,73 @@ def validate_example_feed(
     published: str | None = None,
     updated: str | None = None,
 ) -> None:
-    # type Any to prevent mypy from complaing that .find() can return None
-    feed: Any = BeautifulSoup(feed_contents, 'xml').find('feed')
-    assert feed.find('title').string == 'htmd'
-    assert feed.find('id').string == base_url + '/feed.atom'
-    feed_links = [
-        str(link) for link in feed.find_all('link', recursive=False)
-    ]
-    feed_link = f'<link href="{base_url}/feed.atom" rel="self"/>'
-    assert feed_links == [f'<link href="{base_url}/all/"/>', feed_link]
-    assert str(feed.find('link', rel='self')) == feed_link
-    assert feed.find('subtitle').string == 'Recent Blog Posts'
-    assert feed.find('generator') is None
+    ns = {'atom': 'http://www.w3.org/2005/Atom'}
+    root = ET.fromstring(feed_contents)  # noqa: S314
 
-    entry = feed.find('entry')
-    assert entry.find('title').string == 'Example Post'
-    assert entry.find('id').string == f'{base_url}/2014/10/30/example/'
-    updated_str = entry.find('updated').string
+    # --- Feed Metadata ---
+    assert_tag_text(root, 'atom:title', 'htmd')
+    assert_tag_text(root, 'atom:id', f'{base_url}/feed.atom')
+    assert_tag_text(root, 'atom:subtitle', 'Recent Blog Posts')
+
+    assert root.find('atom:generator', ns) is None
+
+    feed_links = root.findall('atom:link', ns)
+    feed_url = link_to_str(feed_links[1])
+    all_url = link_to_str(feed_links[0])
+    assert all_url == f'<link href="{base_url}/all/"/>'
+    assert feed_url == f'<link href="{base_url}/feed.atom" rel="self"/>'
+
+    # --- Entry Content ---
+    entry = root.find('atom:entry', ns)
+    assert entry is not None
+
+    assert_tag_text(entry, 'atom:title', 'Example Post')
+
+    # Check ID and grab the string for the link comparison later
+    entry_id_el = assert_tag_text(
+        entry,
+        'atom:id',
+        f'{base_url}/2014/10/30/example/',
+    )
+    entry_id = entry_id_el.text
+
+    # Updated Date Logic
+    updated_el = entry.find('atom:updated', ns)
+    assert updated_el is not None
+    updated_str = updated_el.text
+    assert isinstance(updated_str, str), \
+        f'Expected string in <updated>, got {type(updated_str)}'
+
     if updated:
         assert updated_str == updated
     else:
-        # <updated> in feed will be post.published
         assert updated_str.startswith('2014-10-30')
-    # Check for ISO 8601 format (YYYY-MM-DDTHH:MM:SS...)
-    iso_regex = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}'
-    assert re.match(iso_regex, updated_str)
 
-    published_str = entry.find('published').string
+    assert re.match(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}', updated_str)
+
+    # Published Date Logic
+    published_el = entry.find('atom:published', ns)
+    assert published_el is not None
     if published:
-        assert published_str == published
+        assert published_el.text == published
     else:
-        assert published_str == updated_str
-    assert entry.find('link')['href'] == entry.find('id').string
-    author = entry.find('author')
+        # Defaults to updated_str if not explicitly provided
+        assert published_el.text == updated_str
+
+    # Final Details (Link, Author, Content)
+    entry_link = entry.find('atom:link', ns)
+    assert entry_link is not None
+    assert entry_link.get('href') == entry_id
+
+    author = entry.find('atom:author', ns)
     assert author is not None
-    assert author.find('name').string == 'Taylor'
-    expected = '<p>This is the post <strong>text</strong>.</p>'
-    assert entry.find('content').text == expected
+    assert_tag_text(author, 'atom:name', 'Taylor')
+
+    assert_tag_text(
+        entry,
+        'atom:content',
+        '<p>This is the post <strong>text</strong>.</p>',
+    )
 
 
 def test_without_updated_build(run_start: CliRunner) -> None:
@@ -210,8 +262,12 @@ def test_with_site_description(run_start: CliRunner) -> None:
     assert re.search(SUCCESS_REGEX, result.output)
 
     feed_path = Path('build') / 'feed.atom'
-    with feed_path.open('r') as feed_file:
-        feed_contents = feed_file.read()
+    feed_contents = feed_path.read_text()
 
-    feed = BeautifulSoup(feed_contents, 'xml').find('feed')
-    assert feed.find('subtitle').string == description  # type: ignore[union-attr]
+    # Parse the XML string
+    root = ET.fromstring(feed_contents)  # noqa: S314
+    ns = {'atom': 'http://www.w3.org/2005/Atom'}
+    subtitle = root.find('atom:subtitle', ns)
+
+    assert subtitle is not None
+    assert subtitle.text == description
