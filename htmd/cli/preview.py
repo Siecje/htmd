@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import contextlib
 import os
 from pathlib import Path
@@ -53,43 +54,83 @@ def set_stop_event_on_signal(
     signal.signal(signal.SIGINT, handle_signal)
 
 
-class StaticHandler(FileSystemEventHandler):
+class BaseHandler(FileSystemEventHandler):
+    def __init__(self, event: threading.Event, skips: list[str] | None = None) -> None:
+        super().__init__()
+        self._seen_mtimes: dict[str, int] = {}
+        self.event = event
+        self.skips = ['.swp', '.tmp'] + (skips or [])
+
+    def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
+        if event.is_directory:
+            return
+        self.handle_event(event.src_path, is_new=True)
+
+    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
+        if event.is_directory:
+            return
+        self.handle_event(event.src_path, is_new=False)
+
+    def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
+        if event.is_directory:
+            return
+        # A move/replace is essentially an update to the destination file
+        self.handle_event(event.dest_path, is_new=False)
+
+    @abstractmethod
+    def handle_file(self, file_path: str, *, is_new: bool) -> None:
+        """Handle a file event."""
+
+    def handle_event(self, file_path: str | bytes, *, is_new: bool) -> None:
+        if isinstance(file_path, bytes):
+            file_path = file_path.decode('utf-8')
+        for ending in self.skips:
+            if file_path.endswith(ending):
+                return
+
+        path_obj = Path(file_path)
+        new_mtime = path_obj.stat().st_mtime_ns
+        if self._seen_mtimes.get(file_path) == new_mtime:
+            # This was likely a metadata event or a double-trigger
+            return
+        self.handle_file(file_path, is_new=is_new)
+        try:
+            # Set new mtime if the file is changed in self.handle_file()
+            self._seen_mtimes[file_path] = path_obj.stat().st_mtime_ns
+        except FileNotFoundError:  # pragma: no cover
+            # File was deleted before we could stat it
+            with contextlib.suppress(KeyError):
+                del self._seen_mtimes[file_path]
+
+
+class StaticHandler(BaseHandler):
     def __init__(
         self,
         event: threading.Event,
+        skips: list[str],
         static_directory: Path,
         *,
         css_minify: bool,
         js_minify: bool,
     ) -> None:
-        super().__init__()
-        self._seen_mtimes: dict[str, int] = {}
-        self.event = event
+        super().__init__(event, skips)
         self.static_directory = static_directory
         self.css_minify = css_minify
         self.js_minify = js_minify
 
-    def handle_event(self, file_path: str | bytes) -> None:
-        if isinstance(file_path, bytes):
-            file_path = file_path.decode('utf-8')
-        dst_css = 'combined.min.css'
-        dst_js = 'combined.min.js'
-        skips = [dst_css, dst_js, '.swp', '.tmp']
-        for ending in skips:
-            if file_path.endswith(ending):
-                return
-
-        new_mtime = Path(file_path).stat().st_mtime_ns
-        if self._seen_mtimes.get(file_path) == new_mtime:
-            # This was likely a metadata event or a double-trigger
-            return
-
+    def handle_file(
+        self,
+        file_path: str,
+        *,
+        is_new: bool,  # noqa: ARG002
+    ) -> None:
         if (
             file_path.endswith('.css')
             and self.css_minify
             and combine_and_minify_css(self.static_directory)
         ):
             self.event.set()
+            dst_css = 'combined.min.css'
             click.echo(f'Changes in {file_path}. Recreating {dst_css}...')
         elif (
             file_path.endswith('.js')
@@ -97,73 +138,33 @@ class StaticHandler(FileSystemEventHandler):
             and combine_and_minify_js(self.static_directory)
         ):
             self.event.set()
+            dst_js = 'combined.min.js'
             click.echo(f'Changes in {file_path}. Recreating {dst_js}...')
-        self._seen_mtimes[file_path] = new_mtime
-
-    def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
-        if event.is_directory:
-            return
-        self.handle_event(event.src_path)
-
-    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
-        if event.is_directory:
-            return
-        self.handle_event(event.src_path)
-
-    def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
-        if event.is_directory:
-            return
-        self.handle_event(event.dest_path)
 
 
-class PostsCreatedHandler(FileSystemEventHandler):
-    def __init__(self, event: threading.Event, app: Flask) -> None:
-        super().__init__()
-        self._seen_mtimes: dict[str, int] = {}
-        self.event = event
+class PostsCreatedHandler(BaseHandler):
+    def __init__(
+        self,
+        event: threading.Event,
+        app: Flask,
+    ) -> None:
+        super().__init__(event)
         self.app = app
 
-    def _handle_event(self, file_path: str | bytes, *, is_new_post: bool) -> None:
-        if isinstance(file_path, bytes):
-            file_path = file_path.decode('utf-8')
+    def handle_file(self, file_path: str, *, is_new: bool) -> None:
         if not file_path.endswith('.md'):
             return
-
-        new_mtime = Path(file_path).stat().st_mtime_ns
-        if self._seen_mtimes.get(file_path) == new_mtime:
-            # This was likely a metadata event or a double-trigger
-            return
-
         with self.app.app_context():
             site.reload_posts(self.app)
         sync_posts(self.app)
-        # Refresh m_time in case it was changed during sync_posts
-        new_mtime = Path(file_path).stat().st_mtime_ns
         posts = self.app.extensions['flatpages'][None]
         for post in list(posts.pages.values()):
             validate_post(post, [])
 
-        self._seen_mtimes[file_path] = new_mtime
         self.event.set()
 
-        action = 'created' if is_new_post else 'updated'
+        action = 'created' if is_new else 'updated'
         click.echo(f'Post {action} {file_path}.')
-
-    def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
-        if event.is_directory:
-            return
-        self._handle_event(event.src_path, is_new_post=True)
-
-    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
-        if event.is_directory:
-            return
-        self._handle_event(event.src_path, is_new_post=False)
-
-    def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
-        if event.is_directory:
-            return
-        # A move/replace is essentially an update to the destination file
-        self._handle_event(event.dest_path, is_new_post=False)
 
 
 def watch_disk(  # noqa: PLR0913
@@ -204,8 +205,10 @@ def watch_disk(  # noqa: PLR0913
 
     try:
         if static_directory.exists():
+            skips = ['combined.min.css', 'combined.min.js']
             static_handler = StaticHandler(
                 refresh_event,
+                skips,
                 static_directory,
                 css_minify=css_minify,
                 js_minify=js_minify,
@@ -250,9 +253,9 @@ def watch_disk(  # noqa: PLR0913
 
 
 def create_webserver(
-        app: Flask,
-        host: str,
-        port: int,
+    app: Flask,
+    host: str,
+    port: int,
 ) -> BaseWSGIServer:  # pragma: no cover
     webserver = make_server(
         host,
