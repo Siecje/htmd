@@ -9,7 +9,7 @@ from jinja2 import ChoiceLoader, FileSystemLoader
 from .freezer import freeze_bp, freezer
 from .main import main_bp
 from .pages import pages
-from .posts import posts, posts_bp, reload_posts
+from .posts import posts, posts_bp
 
 
 def get_project_dir() -> Path:
@@ -130,7 +130,7 @@ def create_app(*, show_drafts: bool = False) -> Flask:
     posts.init_app(app)
     # populate publish_posts
     with app.app_context():
-        reload_posts(app, show_drafts=show_drafts)
+        posts.reload(show_drafts=show_drafts)
 
     freezer.init_app(app)
 

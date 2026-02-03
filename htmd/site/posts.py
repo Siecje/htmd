@@ -1,4 +1,5 @@
 import calendar
+from collections.abc import Iterator
 import datetime
 
 from bs4 import BeautifulSoup
@@ -24,36 +25,32 @@ posts_bp = Blueprint('posts', __name__)
 
 class Posts(FlatPages):
     def __init__(self, app: Flask | None = None) -> None:
-        super().__init__()
+        super().__init__(app)
         self.show_drafts: bool = False
         self.published_posts: list[Page] = []
         self._app = app
 
-    @property
-    def pages(self) -> dict[str, Page]:
-        """
-        Public access to the underlying _pages dictionary.
+    def __iter__(self) -> Iterator[Page]:
+        """Iterate on a snapshot of all :class:`Page` objects."""
+        return iter(list(self._pages.values()))
 
-        Required for thread-safe iteration/copying without accessing private members.
-        """
-        return self._pages  # type: ignore[attr-defined]
+    def reload(self, *, show_drafts: bool | None = None) -> None:
+        super().reload()
+        if show_drafts is not None:
+            self.show_drafts = show_drafts
+
+        if not self._app:
+            return
+        with self._app.app_context():
+            new_published_posts = [
+                p for p in self
+                if 'published' in p.meta and hasattr(p.meta['published'], 'year')
+                and (self.show_drafts or not p.meta.get('draft', False))
+            ]
+        self.published_posts = new_published_posts
 
 
 posts = Posts()
-
-
-def reload_posts(app: Flask, *, show_drafts: bool | None = None) -> None:
-    _posts = app.extensions['flatpages'][None]
-    _posts.reload()
-    target_show_drafts = show_drafts if show_drafts is not None else _posts.show_drafts
-
-    new_published_posts = [
-        p for p in _posts.pages.values()
-        if 'published' in p.meta and hasattr(p.meta['published'], 'year')
-        and (target_show_drafts or not p.meta.get('draft', False))
-    ]
-    _posts.published_posts = new_published_posts
-    _posts.show_drafts = target_show_drafts
 
 
 def truncate_post_html(post_html: str) -> str:
@@ -168,8 +165,7 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
 @posts_bp.route('/draft/<post_uuid>/')
 def draft(post_uuid: str) -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]
-    posts_copy = _posts.pages
-    for post in posts_copy.values():
+    for post in _posts:
         if str(post.meta.get('draft', '')).replace('build|', '') == post_uuid:
             break
     else:
@@ -205,10 +201,9 @@ def no_posts_shown(post_list: list[Page]) -> bool:
 @posts_bp.route('/tags/<string:tag>/')
 def tag(tag: str) -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]
-    posts_copy = _posts.pages
     tagged = [
         p
-        for p in posts_copy.values()
+        for p in _posts
         if tag in p.meta.get('tags', [])
     ]
     if not tagged:
@@ -233,10 +228,9 @@ def author(author: str) -> ResponseReturnValue:
     # page is served without displaying posts
     # so no 404 when for the link from the draft
     _posts = current_app.extensions['flatpages'][None]
-    posts_copy = _posts.pages
     posts_author = [
         p
-        for p in posts_copy.values()
+        for p in _posts
         if author == p.meta.get('author', '')
     ]
 

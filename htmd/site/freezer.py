@@ -29,8 +29,8 @@ def add_404() -> Iterator[str]:
 # Telling Frozen-Flask about routes that are not linked to in templates
 @freezer.register_generator
 def year_view() -> Iterator[tuple[str, dict[str, int]]]:
-    _posts = current_app.extensions['flatpages'][None]
-    for post in _posts.published_posts:
+    posts = current_app.extensions['flatpages'][None]
+    for post in posts.published_posts:
         yield 'posts.year_view', {
             'year': post.meta['published'].year,
         }
@@ -38,8 +38,8 @@ def year_view() -> Iterator[tuple[str, dict[str, int]]]:
 
 @freezer.register_generator
 def month_view() -> Iterator[tuple[str, dict[str, int | str]]]:
-    _posts = current_app.extensions['flatpages'][None]
-    for post in _posts.published_posts:
+    posts = current_app.extensions['flatpages'][None]
+    for post in posts.published_posts:
         yield 'posts.month_view', {
             'month': post.meta['published'].strftime('%m'),
             'year': post.meta['published'].year,
@@ -48,8 +48,8 @@ def month_view() -> Iterator[tuple[str, dict[str, int | str]]]:
 
 @freezer.register_generator
 def day_view() -> Iterator[tuple[str, dict[str, int | str]]]:
-    _posts = current_app.extensions['flatpages'][None]
-    for post in _posts.published_posts:
+    posts = current_app.extensions['flatpages'][None]
+    for post in posts.published_posts:
         yield 'posts.day_view', {
             'day': post.meta['published'].strftime('%d'),
             'month': post.meta['published'].strftime('%m'),
@@ -59,11 +59,10 @@ def day_view() -> Iterator[tuple[str, dict[str, int | str]]]:
 
 @freezer.register_generator
 def draft() -> Iterator[tuple[str, dict[str, str]]]:
-    _posts = current_app.extensions['flatpages'][None]
-    posts_copy = _posts.pages
+    posts = current_app.extensions['flatpages'][None]
     draft_posts = [
         p
-        for p in posts_copy.values()
+        for p in posts
         if 'draft' in p.meta
         and 'build|' in str(p.meta['draft'])
     ]

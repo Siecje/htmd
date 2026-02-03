@@ -73,8 +73,8 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
         {'password': password},
     )
     posts.reload()
+    post = posts.get('example')
     with flask_app.app_context():
-        post = posts.get('example')
         assert post.html == old_post.html
     assert post.meta['password'].rstrip() == password
     assert post.meta['author'] == old_post.meta['author']
@@ -90,8 +90,8 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
         {'password': new_password},
     )
     posts.reload()
+    post = posts.get('example')
     with flask_app.app_context():
-        post = posts.get('example')
         assert post.html == old_post.html
     assert post.meta['password'].rstrip() == new_password
     assert post.meta['author'] == old_post.meta['author']
@@ -112,8 +112,8 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
         {'password': new_password},
     )
     posts.reload()
+    post = posts.get('example')
     with flask_app.app_context():
-        post = posts.get('example')
         assert post.html == old_post.html
     assert post.meta['password'].rstrip() == new_password
     assert post.meta['author'] == old_post.meta['author']

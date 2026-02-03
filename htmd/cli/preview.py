@@ -154,11 +154,10 @@ class PostsCreatedHandler(BaseHandler):
     def handle_file(self, file_path: str, *, is_new: bool) -> None:
         if not file_path.endswith('.md'):
             return
-        with self.app.app_context():
-            site.reload_posts(self.app)
-        sync_posts(self.app)
         posts = self.app.extensions['flatpages'][None]
-        for post in list(posts.pages.values()):
+        posts.reload()
+        sync_posts(self.app)
+        for post in posts:
             validate_post(post, [])
 
         self.event.set()
@@ -231,8 +230,8 @@ def watch_disk(  # noqa: PLR0913
 
         # If webserver starts before watchdog then updates can be missed
         # Ensure everything is current now that watchdogs are running
-        with app.app_context():
-            site.reload_posts(app)
+        posts = app.extensions['flatpages'][None]
+        posts.reload()
         sync_posts(app)
         if css_minify:
             combine_and_minify_css(static_directory)

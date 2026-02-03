@@ -346,7 +346,7 @@ def sync_posts(
     now = datetime.datetime.now(tz=datetime.UTC)
     _posts = app.extensions['flatpages'][None]
     with app.app_context():
-        for post in _posts.pages.values():
+        for post in _posts:
             file_updates: dict[str, str] = {}
             if 'password' in post.meta and post.meta['password'] is None:
                 _, post.meta['password'] = generate_private_key()
