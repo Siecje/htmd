@@ -95,8 +95,10 @@ class BaseHandler(FileSystemEventHandler):
             return
         self.handle_file(file_path, is_new=is_new)
         try:
-            # Set new mtime if the file is changed in self.handle_file()
-            self._seen_mtimes[file_path] = path_obj.stat().st_mtime_ns
+            # Set mtime from before processing so we don't miss events
+            # even though it means we will try to handle the same file again
+            # if it is modified in self.handle_file()
+            self._seen_mtimes[file_path] = new_mtime
         except FileNotFoundError:  # pragma: no cover
             # File was deleted before we could stat it
             with contextlib.suppress(KeyError):

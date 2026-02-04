@@ -715,7 +715,7 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
 
 
 def test_posts_handler_double_event(flask_app: Flask) -> None:
-    # Verify file is processed once when editor triggers created and modified events
+    # Simulate when editor triggers created and modified events
     refresh_event = threading.Event()
     handler = preview_module.PostsCreatedHandler(refresh_event, flask_app)
     example_path = Path('posts') / 'example.md'
@@ -725,11 +725,11 @@ def test_posts_handler_double_event(flask_app: Flask) -> None:
     # First call: Processes normally
     handler.on_created(FileCreatedEvent(bytes(copy_path), '', is_synthetic=True))
     assert refresh_event.is_set()
-
-    # Second call: Hits the 'return' because mtime is now in _seen_mtimes
     refresh_event.clear()
+    # Since the file was changed in the first event it will be processed again
+    # This is to prevent missing file changes between first event start and end
     handler.on_modified(FileModifiedEvent(bytes(copy_path), '', is_synthetic=True))
-    assert not refresh_event.is_set()
+    assert refresh_event.is_set()
 
 
 def test_favicon(run_start: CliRunner) -> None:
