@@ -20,9 +20,10 @@ def test_set_protected_during_preview(run_start: CliRunner) -> None:
             base_url + f'/2014/10/30/{post_path.stem}/',
             timeout=1,
         )
-        assert response.status_code == 200  # noqa: PLR2004
-        assert 'password-protect.js' not in response.text
         set_example_password_value('')
+        assert response.status_code == 200  # noqa: PLR2004
+        expected = 'password-protect.js'
+        assert expected not in response.text
         wait_for_str_not_in_file(post_path, 'password: \n')
         password = get_example_field('password')
         assert password != ''
@@ -31,7 +32,7 @@ def test_set_protected_during_preview(run_start: CliRunner) -> None:
             timeout=1,
         )
         assert response.status_code == 200  # noqa: PLR2004
-        assert 'password-protect.js' in response.text
+        assert expected in response.text
 
 
 def test_new_protected_post_during_preview(run_start: CliRunner) -> None:

@@ -54,7 +54,7 @@ def build_draft() -> Generator[CliRunner]:
         set_example_to_draft()
         copy_example_as_draft_build()
         result = runner.invoke(build)
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.output
         assert re.search(SUCCESS_REGEX, result.output)
         # Tests code is run here
         yield runner

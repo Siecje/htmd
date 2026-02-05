@@ -118,8 +118,7 @@ def validate_example_feed(
 def test_without_updated_build(run_start: CliRunner) -> None:
     remove_fields_from_post('example', ('updated',))
     path = Path('posts') / 'example.md'
-    with path.open('r') as post_file:
-        contents = post_file.read()
+    contents = path.read_text()
     assert 'updated:' not in contents
 
     server_name = 'example.com'
@@ -140,14 +139,13 @@ def test_without_updated_build(run_start: CliRunner) -> None:
 def test_without_updated_preview(run_start: CliRunner) -> None:
     remove_fields_from_post('example', ('updated',))
     path = Path('posts') / 'example.md'
-    with path.open('r') as post_file:
-        contents = post_file.read()
+    contents = path.read_text()
     assert 'updated:' not in contents
 
     server_name = 'example.com'
     set_config_field('url', server_name)
-
     base_url = f'http://{server_name}'
+
     with run_preview(run_start) as preview_base_url:
         response = requests.get(preview_base_url + '/feed.atom', timeout=5)
         assert response.status_code == 200  # noqa: PLR2004
@@ -157,15 +155,15 @@ def test_without_updated_preview(run_start: CliRunner) -> None:
 def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
     remove_fields_from_post('example', ('updated',))
     path = Path('posts') / 'example.md'
-    with path.open('r') as post_file:
-        contents = post_file.read()
+    contents = path.read_text()
     assert 'updated:' not in contents
 
     server_name = 'example.com'
     set_config_field('url', server_name)
+    base_url = f'http://{server_name}'
 
     result = run_start.invoke(build)
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.output
     assert re.search(SUCCESS_REGEX, result.output)
 
     published = get_example_field('published')
@@ -174,7 +172,6 @@ def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
     with feed_path.open('r') as feed_file:
         feed_contents = feed_file.read()
 
-    base_url = f'http://{server_name}'
     validate_example_feed(base_url, feed_contents)
 
     with run_preview(run_start) as preview_base_url:
@@ -205,10 +202,10 @@ def test_with_updated(run_start: CliRunner) -> None:
     assert re.search(SUCCESS_REGEX, result.output)
 
     feed_path = Path('build') / 'feed.atom'
-    with feed_path.open('r') as feed_file:
-        feed_contents = feed_file.read()
+    feed_contents = feed_path.read_text()
 
     updated = get_example_field('updated')
+    assert get_example_field('updated') is not None
 
     base_url = f'http://{server_name}'
     validate_example_feed(

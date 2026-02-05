@@ -33,14 +33,13 @@ def test_build_verify_fails(run_start: CliRunner) -> None:
 
 
 def test_build_js_minify(run_start: CliRunner) -> None:
-    with (Path('static') / 'app.js').open('w') as js_file:
-        js_file.write('console.log("htmd");')
+    path = Path('static') / 'app.js'
+    path.write_text('console.log("htmd");')
 
     result = run_start.invoke(build, ['--js-minify'])
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
-    with (Path('build') / 'index.html').open('r') as built_index:
-        contents = built_index.read()
+    contents = (Path('build') / 'index.html').read_text()
     assert 'combined.min.js' in contents
 
 
@@ -58,8 +57,7 @@ def test_build_no_js_minify(run_start: CliRunner) -> None:
 
 def test_build_css_minify(run_start: CliRunner) -> None:
     result = run_start.invoke(build, ['--css-minify'])
-    with (Path('build') / 'index.html').open('r') as built_index:
-        contents = built_index.read()
+    contents = (Path('build') / 'index.html').read_text()
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
     assert 'combined.min.css' in contents
@@ -115,20 +113,17 @@ def test_build_page_404(run_start: CliRunner) -> None:
         "Unexpected status '404 NOT FOUND' on URL /dne/\n"
     )
     about_path = Path('pages') / 'about.html'
-    with about_path.open('r') as about_file:
-        lines = about_file.readlines()
+    lines = about_path.read_text().splitlines(keepends=True)
 
     new_line = '''<p><a href="{{ url_for('pages.page', path='dne') }}">DNE link</a></p>\n'''  # noqa: E501
-    with about_path.open('w') as about_file:
-        for line in lines:
-            if '<p>This is the about page.</p>' in line:
-                about_file.write(new_line)
-            else:
-                about_file.write(line)
+    replace_line = '<p>This is the about page.</p>\n'
+    new_lines = [new_line if replace_line in line else line for line in lines]
+
+    about_path.write_text(''.join(new_lines))
 
     result = run_start.invoke(build)
-    assert result.exit_code == 1
     assert result.output == expected_output
+    assert result.exit_code == 1
 
 
 def test_build_multiple_posts(run_start: CliRunner) -> None:
@@ -170,19 +165,15 @@ def test_build_page_without_link(run_start: CliRunner) -> None:
         '{% endblock content %}\n',
     )
     # Create page that is doesn't have a link in the site
-    with (Path('pages') / 'new.html').open('w') as page_file:
-        for line in page_lines:
-            page_file.write(line)
+    (Path('pages') / 'new.html').write_text(''.join(page_lines))
     result = run_start.invoke(build)
     assert result.exit_code == 0
-    with (Path('build') / 'new' / 'index.html').open('r') as page_file:
-        assert 'Totally new' in page_file.read()
+    assert 'Totally new' in (Path('build') / 'new' / 'index.html').read_text()
 
 
 def test_build_pages_with_non_html_file(run_start: CliRunner) -> None:
     page_path = Path('pages') / '.DS_STORE'
-    with page_path.open('w'):
-        pass
+    page_path.touch()
     assert page_path.is_file()
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -227,13 +218,9 @@ def test_build_without_pages(run_start: CliRunner) -> None:
 
     # Remove link from _layout.html
     layout_path = Path('templates') / '_layout.html'
-    with layout_path.open('r') as layout_file:
-        lines = layout_file.readlines()
-    with layout_path.open('w') as layout_file:
-        for line in lines:
-            if 'about' in line:
-                continue
-            layout_file.write(line)
+    lines = layout_path.read_text().splitlines(keepends=True)
+    new_lines = [line for line in lines if 'about' not in line]
+    layout_path.write_text(''.join(new_lines))
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -256,7 +243,8 @@ def test_build_drafts_removed_from_build(run_start: CliRunner) -> None:
         Path('build') / '2014' / '10' / '30' / 'example' / 'index.html',
     ]
     # create example post in build
-    run_start.invoke(build)
+    result = run_start.invoke(build)
+    assert result.exit_code == 0, result.output
     for path in path_list:
         assert path.is_file()
 
@@ -291,21 +279,18 @@ def test_build_with_default_author(run_start: CliRunner) -> None:
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
     post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
-    with post_path.open('r') as post_file:
-        contents = post_file.read()
+    contents = post_path.read_text()
     assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
 
 
 def test_build_contains_favicon(run_start: CliRunner) -> None:
-    with (Path('static') / 'favicon.svg').open('r') as favicon_file:
-        original_contents = favicon_file.read()
+    original_contents = (Path('static') / 'favicon.svg').read_text()
     result = run_start.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
     build_favicon = Path('build') / 'static' / 'favicon.svg'
     assert build_favicon.is_file()
-    with build_favicon.open('r') as favicon_file:
-        contents = favicon_file.read()
+    contents = build_favicon.read_text()
     assert contents == original_contents
 
 
@@ -313,8 +298,7 @@ def test_build_password_protect(run_start: CliRunner) -> None:
     subtitle = 'This is a subtitle'
     set_example_subtitle(subtitle)
     set_example_password_value('')
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     password = data['password']
     assert password is None
@@ -322,8 +306,7 @@ def test_build_password_protect(run_start: CliRunner) -> None:
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
 
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
 
     # extract password
     data = yaml.safe_load(md_str[:md_str.find('...')])
@@ -331,8 +314,7 @@ def test_build_password_protect(run_start: CliRunner) -> None:
 
     # Verify post page
     post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
-    with post_path.open('r') as post_file:
-        contents = post_file.read()
+    contents = post_path.read_text()
 
     assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
     title = 'Example Post'
@@ -364,8 +346,7 @@ def test_build_password_protect(run_start: CliRunner) -> None:
         day_path,
     ]
     for path in list_paths:
-        with path.open('r') as list_file:
-            contents = list_file.read()
+        contents = path.read_text()
         assert title not in contents
         assert 'Protected Post' in contents
         assert subtitle not in contents
@@ -375,8 +356,7 @@ def test_build_password_protect(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     after_password = data['password']
     assert after_password == password
@@ -389,8 +369,7 @@ def test_build_password_false(run_start: CliRunner) -> None:
     assert re.search(SUCCESS_REGEX, result.output)
 
     post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
-    with post_path.open('r') as post_file:
-        contents = post_file.read()
+    contents = post_path.read_text()
 
     assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
     title = 'Example Post'
@@ -398,8 +377,7 @@ def test_build_password_false(run_start: CliRunner) -> None:
     body = 'This is the post'
     assert body in contents
 
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     assert data['password'] is False
 
@@ -407,8 +385,7 @@ def test_build_password_false(run_start: CliRunner) -> None:
 def test_build_draft_password_protect(run_start: CliRunner) -> None:
     set_example_to_draft_build()
     set_example_password_value('')
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     password = data['password']
     assert password is None
@@ -416,14 +393,12 @@ def test_build_draft_password_protect(run_start: CliRunner) -> None:
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
 
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     build_uuid = data['draft'].replace('build|', '')
 
     post_path = Path('build') / 'draft' / build_uuid / 'index.html'
-    with post_path.open('r') as post_file:
-        contents = post_file.read()
+    contents = post_path.read_text()
 
     # extract password
     data = yaml.safe_load(md_str[:md_str.find('...')])
@@ -443,8 +418,7 @@ def test_build_draft_password_protect(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     after_password = data['password']
     assert after_password == password
@@ -457,14 +431,12 @@ def test_build_draft_password_false(run_start: CliRunner) -> None:
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
 
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     build_uuid = data['draft'].replace('build|', '')
 
     post_path = Path('build') / 'draft' / build_uuid / 'index.html'
-    with post_path.open('r') as post_file:
-        contents = post_file.read()
+    contents = post_path.read_text()
 
     assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
     title = 'Example Post'
@@ -473,8 +445,7 @@ def test_build_draft_password_false(run_start: CliRunner) -> None:
     assert body in contents
     assert 'password-protect.js' not in contents
 
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     assert data['password'] is False
 
@@ -482,8 +453,7 @@ def test_build_draft_password_false(run_start: CliRunner) -> None:
 def test_build_doesnt_have_sse(run_start: CliRunner) -> None:
     sse_js_line = 'sse.onmessage'
     layout_path = Path('templates') / '_layout.html'
-    with layout_path.open('r') as layout_file:
-        contents = layout_file.read()
+    contents = layout_path.read_text()
     assert sse_js_line in contents
 
     result = run_start.invoke(build)
@@ -491,8 +461,7 @@ def test_build_doesnt_have_sse(run_start: CliRunner) -> None:
     assert re.search(SUCCESS_REGEX, result.output)
 
     post_path = Path('build') / 'index.html'
-    with post_path.open('r') as post_file:
-        contents = post_file.read()
+    contents = post_path.read_text()
 
     assert sse_js_line not in contents
 
@@ -506,14 +475,12 @@ def test_post_without_published_and_without_author(run_start: CliRunner) -> None
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
 
-    with (Path('posts') / 'example.md').open('r') as md_file:
-        md_str = md_file.read()
+    md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
     build_uuid = data['draft'].replace('build|', '')
 
     post_path = Path('build') / 'draft' / build_uuid / 'index.html'
-    with post_path.open('r') as post_file:
-        contents = post_file.read()
+    contents = post_path.read_text()
 
     assert (
         'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30'

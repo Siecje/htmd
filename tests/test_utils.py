@@ -132,7 +132,7 @@ def test_validate_post_invalid_updated(
         path='example',
         meta=f'updated: {invalid_date}',
         body='',
-        html_renderer=None,
+        html_renderer=lambda _x: '',
         folder='.',
     )
     is_valid = validate_post(post, [])
@@ -150,7 +150,7 @@ def test_validate_post_invalid_draft_uuid(
         path='example',
         meta=f'draft: {invalid_draft}',
         body='',
-        html_renderer=None,
+        html_renderer=lambda _x: '',
         folder='.',
     )
     is_valid = validate_post(post, [])
@@ -168,7 +168,7 @@ def test_validate_post_invalid_draft_value(
         path='example',
         meta=f'draft: {invalid_draft}',
         body='',
-        html_renderer=None,
+        html_renderer=lambda _x: '',
         folder='.',
     )
     is_valid = validate_post(post, [])
