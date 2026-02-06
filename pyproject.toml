@@ -44,6 +44,7 @@ dev = [
   "PyYAML",
   "requests",
   "ruff",
+  "tox",
   "types-Pygments",
   "types-PyYAML",
   "types-beautifulsoup4",
@@ -118,4 +119,15 @@ htmd = [
   "example_site/static/password-protect.js",
   "example_site/static/favicon.svg",
   "example_site/templates/*.html",
+]
+
+[tool.tox]
+env_list = ["py"]
+
+[tool.tox.env_run_base]
+usedevelop = true
+extras = ["dev"]
+commands = [
+    ["coverage", "run", "-m", "pytest", "."],
+    ["coverage", "report", "--fail-under=100"]
 ]
