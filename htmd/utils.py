@@ -72,10 +72,7 @@ def combine_and_minify_css(static_folder: Path) -> bool:
         return False
 
     # combine all .css files into one string
-    file_contents = []
-    for f in css_files:
-        with f.open('r') as css_file:
-            file_contents.append(css_file.read())
+    file_contents = [f.read_text() for f in css_files]
     combined_str = '\n'.join(file_contents)
 
     dst_path = static_folder / 'combined.min.css'
@@ -110,10 +107,7 @@ def combine_and_minify_js(static_folder: Path) -> bool:
         return False
 
     # combine all .js files into one string
-    file_contents = []
-    for f in js_files:
-        with f.open('r') as js_file:
-            file_contents.append(js_file.read())
+    file_contents = [f.read_text() for f in js_files]
     combined_str = '\n'.join(file_contents)
 
     dst_path = static_folder / 'combined.min.js'
@@ -160,7 +154,7 @@ def copy_site_file(directory: Path, filename: str) -> None:
 
 
 def format_yaml_value(value: str) -> str:
-    """Return a single-line value or a YAML literal block if newlines are present."""
+    """Return a single-line or YAML block value."""
     if '\n' in value:
         # YAML Literal Block Scalar: indent each line by 4 spaces
         indented = value.replace('\n', '\n    ')
@@ -176,8 +170,7 @@ def set_post_metadata(
     post_folder = Path(app.config['FLATPAGES_ROOT']) / post.folder
     file_extension = app.config['FLATPAGES_EXTENSION']
     file_path = post_folder / (post.path + file_extension)
-    with file_path.open('r') as file:
-        lines = file.readlines()
+    lines = file_path.read_text().splitlines(keepends=True)
 
     applied_keys = set()
     new_lines = []
@@ -356,7 +349,9 @@ def sync_posts(
             if post.meta.get('draft', False):
                 if (
                     'build' in str(post.meta['draft'])
-                    and not valid_uuid(post.meta['draft'].replace('build|', ''))
+                    and not valid_uuid(
+                        post.meta['draft'].replace('build|', ''),
+                    )
                 ):
                     post.meta['draft'] = 'build|' + str(uuid.uuid4())
                     file_updates['draft'] = post.meta['draft']

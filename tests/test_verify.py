@@ -106,12 +106,9 @@ def test_verify_site_name_missing(run_start: CliRunner) -> None:
     )
     config_path = Path('config.toml')
     assert 'name = "htmd"' in config_path.read_text()
-    with config_path.open('r') as post:
-        lines = post.readlines()
-    with config_path.open('w') as post:
-        for line in lines:
-            if not line.startswith('name = '):
-                post.write(line)
+    lines = config_path.read_text().splitlines(keepends=True)
+    new_lines = [line for line in lines if not line.startswith('name = ')]
+    config_path.write_text(''.join(new_lines))
 
     assert 'name = "htmd"' not in config_path.read_text()
 

@@ -108,7 +108,8 @@ def create_app(*, show_drafts: bool = False) -> Flask:
     # Even when the template folder and jinja_loader has changed
     app.jinja_env.cache = {}
 
-    # Allow config settings (even new user created ones) to be used in templates
+    # Allow config settings (even new user created ones)
+    # to be used in templates
     for key in app.config:
         app.jinja_env.globals[key] = app.config[key]
 

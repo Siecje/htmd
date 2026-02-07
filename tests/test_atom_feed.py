@@ -129,8 +129,7 @@ def test_without_updated_build(run_start: CliRunner) -> None:
     assert re.search(SUCCESS_REGEX, result.output)
 
     feed_path = Path('build') / 'feed.atom'
-    with feed_path.open('r') as feed_file:
-        feed_contents = feed_file.read()
+    feed_contents = feed_path.read_text()
 
     base_url = f'http://{server_name}'
     validate_example_feed(base_url, feed_contents)
@@ -169,8 +168,7 @@ def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
     published = get_example_field('published')
 
     feed_path = Path('build') / 'feed.atom'
-    with feed_path.open('r') as feed_file:
-        feed_contents = feed_file.read()
+    feed_contents = feed_path.read_text()
 
     validate_example_feed(base_url, feed_contents)
 

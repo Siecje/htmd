@@ -3,6 +3,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from htmd.cli.build import build
+from htmd.utils import atomic_write
 
 from utils import (
     get_example_field,
@@ -20,16 +21,15 @@ def test_build_post_404_invalid_date_year(run_start: CliRunner) -> None:
     )
 
     about_path = Path('pages') / 'about.html'
-    with about_path.open('r') as about_file:
-        lines = about_file.readlines()
+    lines = about_path.read_text().splitlines(keepends=True)
 
     new_line = '''<p><a href="{{ url_for('posts.post', year=14, month='10', day='30', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
-    with about_path.open('w') as about_file:
-        for line in lines:
-            if '<p>This is the about page.</p>' in line:
-                about_file.write(new_line)
-            else:
-                about_file.write(line)
+    lines = [
+        new_line if '<p>This is the about page.</p>' in line
+        else line
+        for line in lines
+    ]
+    atomic_write(about_path, ''.join(lines))
 
     result = run_start.invoke(build)
     assert result.exit_code == 1
@@ -45,16 +45,15 @@ def test_build_post_404_invalid_date_month(run_start: CliRunner) -> None:
     )
 
     about_path = Path('pages') / 'about.html'
-    with about_path.open('r') as about_file:
-        lines = about_file.readlines()
+    lines = about_path.read_text().splitlines(keepends=True)
 
     new_line = '''<p><a href="{{ url_for('posts.post', year=2014, month='1', day='30', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
-    with about_path.open('w') as about_file:
-        for line in lines:
-            if '<p>This is the about page.</p>' in line:
-                about_file.write(new_line)
-            else:
-                about_file.write(line)
+    lines = [
+        new_line if '<p>This is the about page.</p>' in line
+        else line
+        for line in lines
+    ]
+    atomic_write(about_path, ''.join(lines))
 
     result = run_start.invoke(build)
     assert result.exit_code == 1
@@ -70,16 +69,15 @@ def test_build_post_404_invalid_date_day(run_start: CliRunner) -> None:
     )
 
     about_path = Path('pages') / 'about.html'
-    with about_path.open('r') as about_file:
-        lines = about_file.readlines()
+    lines = about_path.read_text().splitlines(keepends=True)
 
     new_line = '''<p><a href="{{ url_for('posts.post', year=2014, month='10', day='3', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
-    with about_path.open('w') as about_file:
-        for line in lines:
-            if '<p>This is the about page.</p>' in line:
-                about_file.write(new_line)
-            else:
-                about_file.write(line)
+    lines = [
+        new_line if '<p>This is the about page.</p>' in line
+        else line
+        for line in lines
+    ]
+    atomic_write(about_path, ''.join(lines))
 
     result = run_start.invoke(build)
     assert result.exit_code == 1
@@ -95,16 +93,14 @@ def test_build_post_404_different_date(run_start: CliRunner) -> None:
         "Unexpected status '404 NOT FOUND' on URL /2014/10/29/example/\n"
     )
     about_path = Path('pages') / 'about.html'
-    with about_path.open('r') as about_file:
-        lines = about_file.readlines()
-
+    lines = about_path.read_text().splitlines(keepends=True)
     new_line = '''<p><a href="{{ url_for('posts.post', year=2014, month='10', day='29', path='example') }}">DNE link</a></p>\n'''  # noqa: E501
-    with about_path.open('w') as about_file:
-        for line in lines:
-            if '<p>This is the about page.</p>' in line:
-                about_file.write(new_line)
-            else:
-                about_file.write(line)
+    lines = [
+        new_line if '<p>This is the about page.</p>' in line
+        else line
+        for line in lines
+    ]
+    atomic_write(about_path, ''.join(lines))
 
     result = run_start.invoke(build)
     assert result.exit_code == 1
@@ -121,16 +117,14 @@ def test_build_year_404_incorrect(run_start: CliRunner) -> None:
     )
 
     about_path = Path('pages') / 'about.html'
-    with about_path.open('r') as about_file:
-        lines = about_file.readlines()
-
+    lines = about_path.read_text().splitlines(keepends=True)
     new_line = '''<p><a href="{{ url_for('posts.year_view', year=14) }}">DNE link</a></p>\n'''  # noqa: E501
-    with about_path.open('w') as about_file:
-        for line in lines:
-            if '<p>This is the about page.</p>' in line:
-                about_file.write(new_line)
-            else:
-                about_file.write(line)
+    lines = [
+        new_line if '<p>This is the about page.</p>' in line
+        else line
+        for line in lines
+    ]
+    atomic_write(about_path, ''.join(lines))
 
     result = run_start.invoke(build)
     assert result.exit_code == 1
@@ -146,16 +140,15 @@ def test_build_year_404_no_posts(run_start: CliRunner) -> None:
         "Unexpected status '404 NOT FOUND' on URL /2013/\n"
     )
     about_path = Path('pages') / 'about.html'
-    with about_path.open('r') as about_file:
-        lines = about_file.readlines()
+    lines = about_path.read_text().splitlines(keepends=True)
 
     new_line = '''<p><a href="{{ url_for('posts.year_view', year=2013) }}">DNE link</a></p>\n'''  # noqa: E501
-    with about_path.open('w') as about_file:
-        for line in lines:
-            if '<p>This is the about page.</p>' in line:
-                about_file.write(new_line)
-            else:
-                about_file.write(line)
+    lines = [
+        new_line if '<p>This is the about page.</p>' in line
+        else line
+        for line in lines
+    ]
+    atomic_write(about_path, ''.join(lines))
 
     result = run_start.invoke(build)
     assert result.exit_code == 1
@@ -172,16 +165,14 @@ def test_build_month_404_no_posts(run_start: CliRunner) -> None:
     )
 
     about_path = Path('pages') / 'about.html'
-    with about_path.open('r') as about_file:
-        lines = about_file.readlines()
-
+    lines = about_path.read_text().splitlines(keepends=True)
     new_line = '''<p><a href="{{ url_for('posts.month_view', year=2014, month='01') }}">DNE link</a></p>\n'''  # noqa: E501
-    with about_path.open('w') as about_file:
-        for line in lines:
-            if '<p>This is the about page.</p>' in line:
-                about_file.write(new_line)
-            else:
-                about_file.write(line)
+    lines = [
+        new_line if '<p>This is the about page.</p>' in line
+        else line
+        for line in lines
+    ]
+    atomic_write(about_path, ''.join(lines))
 
     result = run_start.invoke(build)
     assert result.exit_code == 1
@@ -198,16 +189,14 @@ def test_build_day_404_no_posts(run_start: CliRunner) -> None:
     )
 
     about_path = Path('pages') / 'about.html'
-    with about_path.open('r') as about_file:
-        lines = about_file.readlines()
-
+    lines = about_path.read_text().splitlines(keepends=True)
     new_line = '''<p><a href="{{ url_for('posts.day_view', year=2014, month='10', day='29') }}">DNE link</a></p>\n'''  # noqa: E501
-    with about_path.open('w') as about_file:
-        for line in lines:
-            if '<p>This is the about page.</p>' in line:
-                about_file.write(new_line)
-            else:
-                about_file.write(line)
+    lines = [
+        new_line if '<p>This is the about page.</p>' in line
+        else line
+        for line in lines
+    ]
+    atomic_write(about_path, ''.join(lines))
 
     result = run_start.invoke(build)
     assert result.exit_code == 1
@@ -226,8 +215,7 @@ def test_build_time_is_added_to_dates(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0
 
-    with example_path.open('r') as post_file:
-        a_lines = post_file.readlines()
+    a_lines = example_path.read_text().splitlines(keepends=True)
     after_published = next(
         line.replace('published: ', '').strip()
         for line in a_lines
@@ -264,8 +252,12 @@ def test_build_time_is_added_to_dates(run_start: CliRunner) -> None:
     assert len(after_updated) > len(before_updated)
     b_updated_datetime_str = before_updated.replace('updated:', '').strip()
     a_updated_datetime_str = after_updated.replace('updated:', '').strip()
-    b_updated_datetime = datetime.datetime.fromisoformat(b_updated_datetime_str)
-    a_updated_datetime = datetime.datetime.fromisoformat(a_updated_datetime_str)
+    b_updated_datetime = datetime.datetime.fromisoformat(
+        b_updated_datetime_str,
+    )
+    a_updated_datetime = datetime.datetime.fromisoformat(
+        a_updated_datetime_str,
+    )
 
     # Before didn't have a time
     assert b_updated_datetime.hour == 0
@@ -286,8 +278,7 @@ def test_build_published_time_is_added(run_start: CliRunner) -> None:
     # ensure correct time is added
     remove_fields_from_post('example', ('updated',))
     example_path = Path('posts') / 'example.md'
-    with example_path.open('r') as post_file:
-        b_lines = post_file.readlines()
+    b_lines = example_path.read_text().splitlines(keepends=True)
     before_published = next(
         line.replace('published: ', '').strip()
         for line in b_lines
@@ -296,8 +287,7 @@ def test_build_published_time_is_added(run_start: CliRunner) -> None:
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
-    with example_path.open('r') as post_file:
-        a_lines = post_file.readlines()
+    a_lines = example_path.read_text().splitlines(keepends=True)
 
     after_published = next(
         line.replace('published: ', '').strip()
@@ -345,8 +335,7 @@ def test_build_updated_is_added(run_start: CliRunner) -> None:
     assert result2.exit_code == 0
 
     example_path = Path('posts') / 'example.md'
-    with example_path.open('r') as post_file:
-        a_lines = post_file.readlines()
+    a_lines = example_path.read_text().splitlines(keepends=True)
     for a_line in a_lines:  # pragma: no branch
         if 'updated: ' in a_line:
             a_updated = a_line
@@ -374,7 +363,8 @@ def test_build_updated_is_added_once(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0
 
-    with (Path('posts') / 'example.md').open('a') as example_file:
+    path = Path('posts') / 'example.md'
+    with path.open('a') as example_file:
         example_file.write('\nAnother line to change the hash.\n')
 
     # Second build adds updated
@@ -382,8 +372,7 @@ def test_build_updated_is_added_once(run_start: CliRunner) -> None:
     assert result2.exit_code == 0
 
     example_path = Path('posts') / 'example.md'
-    with example_path.open('r') as post_file:
-        a_lines = post_file.readlines()
+    a_lines = example_path.read_text().splitlines(keepends=True)
     count = 0
     for a_line in a_lines:
         if 'updated' in a_line:
@@ -399,8 +388,7 @@ def test_build_without_published(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0
     example_path = Path('posts') / 'example.md'
-    with example_path.open('r') as post_file:
-        a_lines = post_file.readlines()
+    a_lines = example_path.read_text().splitlines(keepends=True)
     count = 0
     for a_line in a_lines:
         if 'published' in a_line:
@@ -411,18 +399,20 @@ def test_build_without_published(run_start: CliRunner) -> None:
 
 def test_build_with_post_in_each_month(run_start: CliRunner) -> None:
     post_path = Path('posts') / 'example.md'
-    with post_path.open('r') as post_file:
-        lines = post_file.readlines()
+    lines = post_path.read_text().splitlines(keepends=True)
+    base_path = Path('build') / '2014'
     for month in range(1, 13):
-        with post_path.open('w') as post_file:
-            for line in lines:
-                if 'published:' in line:
-                    post_file.write(f'published: 2014-{month:02}-03\n')
-                else:
-                    post_file.write(line)
+        new_lines = [
+            f'published: 2014-{month:02}-03\n' if 'published:' in line
+            else line
+            for line in lines
+        ]
+        atomic_write(post_path, ''.join(new_lines))
 
         result = run_start.invoke(build)
         assert result.exit_code == 0
+        expected = base_path / f'{month:02}' / '03' / 'index.html'
+        assert expected.exists()
 
 
 def test_published_date_updated_datetime(run_start: CliRunner) -> None:
@@ -501,7 +491,9 @@ def test_without_published_updated_date(run_start: CliRunner) -> None:
     assert updated.time() == datetime.time.min
 
 
-def test_without_published_updated_date_hash_changed(run_start: CliRunner) -> None:
+def test_without_published_updated_date_hash_changed(
+    run_start: CliRunner,
+) -> None:
     updated_date = datetime.date(year=2026, month=1, day=4)
     set_example_field('updated', updated_date.isoformat())
     remove_fields_from_post('example', ('published',))

@@ -16,9 +16,7 @@ def remove_fields_from_post(
     field_names: Iterable[str],
 ) -> None:
     example_post_path = Path('posts') / f'{path}.md'
-    with example_post_path.open('r') as post:
-        lines = post.readlines()
-
+    lines = example_post_path.read_text().splitlines(keepends=True)
     new_lines = []
     for line in lines:
         skip = any(line.startswith(f'{field}:') for field in field_names)
@@ -32,8 +30,7 @@ def set_example_field(field: str, value: str) -> None:
     remove_fields_from_post('example', (field,))
     post_path = Path('posts') / 'example.md'
 
-    with post_path.open('r') as post_file:
-        lines = post_file.readlines()
+    lines = post_path.read_text().splitlines(keepends=True)
 
     new_lines = []
     for line in lines:
@@ -63,8 +60,7 @@ def set_example_to_draft_build() -> None:
 def set_example_contents(text: str) -> None:
     post_path = Path('posts') / 'example.md'
 
-    with post_path.open('r') as post_file:
-        lines = post_file.readlines()
+    lines = post_path.read_text().splitlines(keepends=True)
 
     new_lines = []
     for line in lines:  # pragma: no branch
@@ -82,24 +78,25 @@ def set_example_subtitle(value: str) -> None:
 
 def set_config_field(field: str, value: str | bool) -> None: # noqa: FBT001
     config_path = Path('config.toml')
-    with config_path.open('r') as config_file:
-        lines = config_file.readlines()
+    lines = config_path.read_text().splitlines(keepends=True)
 
-    with config_path.open('w') as config_file:
-        for line in lines:
-            if line.startswith(f'{field} ='):
-                if isinstance(value, bool):
-                    config_file.write(f'{field} = {str(value).lower()}\n')
-                else:
-                    config_file.write(f'{field} = "{value}"\n')
+    content = ''
+    for line in lines:
+        if line.startswith(f'{field} ='):
+            if isinstance(value, bool):
+                content += f'{field} = {str(value).lower()}\n'
             else:
-                config_file.write(line)
+                content += f'{field} = "{value}"\n'
+        else:
+            content += line + '\n'
+
+    atomic_write(config_path, content)
 
 
 def get_post_field(url_path: str, field: str) -> None | str:
     example_path = Path('posts') / f'{url_path}.md'
-    with example_path.open('r') as post_file:
-        lines = post_file.readlines()
+    lines = example_path.read_text().splitlines(keepends=True)
+
     value = None
     for line in lines:
         if line.startswith(f'{field}:'):
@@ -113,7 +110,11 @@ def get_example_field(field: str) -> None | str:
     return get_post_field('example', field)
 
 
-def wait_for_str_in_file(path: Path, value: str, timeout: float = 5) -> None:
+def wait_for_str_in_file(
+    path: Path,
+    value: str,
+    timeout: float = 5,
+) -> None:
     start_time = time.monotonic()
     content = path.read_text()
     while value not in content:  # pragma: no cover
@@ -124,7 +125,11 @@ def wait_for_str_in_file(path: Path, value: str, timeout: float = 5) -> None:
         content = path.read_text()
 
 
-def wait_for_str_not_in_file(path: Path, value: str, timeout: float = 5) -> None:
+def wait_for_str_not_in_file(
+    path: Path,
+    value: str,
+    timeout: float = 5,
+) -> None:
     start_time = time.monotonic()
     while value in path.read_text():  # pragma: no cover
         if time.monotonic() - start_time > timeout:

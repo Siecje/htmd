@@ -7,6 +7,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 
 from click.testing import CliRunner
 from flask import Flask
@@ -95,8 +96,7 @@ def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
     )
     # Create the only JavaScript file
     js_path = Path('static') / 'scripts.js'
-    with js_path.open('w') as js_file:
-        js_file.write('document.getElementsByTagName("body");')
+    atomic_write(js_path, 'document.getElementsByTagName("body");')
 
     combined_js_path = Path('static') / 'combined.min.js'
     combined_css_path = Path('static') / 'combined.min.css'
@@ -119,8 +119,7 @@ def test_preview_no_css_minify_js_minify(run_start: CliRunner) -> None:
         (200, '/static/combined.min.js'),
     )
     js_path = Path('static') / 'scripts.js'
-    with js_path.open('w') as js_file:
-        js_file.write('document.getElementsByTagName("body");')
+    js_path.write_text('document.getElementsByTagName("body");')
 
     combined_js_path = Path('static') / 'combined.min.js'
     combined_css_path = Path('static') / 'combined.min.css'
@@ -192,46 +191,33 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
         max_attempts = 50
         attempts = 1
 
-        # CSS changes can be seen without stopping webserver
-        # Require two responses to be the same because
-        # response was missing the last few characters
-        # AssertionError: assert 'p{color:red}' in '\np{color:red'
-        previous_response = None
-        consecutive_same_responses = 0
-        same_response_goal = 2
-        while (
-            (before == after or consecutive_same_responses < same_response_goal)
-            and attempts < max_attempts
-        ):
+        while before == after and attempts < max_attempts:
             try:
                 response = requests.get(base_url + url, timeout=1)
+                if response.status_code != 200:  # noqa: PLR2004
+                    continue
             except (
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.ReadTimeout,
             ):  # pragma: no cover
-                # Can happen when file is being replaced
-                # Verify webserver didn't restart
+                # Check if server actually died
                 try:
-                    response = requests.get(base_url, timeout=1)
+                    requests.get(base_url, timeout=1)
                 except (
                     requests.exceptions.ChunkedEncodingError,
                     requests.exceptions.ConnectionError,
                     requests.exceptions.ReadTimeout,
                 ):  # pragma: no cover
-                    read_timeout = True  # pragma: no cover
+                    read_timeout = True
                     break
             else:
                 after = response.text
-
-                if previous_response == after:
-                    consecutive_same_responses += 1
-                else:
-                    consecutive_same_responses = 0
-                previous_response = after
             attempts += 1
 
-    assert read_timeout is False, 'Preview did reload.'
+    assert (
+        not read_timeout
+    ), 'Preview server crashed or reloaded unexpectedly.'
     assert before != after
     assert expected in after
 
@@ -249,8 +235,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
         Path(static_dir).mkdir(exist_ok=True)
 
         # Create file to test modified files update
-        with js_path.open('w') as js_file:
-            js_file.write('document.getElementByTagName("div")')
+        js_path.write_text('document.getElementByTagName("div")')
 
     url = '/static/combined.min.js'
     expected = 'document.getElementByTagName("body")'
@@ -272,16 +257,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
         attempts = 1
 
         # JS changes can be seen without stopping webserver
-        # Require two responses to be the same because
-        # response was missing the last few characters
-        # after == 'document.getElementByTagName("body"' # noqa: ERA001
-        previous_response = None
-        consecutive_same_responses = 0
-        same_response_goal = 2
-        while (
-            (before == after or consecutive_same_responses < same_response_goal)
-            and attempts < max_attempts
-        ):
+        while before == after and attempts < max_attempts:
             try:
                 response = requests.get(base_url + url, timeout=1)
             except (
@@ -289,25 +265,10 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
                 requests.exceptions.ConnectionError,
                 requests.exceptions.ReadTimeout,
             ):  # pragma: no cover
-                # Can happen when file is being replaced
-                # Verify webserver didn't restart
-                try:
-                    response = requests.get(base_url, timeout=1)
-                except (
-                    requests.exceptions.ChunkedEncodingError,
-                    requests.exceptions.ConnectionError,
-                    requests.exceptions.ReadTimeout,
-                ):  # pragma: no cover
-                    read_timeout = True  # pragma: no cover
-                    break
+                read_timeout = True  # pragma: no cover
+                break
             else:
                 after = response.text
-
-                if previous_response == after:
-                    consecutive_same_responses += 1
-                else:
-                    consecutive_same_responses = 0
-                previous_response = after
 
             attempts += 1
 
@@ -320,8 +281,7 @@ def test_preview_js_modified_but_no_changes(run_start: CliRunner) -> None:
     js_path = Path('static') / 'script.js'
 
     # Create file to test modified files update
-    with js_path.open('w') as js_file:
-        js_file.write('document.getElementByTagName("div")')
+    js_path.write_text('document.getElementByTagName("div")')
 
     url = '/static/combined.min.js'
     with run_preview(run_start) as base_url:
@@ -361,7 +321,10 @@ def test_preview_js_modified_but_no_changes(run_start: CliRunner) -> None:
     'posts',
     'bar',
 ])
-def test_preview_when_posts_change(run_start: CliRunner, posts_dir: str) -> None:
+def test_preview_when_posts_change(
+    run_start: CliRunner,
+    posts_dir: str,
+) -> None:
     if posts_dir != 'posts':
         # Change static directory in config.toml
         set_config_field('posts', posts_dir)
@@ -446,7 +409,8 @@ def test_preview_shows_pages_change_without_reload(
         shutil.copy(Path('pages') / 'about.html', Path(pages_dir))
 
     url = '/about/'
-    expected = 'This is new.'
+    unique_id = str(uuid.uuid4())
+    expected = f'This is new {unique_id}.'
     page_path = Path(pages_dir) / 'about.html'
     contents = page_path.read_text()
 
@@ -495,8 +459,7 @@ def test_preview_shows_pages_change_without_reload(
 
 def test_preview_shows_new_pages(run_start: CliRunner) -> None:
     page_path = Path('pages') / 'about.html'
-    with page_path.open('r') as page_file:
-        contents = page_file.read()
+    contents = page_path.read_text()
 
     new_path_path = Path('pages') / 'new.html'
     expected = 'This is new.'
@@ -604,7 +567,9 @@ def test_preview_drafts(run_start: CliRunner) -> None:
             assert 'Example Post' not in response.text
 
 
-def test_preview_when_static_folder_does_not_exist(run_start: CliRunner) -> None:
+def test_preview_when_static_folder_does_not_exist(
+    run_start: CliRunner,
+) -> None:
     static_path = Path('static')
     for file_in_dir in static_path.iterdir():
         file_in_dir.unlink()
@@ -623,13 +588,11 @@ def test_preview_when_static_folder_does_not_exist(run_start: CliRunner) -> None
 def test_preview_when_combined_js_exists(run_start: CliRunner) -> None:
     combined_path = Path('static') / 'combined.min.js'
 
-    with combined_path.open('w') as combined_js_file:
-        combined_js_file.write('document.getElementByTagName("body");')
+    atomic_write(combined_path, 'document.getElementByTagName("body");')
 
     new_path = Path('static') / 'new.js'
     new_js = 'console.log("new");'
-    with new_path.open('w') as new_js_file:
-        new_js_file.write(new_js)
+    atomic_write(new_path, new_js)
 
     url = '/static/combined.min.js'
     success = 200
@@ -661,19 +624,25 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     # Add new file to combined.min.css
     new_css = 'body { background-color: aqua;}'
     new_css_path = Path('static') / 'new.css'
-    with new_css_path.open('w') as new_css_file:
-        new_css_file.write(new_css)
+    atomic_write(new_css_path, new_css)
 
-    css_file_event = FileModifiedEvent(bytes(new_css_path), '', is_synthetic=True)
+    css_file_event = FileModifiedEvent(
+        bytes(new_css_path),
+        '',
+        is_synthetic=True,
+    )
     static_handler.on_modified(css_file_event)
     assert event.is_set()
     event.clear()
 
     new_js = 'document.getElementByTag("body")'
     new_js_path = Path('static') / 'new.js'
-    with new_js_path.open('w') as new_js_file:
-        new_js_file.write(new_js)
-    js_file_event = FileModifiedEvent(str(new_js_path), '', is_synthetic=True)
+    atomic_write(new_js_path, new_js)
+    js_file_event = FileModifiedEvent(
+        str(new_js_path),
+        '',
+        is_synthetic=True,
+    )
     static_handler.on_modified(js_file_event)
     assert event.is_set()
     event.clear()
@@ -681,11 +650,19 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     static_handler.on_modified(js_file_event)
     assert not event.is_set()
 
-    moved_dir_event = DirMovedEvent(bytes(new_js_path), '', is_synthetic=True)
+    moved_dir_event = DirMovedEvent(
+        bytes(new_js_path),
+        '',
+        is_synthetic=True,
+    )
     static_handler.on_moved(moved_dir_event)
     assert not event.is_set()
 
-    created_dir_event = DirCreatedEvent(bytes(new_js_path), '', is_synthetic=True)
+    created_dir_event = DirCreatedEvent(
+        bytes(new_js_path),
+        '',
+        is_synthetic=True,
+    )
     static_handler.on_created(created_dir_event)
     assert not event.is_set()
 
@@ -697,10 +674,13 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
 
     # Add non .md file
     non_md_path = Path('posts') / 'not_markdown.txt'
-    with non_md_path.open('w') as non_md_file:
-        non_md_file.write('This is not markdown.')
+    atomic_write(non_md_path, 'This is not markdown.')
 
-    new_file_event = FileCreatedEvent(bytes(non_md_path), '', is_synthetic=True)
+    new_file_event = FileCreatedEvent(
+        bytes(non_md_path),
+        '',
+        is_synthetic=True,
+    )
     posts_handler.on_created(new_file_event)
     assert not event.is_set()
 
@@ -723,12 +703,16 @@ def test_posts_handler_double_event(flask_app: Flask) -> None:
     shutil.copy(example_path, copy_path)
 
     # First call: Processes normally
-    handler.on_created(FileCreatedEvent(bytes(copy_path), '', is_synthetic=True))
+    handler.on_created(
+        FileCreatedEvent(bytes(copy_path), '', is_synthetic=True),
+    )
     assert refresh_event.is_set()
     refresh_event.clear()
     # Since the file was changed in the first event it will be processed again
     # This is to prevent missing file changes between first event start and end
-    handler.on_modified(FileModifiedEvent(bytes(copy_path), '', is_synthetic=True))
+    handler.on_modified(
+        FileModifiedEvent(bytes(copy_path), '', is_synthetic=True),
+    )
     assert refresh_event.is_set()
 
 
@@ -740,15 +724,13 @@ def test_favicon(run_start: CliRunner) -> None:
     assert response.status_code == success
     assert response.headers['Content-Type'] == 'image/svg+xml; charset=utf-8'
     assert len(response.content) > 0
-    with (Path('static') / 'favicon.svg').open('rb') as favicon_file:
-        svg_content = favicon_file.read()
+    svg_content = (Path('static') / 'favicon.svg').read_bytes()
     assert response.content == svg_content
 
 
 def test_sse(run_start: CliRunner) -> None:
     layout_path = Path('templates') / '_layout.html'
-    with layout_path.open('r') as layout_file:
-        contents = layout_file.read()
+    contents = layout_path.read_text()
 
     expected_js = 'sse.onmessage'
     assert expected_js in contents

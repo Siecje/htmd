@@ -55,7 +55,11 @@ def set_stop_event_on_signal(
 
 
 class BaseHandler(FileSystemEventHandler):
-    def __init__(self, event: threading.Event, skips: list[str] | None = None) -> None:
+    def __init__(
+        self,
+        event: threading.Event,
+        skips: list[str] | None = None,
+    ) -> None:
         super().__init__()
         self._seen_mtimes: dict[str, int] = {}
         self.event = event

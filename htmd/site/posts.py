@@ -44,7 +44,8 @@ class Posts(FlatPages):
         with self._app.app_context():
             new_published_posts = [
                 p for p in self
-                if 'published' in p.meta and hasattr(p.meta['published'], 'year')
+                if 'published' in p.meta
+                and hasattr(p.meta['published'], 'year')
                 and (self.show_drafts or not p.meta.get('draft', False))
             ]
         self.published_posts = new_published_posts
@@ -66,7 +67,10 @@ def on_load(state: BlueprintSetupState) -> None:
 @posts_bp.route('/feed.atom')
 def feed() -> Response:
     name = current_app.config.get('SITE_NAME')
-    subtitle = current_app.config.get('SITE_DESCRIPTION') or 'Recent Blog Posts'
+    subtitle = (
+        current_app.config.get('SITE_DESCRIPTION')
+        or 'Recent Blog Posts'
+    )
     feed_url = url_for('posts.feed', _external=True)
     url = url_for('posts.all_posts', _external=True)
     atom = AtomFeed(
@@ -90,10 +94,14 @@ def feed() -> Response:
         # published and updated need to be datetime
         published = post.meta['published']
         post_datetime = post.meta.get('updated', published)
+        author = post.meta.get(
+            'author',
+            current_app.config.get('DEFAULT_AUTHOR'),
+        )
         atom.add(
             post.meta.get('title'),
             post.html,
-            author=post.meta.get('author', current_app.config.get('DEFAULT_AUTHOR')),
+            author=author,
             content_type='html',
             published=published,
             updated=post_datetime,
@@ -118,7 +126,11 @@ def draft_and_not_shown(post: Page) -> bool:
     _posts = current_app.extensions['flatpages'][None]
     show_drafts = _posts.show_drafts
     is_draft = 'draft' in post.meta
-    return is_draft and not show_drafts and 'build' not in str(post.meta['draft'])
+    return (
+        is_draft
+        and not show_drafts
+        and 'build' not in str(post.meta['draft'])
+    )
 
 
 def render_password_protected_post(post: Page) -> ResponseReturnValue:
@@ -242,7 +254,9 @@ def author(author: str) -> ResponseReturnValue:
     if _posts.show_drafts:
         posts_author_published = posts_author
     else:
-        posts_author_published = [p for p in posts_author if 'draft' not in p.meta]
+        posts_author_published = [
+            p for p in posts_author if 'draft' not in p.meta
+        ]
 
     posts_sorted = sorted(
         posts_author_published,

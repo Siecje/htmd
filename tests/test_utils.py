@@ -3,23 +3,18 @@ import uuid
 
 from flask import Flask
 from flask_flatpages import Page
-from htmd.utils import set_post_metadata, validate_post
+from htmd.utils import atomic_write, set_post_metadata, validate_post
 import pytest
 
 
 def test_set_post_metadata_with_field_in_title(flask_app: Flask) -> None:
     # Add draft to the title
     example_path = Path('posts') / 'example.md'
-    with example_path.open('r') as example_file:
-        lines = example_file.readlines()
+    lines = example_path.read_text().splitlines(keepends=True)
 
     title_line = 'title: Player drafted\n'
-    with example_path.open('w') as example_file:
-        for line in lines:
-            if 'title:' in line:
-                example_file.write(title_line)
-            else:
-                example_file.write(line)
+    lines = [title_line if 'title:' in line else line for line in lines]
+    atomic_write(example_path, ''.join(lines))
 
     posts = flask_app.extensions['flatpages'][None]
     post = posts.get('example')
@@ -30,8 +25,7 @@ def test_set_post_metadata_with_field_in_title(flask_app: Flask) -> None:
         {'draft': post.meta['draft']},
     )
 
-    with example_path.open('r') as example_file:
-        contents = example_file.read()
+    contents = example_path.read_text()
 
     expected = 'draft: ' + post.meta['draft']
     assert expected in contents
@@ -137,7 +131,10 @@ def test_validate_post_invalid_updated(
     )
     is_valid = validate_post(post, [])
     assert not is_valid
-    exp = f'Updated date {invalid_date} for example is not in the format YYYY-MM-DD.\n'
+    exp = (
+        f'Updated date {invalid_date} for example '
+        'is not in the format YYYY-MM-DD.\n'
+    )
     assert exp == capsys.readouterr().err
 
 
@@ -155,7 +152,10 @@ def test_validate_post_invalid_draft_uuid(
     )
     is_valid = validate_post(post, [])
     assert not is_valid
-    expected = f'Draft field {invalid_draft} for example has an invalid UUID4.\n'
+    expected = (
+        f'Draft field {invalid_draft} for example '
+        'has an invalid UUID4.\n'
+    )
     assert expected == capsys.readouterr().err
 
 

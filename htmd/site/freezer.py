@@ -8,7 +8,10 @@ from flask_frozen import Freezer
 from .pages import pages
 
 
-freezer = Freezer(with_static_files=False, with_no_argument_rules=False)
+freezer = Freezer(
+    with_static_files=False,
+    with_no_argument_rules=False,
+)
 
 
 freeze_bp = Blueprint('freezer', __name__)
@@ -78,5 +81,9 @@ def page() -> Iterator[tuple[str, dict[str, str]]]:
     if not isinstance(pages_folder, Path) or not pages_folder.is_dir():
         return
     for page in pages_folder.iterdir():
-        if page.is_file() and not page.name.startswith('.') and page.suffix == '.html':
+        if (
+            page.is_file()
+            and not page.name.startswith('.')
+            and page.suffix == '.html'
+        ):
             yield 'pages.page', {'path': page.stem}

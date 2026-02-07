@@ -71,7 +71,9 @@ def encrypt_post(
             label=None,
         ),
     )
-    subtitle_cipher_base64 = base64.b64encode(subtitle_cipher_b).decode('utf-8')
+    subtitle_cipher_base64 = base64.b64encode(
+        subtitle_cipher_b,
+    ).decode('utf-8')
 
     return (
         html_cipher_base64,

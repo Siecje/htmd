@@ -262,8 +262,7 @@ def test_build_vcs_repo(run_start: CliRunner) -> None:
     run_start.invoke(build)
     for path in path_list:
         path.mkdir()
-        with (path / 'keep').open('w') as keep_file:
-            keep_file.write('keep')
+        (path / 'keep').write_text('keep')
 
     run_start.invoke(build)
     for path in path_list:
@@ -280,7 +279,8 @@ def test_build_with_default_author(run_start: CliRunner) -> None:
     assert re.search(SUCCESS_REGEX, result.output)
     post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
     contents = post_path.read_text()
-    assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
+    expected = 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30'
+    assert expected in contents
 
 
 def test_build_contains_favicon(run_start: CliRunner) -> None:
@@ -316,7 +316,10 @@ def test_build_password_protect(run_start: CliRunner) -> None:
     post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
     contents = post_path.read_text()
 
-    assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
+    assert (
+        'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30'
+        in contents
+    )
     title = 'Example Post'
     assert title in md_str
     assert title not in contents
@@ -371,7 +374,10 @@ def test_build_password_false(run_start: CliRunner) -> None:
     post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
     contents = post_path.read_text()
 
-    assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
+    assert (
+        'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30'
+        in contents
+    )
     title = 'Example Post'
     assert title in contents
     body = 'This is the post'
@@ -404,7 +410,10 @@ def test_build_draft_password_protect(run_start: CliRunner) -> None:
     data = yaml.safe_load(md_str[:md_str.find('...')])
     password = data['password']
 
-    assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
+    assert (
+        'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30'
+        in contents
+    )
 
     title = 'Example Post'
     assert title in md_str
@@ -438,7 +447,10 @@ def test_build_draft_password_false(run_start: CliRunner) -> None:
     post_path = Path('build') / 'draft' / build_uuid / 'index.html'
     contents = post_path.read_text()
 
-    assert 'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30' in contents
+    assert (
+        'Posted by <a href="/author/Taylor/">Taylor</a> on 2014-10-30'
+        in contents
+    )
     title = 'Example Post'
     assert title in contents
     body = 'This is the post'
@@ -466,7 +478,9 @@ def test_build_doesnt_have_sse(run_start: CliRunner) -> None:
     assert sse_js_line not in contents
 
 
-def test_post_without_published_and_without_author(run_start: CliRunner) -> None:
+def test_post_without_published_and_without_author(
+    run_start: CliRunner,
+) -> None:
     set_config_field('show', value=False)
     set_example_to_draft_build()
     remove_fields_from_post('example', ('published', 'updated'))

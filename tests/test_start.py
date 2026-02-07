@@ -127,12 +127,9 @@ def test_start_with_existing_template() -> None:
     with runner.isolated_filesystem():
         Path('templates').mkdir()
         layout_path = Path('templates') / '_layout.html'
-        with layout_path.open('w') as layout:
-            pass
+        layout_path.touch()
         result = runner.invoke(start)
-        with layout_path.open('r') as layout:
-            # _layout.html was not replaced
-            assert layout.read() == ''
+        assert layout_path.read_text() == '', '_layout.html was replaced.'
     assert result.exit_code == 0
     assert 'templates/ already exists and was not created.' in result.output
     expected2 = 'templates/_layout.html already exists and was not created.'

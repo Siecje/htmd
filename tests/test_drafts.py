@@ -24,25 +24,22 @@ from utils_preview import run_preview
 def copy_example_as_draft_build() -> Path:
     post_path = Path('posts') / 'example.md'
     copy_path = Path('posts') / 'copy.md'
-    with post_path.open('r') as post_file:
-        lines = post_file.readlines()
-
-    new_lines = []
-    for line in lines:
-        if 'draft' in line:
-            new_lines.append('draft: build\n')
-        else:
-            new_lines.append(line)
+    lines = post_path.read_text().splitlines(keepends=True)
+    new_lines = [
+        'draft: build\n' if 'draft' in line
+        else line
+        for line in lines
+    ]
     atomic_write(copy_path, ''.join(new_lines))
     return copy_path
 
 
 def get_draft_uuid(path: str) -> str:
     draft_path = Path('posts') / f'{path}.md'
-    with draft_path.open('r') as draft_file:
-        for line in draft_file.readlines():
-            if 'draft: build|' in line:
-                return line.replace('draft: build|', '').strip()
+    lines = draft_path.read_text().splitlines(keepends=True)
+    for line in lines:
+        if 'draft: build|' in line:
+            return line.replace('draft: build|', '').strip()
     return ''
 
 
@@ -78,35 +75,32 @@ def test_draft_only_draft_build_is_in_build(build_draft: CliRunner) -> None:
 
 
 def test_no_drafts_home(build_draft: CliRunner) -> None:  # noqa: ARG001
-    with (Path('build') / 'index.html').open('r') as home_page:
-        assert 'Example Post' not in home_page.read()
+    assert 'Example Post' not in (Path('build') / 'index.html').read_text()
 
 
 def test_no_drafts_atom_feed(build_draft: CliRunner) -> None:  # noqa: ARG001
-    with (Path('build') / 'feed.atom').open('r') as feed_page:
-        assert 'Example Post' not in feed_page.read()
+    assert 'Example Post' not in (Path('build') / 'feed.atom').read_text()
 
 
 def test_no_drafts_all_posts(build_draft: CliRunner) -> None:  # noqa: ARG001
-    with (Path('build') / 'all' / 'index.html').open('r') as web_page:
-        assert 'Example Post' not in web_page.read()
+    build_all = (Path('build') / 'all' / 'index.html').read_text()
+    assert 'Example Post' not in build_all
 
 
 def test_no_drafts_all_tags(build_draft: CliRunner) -> None:  # noqa: ARG001
-    with (Path('build') / 'tags' / 'index.html').open('r') as web_page:
-        assert 'first' not in web_page.read()
+    assert 'first' not in (Path('build') / 'tags' / 'index.html').read_text()
 
 
 def test_no_drafts_in_tag(build_draft: CliRunner) -> None:  # noqa: ARG001
     # tag page exists because the draft links to it
-    with (Path('build') / 'tags' / 'first' / 'index.html').open('r') as web_page:
-        assert 'Example Post' not in web_page.read()
+    first = (Path('build') / 'tags' / 'first' / 'index.html').read_text()
+    assert 'Example Post' not in first
 
 
 def test_no_drafts_for_author(build_draft: CliRunner) -> None:  # noqa: ARG001
     # author page exists because the draft links to it
-    with (Path('build') / 'author' / 'Taylor' / 'index.html').open('r') as web_page:
-        assert 'Example Post' not in web_page.read()
+    author = (Path('build') / 'author' / 'Taylor' / 'index.html').read_text()
+    assert 'Example Post' not in author
 
 
 def test_no_drafts_for_year(build_draft: CliRunner) -> None:  # noqa: ARG001
@@ -121,7 +115,8 @@ def test_no_drafts_for_month(build_draft: CliRunner) -> None:  # noqa: ARG001
 
 def test_no_drafts_for_day(build_draft: CliRunner) -> None:  # noqa: ARG001
     # folder exists becaues of URL for post
-    assert (Path('build') / '2014' / '10' / '30' / 'index.html').exists() is False
+    day = Path('build') / '2014' / '10' / '30' / 'index.html'
+    assert day.exists() is False
 
 
 def test_draft_without_published(run_start: CliRunner) -> None:
@@ -171,7 +166,10 @@ def test_draft_build_preview(run_start: CliRunner) -> None:
     with run_preview(run_start) as base_url:
         draft_uuid = get_draft_uuid('example')
         assert draft_uuid != ''
-        response = requests.get(base_url + f'/draft/{draft_uuid}/', timeout=1)
+        response = requests.get(
+            base_url + f'/draft/{draft_uuid}/',
+            timeout=1,
+        )
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
         assert 'Example Post' in contents
@@ -188,7 +186,10 @@ def test_draft_build_preview_without_published(run_start: CliRunner) -> None:
     with run_preview(run_start) as base_url:
         draft_uuid = get_draft_uuid('example')
         assert draft_uuid != ''
-        response = requests.get(base_url + f'/draft/{draft_uuid}/', timeout=1)
+        response = requests.get(
+            base_url + f'/draft/{draft_uuid}/',
+            timeout=1,
+        )
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
         assert 'Example Post' in contents
