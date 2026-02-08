@@ -46,26 +46,33 @@ def run_preview_subprocess(
     max_tries: int = 10_000,
 ) -> Generator[str]:
     cmd = [sys.executable, '-m', 'htmd', 'preview']
-    if args:  # pragma: no branch
-        cmd += args  # pragma: no cover
+    if args:
+        cmd += args
+    else:
+        args = []
 
     task = subprocess.Popen(  # noqa: S603
         cmd,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    if args and '--port' in args:
-        base_url = 'http://[::1]:' + args[args.index('--port') + 1]
-    else:
-        base_url = 'http://[::1]:9090'
+
+    host = '::1'
+    port = '9090'
+    for i, arg in enumerate(args):
+        if arg in ('--host', '-h') and i + 1 < len(args):
+            host = args[i + 1]
+        if arg in ('--port', '-p') and i + 1 < len(args):
+            port = args[i + 1]
+    url_host = f'[{host}]' if ':' in host and not host.startswith('[') else host
+    base_url = f'http://{url_host}:{port}'
     try:
         for _ in range(max_tries):  # pragma: no branch
             try:
-                requests.head(base_url, timeout=1)
-            except requests.exceptions.ConnectionError:
-                continue
-            else:
-                break
+                with socket.create_connection((host, int(port)), timeout=0.05):
+                    break
+            except (ConnectionRefusedError, OSError):
+                time.sleep(0.05)
         yield base_url
     finally:
         task.terminate()
@@ -387,6 +394,14 @@ def test_preview_subprocess_default_port(
             timeout=2,
             headers={'Connection': 'close'},
         )
+        assert response.status_code == 200  # noqa: PLR2004
+
+
+def test_preview_subprocess_host(
+    run_start: CliRunner,  # noqa: ARG001
+) -> None:
+    with run_preview_subprocess(['--host', 'localhost']) as base_url:
+        response = requests.get(base_url, timeout=1)
         assert response.status_code == 200  # noqa: PLR2004
 
 
