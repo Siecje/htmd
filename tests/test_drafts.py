@@ -7,10 +7,10 @@ from htmd.cli.build import build
 from htmd.cli.start import start
 from htmd.utils import atomic_write
 import pytest
-import requests
 
 from utils import (
     get_example_field,
+    http_get,
     remove_fields_from_post,
     set_example_draft_status,
     set_example_to_draft,
@@ -141,14 +141,14 @@ def test_draft_build_and_without_published(run_start: CliRunner) -> None:
 
     anchor_text = f'<a href="/draft/{draft_uuid}/" class="post-preview-link"'
     with run_preview(run_start, ['--drafts']) as base_url:
-        response = requests.get(base_url + '/author/Taylor/', timeout=1)
+        response = http_get(base_url + '/author/Taylor/')
         contents = response.text
         assert response.status_code == 200  # noqa: PLR2004
         assert 'Example Post' in contents
         assert anchor_text in contents
 
     with run_preview(run_start) as base_url:
-        response = requests.get(base_url + '/author/Taylor/', timeout=1)
+        response = http_get(base_url + '/author/Taylor/')
         contents = response.text
         # draft post is in build and links to author so author page exists
         assert response.status_code == 200  # noqa: PLR2004
@@ -166,10 +166,7 @@ def test_draft_build_preview(run_start: CliRunner) -> None:
     with run_preview(run_start) as base_url:
         draft_uuid = get_draft_uuid('example')
         assert draft_uuid != ''
-        response = requests.get(
-            base_url + f'/draft/{draft_uuid}/',
-            timeout=1,
-        )
+        response = http_get(base_url + f'/draft/{draft_uuid}/')
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
         assert 'Example Post' in contents
@@ -186,10 +183,7 @@ def test_draft_build_preview_without_published(run_start: CliRunner) -> None:
     with run_preview(run_start) as base_url:
         draft_uuid = get_draft_uuid('example')
         assert draft_uuid != ''
-        response = requests.get(
-            base_url + f'/draft/{draft_uuid}/',
-            timeout=1,
-        )
+        response = http_get(base_url + f'/draft/{draft_uuid}/')
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
         assert 'Example Post' in contents
@@ -204,7 +198,7 @@ def test_draft_during_preview(run_start: CliRunner) -> None:
         wait_for_str_in_file(post_path, 'build|')
         post_uuid = get_draft_uuid('example')
         assert post_uuid != ''
-        response = requests.get(base_url + f'/draft/{post_uuid}/', timeout=1)
+        response = http_get(base_url + f'/draft/{post_uuid}/')
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
         assert 'Example Post' in contents
@@ -222,7 +216,7 @@ def test_new_draft_during_preview(run_start: CliRunner) -> None:
         wait_for_str_in_file(post_path, 'build|')
         post_uuid = get_draft_uuid(post_path.stem)
         assert post_uuid != ''
-        response = requests.get(base_url + f'/draft/{post_uuid}/', timeout=1)
+        response = http_get(base_url + f'/draft/{post_uuid}/')
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
         assert 'Example Post' in contents

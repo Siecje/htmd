@@ -4,10 +4,10 @@ import xml.etree.ElementTree as ET
 
 from click.testing import CliRunner
 from htmd.cli.build import build
-import requests
 
 from utils import (
     get_example_field,
+    http_get,
     remove_fields_from_post,
     set_config_field,
     set_example_field,
@@ -146,7 +146,7 @@ def test_without_updated_preview(run_start: CliRunner) -> None:
     base_url = f'http://{server_name}'
 
     with run_preview(run_start) as preview_base_url:
-        response = requests.get(preview_base_url + '/feed.atom', timeout=5)
+        response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(base_url, response.text)
 
@@ -174,7 +174,7 @@ def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
 
     with run_preview(run_start) as preview_base_url:
         updated = get_example_field('updated')
-        response = requests.get(preview_base_url + '/feed.atom', timeout=1)
+        response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(
             base_url,
@@ -214,7 +214,7 @@ def test_with_updated(run_start: CliRunner) -> None:
     )
 
     with run_preview(run_start) as preview_base_url:
-        response = requests.get(preview_base_url + '/feed.atom', timeout=1)
+        response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(
             base_url,
@@ -238,7 +238,7 @@ def test_without_updated_no_build_preview(run_start: CliRunner) -> None:
     with run_preview(run_start) as preview_base_url:
         updated = get_example_field('updated')
         assert updated is not None
-        response = requests.get(preview_base_url + '/feed.atom', timeout=1)
+        response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(
             base_url,

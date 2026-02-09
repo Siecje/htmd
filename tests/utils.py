@@ -3,6 +3,7 @@ from pathlib import Path
 import time
 
 from htmd.utils import atomic_write
+import requests
 
 
 SUCCESS_REGEX = (
@@ -136,3 +137,16 @@ def wait_for_str_not_in_file(
             msg = f'{value} still in {path} after {timeout}s.'
             raise TimeoutError(msg)
         time.sleep(0.1)
+
+
+def http_get(
+    url: str,
+    *,
+    headers: dict[str, str] | None = None,
+    session: requests.Session | None = None,
+    timeout: float = 1,
+) -> requests.Response:
+    if session is None and headers is None:
+        headers = {'Connection': 'close'}
+    caller = session or requests
+    return caller.get(url, headers=headers, timeout=timeout)
