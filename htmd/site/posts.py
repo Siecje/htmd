@@ -164,7 +164,8 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     if draft_and_not_shown(post):
         abort(404)
     date_str = f'{year}-{month}-{day}'
-    published = post.meta.get('published')
+    today = datetime.datetime.now(tz=datetime.UTC)
+    published = post.meta.get('published', today)
     if (not isinstance(published, (datetime.date))
         or published.strftime('%Y-%m-%d') != date_str
     ):
@@ -213,6 +214,8 @@ def no_posts_shown(post_list: list[Page]) -> bool:
 @posts_bp.route('/tags/<string:tag>/')
 def tag(tag: str) -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]
+    # Not using published_posts because build draft can link to a tag
+    # and build will fail if link is 404
     tagged = [
         p
         for p in _posts
@@ -225,13 +228,27 @@ def tag(tag: str) -> ResponseReturnValue:
     if _posts.show_drafts:
         tagged_published = tagged
     else:
-        tagged_published = [p for p in tagged if 'draft' not in p.meta]
+        tagged_published = [
+            p
+            for p in tagged
+            if (
+                'draft' not in p.meta
+                or p.meta['draft'] is False
+            )
+        ]
+    today = datetime.datetime.now(tz=datetime.UTC)
     sorted_posts = sorted(
         tagged_published,
         reverse=True,
-        key=lambda p: p.meta.get('published'),
+        key=lambda p: p.meta.get('published', today),
     )
-    return render_template('tag.html', active=tag, posts=sorted_posts, tag=tag)
+    return render_template(
+        'tag.html',
+        active=tag,
+        posts=sorted_posts,
+        tag=tag,
+        today=today,
+    )
 
 
 @posts_bp.route('/author/<author>/')

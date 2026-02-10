@@ -1,17 +1,39 @@
 <div class="post-preview">
-  {% if not post.published %}
-    <a href="{{ url_for(
-      "posts.draft",
-      post_uuid=post.meta['draft'].split('|')[1]
-      ) }}" class="post-preview-link"
+  {% if post.published %}
+    <a
+      href="{{
+        url_for(
+          "posts.post",
+          year=post.meta['published'].year,
+          month=post.meta['published'].strftime('%m'),
+          day=post.meta['published'].strftime('%d'),
+          path=post.path,
+        )
+      }}"
+      class="post-preview-link"
+    >
+  {% elif 'build' in post.meta['draft'] | string %}
+    <a
+      href="{{
+        url_for(
+          "posts.draft",
+          post_uuid=post.meta['draft'].split('|')[1],
+        )
+      }}"
+      class="post-preview-link"
     >
   {% else %}
-    <a href="{{ url_for(
-      "posts.post",
-      year=post.meta['published'].year,
-      month=post.meta['published'].strftime('%m'),
-      day=post.meta['published'].strftime('%d'),
-      path=post.path) }}" class="post-preview-link"
+    <a
+      href="{{
+        url_for(
+          "posts.post",
+          year=today.year,
+          month=today.strftime('%m'),
+          day=today.strftime('%d'),
+          path=post.path,
+        )
+      }}"
+      class="post-preview-link"
     >
   {% endif %}
     {% set is_protected = ('password' in post.meta and post.meta['password'] != false) %}

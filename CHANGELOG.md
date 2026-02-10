@@ -17,6 +17,8 @@
 - Added `_hash` post metadata field
 - Set post dates when `htmd preview` is run
 - Show date on post page when there is no author
+- Show drafts without published during `htmd preview --drafts`
+    - Date in URL will be the current date
 ### Fixed
 - Protected post subtitles are encrypted
 - Hide protected post data on list pages

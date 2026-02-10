@@ -139,7 +139,7 @@ def test_draft_build_and_without_published(run_start: CliRunner) -> None:
     draft_path = Path('build') / 'draft' / draft_uuid / 'index.html'
     assert draft_path.is_file() is True
 
-    anchor_text = f'<a href="/draft/{draft_uuid}/" class="post-preview-link"'
+    anchor_text = f'"/draft/{draft_uuid}/"'
     with run_preview(run_start, ['--drafts']) as base_url:
         response = http_get(base_url + '/author/Taylor/')
         contents = response.text
