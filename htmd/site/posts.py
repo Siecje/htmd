@@ -272,19 +272,26 @@ def author(author: str) -> ResponseReturnValue:
         posts_author_published = posts_author
     else:
         posts_author_published = [
-            p for p in posts_author if 'draft' not in p.meta
+            p
+            for p in posts_author
+            if (
+                'draft' not in p.meta
+                or p.meta['draft'] is False
+            )
         ]
 
+    today = datetime.datetime.now(tz=datetime.UTC)
     posts_sorted = sorted(
         posts_author_published,
         reverse=True,
-        key=lambda p: p.meta.get('published'),
+        key=lambda p: p.meta.get('published', today),
     )
     return render_template(
         'author.html',
         active='author',
         author=author,
         posts=posts_sorted,
+        today=today,
     )
 
 
