@@ -157,18 +157,20 @@ def render_password_protected_post(post: Page) -> ResponseReturnValue:
 # If month and day are ints then Flask removes leading zeros
 @posts_bp.route('/<year>/<month>/<day>/<path:path>/')
 def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
-    if len(year) != 4 or len(month) != 2 or len(day) != 2:  # noqa: PLR2004
+    date_str = f'{year}-{month}-{day}'
+    try:
+        datetime.date.fromisoformat(date_str)
+    except ValueError:
         abort(404)
     _posts = current_app.extensions['flatpages'][None]
     post = _posts.get_or_404(path)
     if draft_and_not_shown(post):
         abort(404)
-    date_str = f'{year}-{month}-{day}'
-    today = datetime.datetime.now(tz=datetime.UTC)
-    published = post.meta.get('published', today)
-    if (not isinstance(published, (datetime.date))
-        or published.strftime('%Y-%m-%d') != date_str
-    ):
+    published = post.meta.get(
+        'published',
+        datetime.datetime.now(tz=datetime.UTC),
+    )
+    if published.strftime('%Y-%m-%d') != date_str:
         abort(404)
     if post.meta.get('password'):
         return render_password_protected_post(post)
