@@ -16,29 +16,55 @@ def remove_fields_from_post(
     path: str,
     field_names: Iterable[str],
 ) -> None:
-    example_post_path = Path('posts') / f'{path}.md'
-    lines = example_post_path.read_text().splitlines(keepends=True)
-    new_lines = []
-    for line in lines:
-        skip = any(line.startswith(f'{field}:') for field in field_names)
-        if not skip:
-            new_lines.append(line)
+    fields_to_remove = set(field_names)
+    post_path = Path('posts') / f'{path}.md'
 
-    atomic_write(example_post_path, ''.join(new_lines))
+    lines = post_path.read_text().splitlines(keepends=True)
+    new_lines = []
+    line_iter = iter(lines)
+
+    # Iterate until content is reached or all fields have been removed
+    for line in line_iter:  # pragma: no branch
+        if line.strip() == '...':
+            new_lines.append(line)
+            break
+
+        parts = line.split(':', 1)
+        key = parts[0]
+        if len(parts) > 1 and key in fields_to_remove:
+            fields_to_remove.remove(key)
+            if not fields_to_remove:
+                break
+            continue
+
+        new_lines.append(line)
+
+    new_lines.extend(line_iter)
+    atomic_write(post_path, ''.join(new_lines))
 
 
 def set_example_field(field: str, value: str) -> None:
-    remove_fields_from_post('example', (field,))
     post_path = Path('posts') / 'example.md'
-
     lines = post_path.read_text().splitlines(keepends=True)
 
     new_lines = []
-    for line in lines:
-        if line == '...\n':
+    line_iter = iter(lines)
+    field_key = f'{field}:'
+    found_and_removed = False
+
+    for line in line_iter:  # pragma: no branch
+        if line.strip() == '...':
             new_lines.append(f'{field}: {value}\n')
+            new_lines.append(line)
+            break
+
+        if not found_and_removed and line.startswith(field_key):
+            found_and_removed = True
+            continue
+
         new_lines.append(line)
 
+    new_lines.extend(line_iter)
     atomic_write(post_path, ''.join(new_lines))
 
 
