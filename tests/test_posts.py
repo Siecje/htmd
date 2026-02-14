@@ -1,11 +1,4 @@
-import datetime
-
-from click.testing import CliRunner
 from htmd.site.posts import Posts
-import requests
-
-from utils import http_get, remove_fields_from_post, set_example_field
-from utils_preview import run_preview
 
 
 def test_Posts_without_app() -> None:  # noqa: N802
@@ -19,51 +12,3 @@ def test_Posts_without_app() -> None:  # noqa: N802
     assert posts.published_posts == []
 
 
-def test_tag_with_draft_without_published(run_start: CliRunner) -> None:
-    tag = 'first'
-    remove_fields_from_post('example', ('published',))
-    set_example_field('tags', f'[{tag}]')
-    set_example_field('draft', 'true')
-    today = datetime.datetime.now(tz=datetime.UTC)
-    year = today.year
-    month = today.strftime('%m')
-    day = today.strftime('%d')
-    with (
-        run_preview(run_start, ['--drafts']) as base_url,
-        requests.Session() as session,
-    ):
-        response = http_get(base_url + f'/tags/{tag}/', session=session)
-        assert response.status_code == 200  # noqa: PLR2004
-        post_url = f'/{year}/{month}/{day}/example/'
-        assert post_url in response.text
-
-        response = http_get(
-            base_url + post_url,
-            session=session,
-        )
-        assert response.status_code == 200  # noqa: PLR2004
-
-
-def test_author_with_draft_without_published(run_start: CliRunner) -> None:
-    remove_fields_from_post('example', ('published',))
-    author = 'Taylor'
-    set_example_field('author', author)
-    set_example_field('draft', 'true')
-    today = datetime.datetime.now(tz=datetime.UTC)
-    year = today.year
-    month = today.strftime('%m')
-    day = today.strftime('%d')
-    with (
-        run_preview(run_start, ['--drafts']) as base_url,
-        requests.Session() as session,
-    ):
-        response = http_get(base_url + f'/author/{author}/', session=session)
-        assert response.status_code == 200  # noqa: PLR2004
-        post_url = f'/{year}/{month}/{day}/example/'
-        assert post_url in response.text
-
-        response = http_get(
-            base_url + post_url,
-            session=session,
-        )
-        assert response.status_code == 200  # noqa: PLR2004

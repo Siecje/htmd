@@ -1,4 +1,5 @@
 from collections.abc import Generator
+import datetime
 from pathlib import Path
 import re
 
@@ -7,12 +8,14 @@ from htmd.cli.build import build
 from htmd.cli.start import start
 from htmd.utils import atomic_write
 import pytest
+import requests
 
 from utils import (
     get_example_field,
     http_get,
     remove_fields_from_post,
     set_example_draft_status,
+    set_example_field,
     set_example_to_draft,
     set_example_to_draft_build,
     SUCCESS_REGEX,
@@ -220,3 +223,72 @@ def test_new_draft_during_preview(run_start: CliRunner) -> None:
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
         assert 'Example Post' in contents
+
+
+def test_tag_with_draft_without_published(run_start: CliRunner) -> None:
+    tag = 'first'
+    remove_fields_from_post('example', ('published',))
+    set_example_field('tags', f'[{tag}]')
+    set_example_field('draft', 'true')
+    today = datetime.datetime.now(tz=datetime.UTC)
+    year = today.year
+    month = today.strftime('%m')
+    day = today.strftime('%d')
+    with (
+        run_preview(run_start, ['--drafts']) as base_url,
+        requests.Session() as session,
+    ):
+        response = http_get(base_url + f'/tags/{tag}/', session=session)
+        assert response.status_code == 200  # noqa: PLR2004
+        post_url = f'/{year}/{month}/{day}/example/'
+        assert post_url in response.text
+
+        response = http_get(
+            base_url + post_url,
+            session=session,
+        )
+        assert response.status_code == 200  # noqa: PLR2004
+
+
+def test_author_with_draft_without_published(run_start: CliRunner) -> None:
+    remove_fields_from_post('example', ('published',))
+    author = 'Taylor'
+    set_example_field('author', author)
+    set_example_field('draft', 'true')
+    today = datetime.datetime.now(tz=datetime.UTC)
+    year = today.year
+    month = today.strftime('%m')
+    day = today.strftime('%d')
+    with (
+        run_preview(run_start, ['--drafts']) as base_url,
+        requests.Session() as session,
+    ):
+        response = http_get(base_url + f'/author/{author}/', session=session)
+        assert response.status_code == 200  # noqa: PLR2004
+        post_url = f'/{year}/{month}/{day}/example/'
+        assert post_url in response.text
+
+        response = http_get(
+            base_url + post_url,
+            session=session,
+        )
+        assert response.status_code == 200  # noqa: PLR2004
+
+
+def test_draft_without_published_year_month_day(run_start: CliRunner) -> None:
+    remove_fields_from_post('example', ('published',))
+    set_example_field('draft', 'true')
+    today = datetime.datetime.now(tz=datetime.UTC)
+    year = today.year
+    month = today.strftime('%m')
+    day = today.strftime('%d')
+    with (
+        run_preview(run_start, ['--drafts']) as base_url,
+        requests.Session() as session,
+    ):
+        response = http_get(base_url + f'/{year}/', session=session)
+        assert response.status_code == 404  # noqa: PLR2004
+        response = http_get(base_url + f'/{year}/{month}/', session=session)
+        assert response.status_code == 404  # noqa: PLR2004
+        response = http_get(base_url + f'/{year}/{month}/{day}/', session=session)
+        assert response.status_code == 404  # noqa: PLR2004
