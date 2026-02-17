@@ -82,31 +82,30 @@ class BaseHandler(FileSystemEventHandler):
         self.handle_event(event.dest_path, is_new=False)
 
     @abstractmethod
-    def handle_file(self, file_path: str, *, is_new: bool) -> None:
+    def handle_file(self, file_path: Path, *, is_new: bool) -> None:
         """Handle a file event."""
 
-    def handle_event(self, file_path: str | bytes, *, is_new: bool) -> None:
-        if isinstance(file_path, bytes):
-            file_path = file_path.decode('utf-8')
-        for ending in self.skips:
-            if file_path.endswith(ending):
-                return
-
-        path_obj = Path(file_path)
-        new_mtime = path_obj.stat().st_mtime_ns
-        if self._seen_mtimes.get(file_path) == new_mtime:
-            # This was likely a metadata event or a double-trigger
+    def handle_event(self, path_str: str | bytes, *, is_new: bool) -> None:
+        if isinstance(path_str, bytes):
+            path_str = path_str.decode('utf-8')
+        path_obj = Path(path_str)
+        if path_obj.name in self.skips or path_obj.suffix in self.skips:
             return
-        self.handle_file(file_path, is_new=is_new)
+
         try:
-            # Set mtime from before processing so we don't miss events
-            # even though it means we will try to handle the same file again
-            # if it is modified in self.handle_file()
-            self._seen_mtimes[file_path] = new_mtime
+            new_mtime = path_obj.stat().st_mtime_ns
         except FileNotFoundError:  # pragma: no cover
             # File was deleted before we could stat it
-            with contextlib.suppress(KeyError):
-                del self._seen_mtimes[file_path]
+            return
+        seen_key = str(path_obj.resolve())
+        if self._seen_mtimes.get(seen_key) == new_mtime:
+            # This was likely a metadata event or a double-trigger
+            return
+        self.handle_file(path_obj, is_new=is_new)
+        # Set mtime from before processing so we don't miss events
+        # even though it means we will try to handle the same file again
+        # if it is modified in self.handle_file()
+        self._seen_mtimes[seen_key] = new_mtime
 
 
 class StaticHandler(BaseHandler):
@@ -126,26 +125,26 @@ class StaticHandler(BaseHandler):
 
     def handle_file(
         self,
-        file_path: str,
+        file_path: Path,
         *,
         is_new: bool,  # noqa: ARG002
     ) -> None:
         if (
-            file_path.endswith('.css')
+            file_path.suffix == '.css'
             and self.css_minify
             and combine_and_minify_css(self.static_directory)
         ):
             self.event.set()
             dst_css = 'combined.min.css'
-            click.echo(f'Changes in {file_path}. Recreating {dst_css}...')
+            click.echo(f'Changes in {file_path.name}. Recreating {dst_css}...')
         elif (
-            file_path.endswith('.js')
+            file_path.suffix == '.js'
             and self.js_minify
             and combine_and_minify_js(self.static_directory)
         ):
             self.event.set()
             dst_js = 'combined.min.js'
-            click.echo(f'Changes in {file_path}. Recreating {dst_js}...')
+            click.echo(f'Changes in {file_path.name}. Recreating {dst_js}...')
 
 
 class PostsCreatedHandler(BaseHandler):
@@ -157,8 +156,8 @@ class PostsCreatedHandler(BaseHandler):
         super().__init__(event)
         self.app = app
 
-    def handle_file(self, file_path: str, *, is_new: bool) -> None:
-        if not file_path.endswith('.md'):
+    def handle_file(self, file_path: Path, *, is_new: bool) -> None:
+        if file_path.suffix != '.md':
             return
         posts = self.app.extensions['flatpages'][None]
         posts.reload()
@@ -169,7 +168,7 @@ class PostsCreatedHandler(BaseHandler):
         self.event.set()
 
         action = 'created' if is_new else 'updated'
-        click.echo(f'Post {action} {file_path}.')
+        click.echo(f'Post {action} {file_path.name}.')
 
 
 def watch_disk(  # noqa: PLR0913
