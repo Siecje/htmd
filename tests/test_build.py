@@ -37,8 +37,8 @@ def test_build_js_minify(run_start: CliRunner) -> None:
     path.write_text('console.log("htmd");')
 
     result = run_start.invoke(build, ['--js-minify'])
-    assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
+    assert result.exit_code == 0
     contents = (Path('build') / 'index.html').read_text()
     assert 'combined.min.js' in contents
 
@@ -396,8 +396,8 @@ def test_build_draft_password_protect(run_start: CliRunner) -> None:
     password = data['password']
     assert password is None
     result = run_start.invoke(build)
-    assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
+    assert result.exit_code == 0
 
     md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
@@ -481,13 +481,15 @@ def test_build_doesnt_have_sse(run_start: CliRunner) -> None:
 def test_post_without_published_and_without_author(
     run_start: CliRunner,
 ) -> None:
+    # Set config to not show author
     set_config_field('show', value=False)
     set_example_to_draft_build()
     remove_fields_from_post('example', ('published', 'updated'))
+    assert 'author' in (Path('posts') / 'example.md').read_text()
 
     result = run_start.invoke(build)
-    assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
+    assert result.exit_code == 0
 
     md_str = (Path('posts') / 'example.md').read_text()
     data = yaml.safe_load(md_str[:md_str.find('...')])
