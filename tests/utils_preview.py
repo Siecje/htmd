@@ -17,12 +17,11 @@ def _make_test_webserver(  # noqa: PLR0913
     host: str,
     port: int,
     *,
-    threaded: bool,
     url_future: Future[str],
     preview_ready: threading.Event,
     webserver_collector: list | None,
 ) -> BaseWSGIServer:
-    webserver = make_server(host, port, app, threaded=threaded)
+    webserver = make_server(host, port, app, threaded=True)
     webserver.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # Capture URL
@@ -65,7 +64,6 @@ def run_preview(
     runner: CliRunner,  # noqa: ARG001
     args: list[str] | None = None,
     *,
-    threaded:  bool = False,
     webserver_collector: list | None = None,
 ) -> Generator[str]:
     preview_ready = threading.Event()
@@ -77,7 +75,6 @@ def run_preview(
             app,
             host,
             port,
-            threaded=threaded,
             url_future=url_future,
             preview_ready=preview_ready,
             webserver_collector=webserver_collector,

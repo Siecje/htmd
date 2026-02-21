@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from pathlib import Path
+import threading
 
 from bs4 import BeautifulSoup
 from flask import (
@@ -30,19 +31,21 @@ def format_html(response: Response) -> Response:
     return response
 
 
+def event_stream(event: threading.Event | None) -> Generator[str]:
+    if not event:
+        return
+    while True:
+        event.wait(timeout=1.0)
+        if event.is_set():
+            yield 'data: refresh\n\n'
+            event.clear()
+
+
 @main_bp.route('/changes')
 def changes() -> Response:
     """To cause browser refresh on file changes."""
     event = current_app.config.get('refresh_event')
-    def event_stream() -> Generator[str]:
-        if not event:
-            return
-        while True:
-            event.wait()
-            yield 'data: refresh\n\n'
-            event.clear()
-
-    return Response(event_stream(), mimetype='text/event-stream')
+    return Response(event_stream(event), mimetype='text/event-stream')
 
 
 # Will end up in the static directory

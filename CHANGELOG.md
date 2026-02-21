@@ -26,6 +26,7 @@
 - Protected post subtitles are encrypted
 - Hide protected post data on list pages
 - Only update post updated if there are changes
+- Prevent preview from locking up from waiting forever in SSE handler
 ### Breaking
 - Anchor elements in templates need to update `url_for` argument
     - `index` -> `main.index`

@@ -266,6 +266,7 @@ def create_webserver(
         host,
         port,
         app,
+        threaded=True,
     )
     # Allows immediate restart on the same port without OS lock-out
     webserver.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

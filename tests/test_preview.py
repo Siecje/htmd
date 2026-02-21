@@ -823,11 +823,7 @@ def test_sse(run_start: CliRunner) -> None:
     changes: list[str] = []
     started = threading.Event()
     ended = threading.Event()
-    with run_preview(
-        run_start,
-        # So that SSE thread doesn't block preview threads from running
-        threaded=True,
-    ) as base_url:
+    with run_preview(run_start) as base_url:
         response = http_get(base_url)
         assert expected_js in response.text
 
@@ -839,6 +835,9 @@ def test_sse(run_start: CliRunner) -> None:
         thread.start()
 
         started.wait(timeout=10)
+
+        # Trigger timeout waiting for event to be set in SSE handler
+        time.sleep(1)
 
         # Trigger two events
         set_example_contents('Different1.')
