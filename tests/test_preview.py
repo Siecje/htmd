@@ -99,83 +99,98 @@ def test_preview_lifecycle(run_start: CliRunner) -> None:
 def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
     args = ['--css-minify', '--js-minify']
     urls = (
-        (200, '/static/combined.min.css'),
-        (200, '/static/combined.min.js'),
+        (200, '/static/style.min.css'),
+        (404, '/static/style.css'),
+        (200, '/static/scripts.min.js'),
+        (404, '/static/scripts.js'),
     )
     # Create the only JavaScript file
     js_path = Path('static') / 'scripts.js'
     atomic_write(js_path, 'document.getElementsByTagName("body");')
 
-    combined_js_path = Path('static') / 'combined.min.js'
-    combined_css_path = Path('static') / 'combined.min.css'
-    assert not combined_js_path.exists()
-    assert not combined_css_path.exists()
+    minify_css_path = Path('build') / 'static' / 'style.min.css'
+    assert not minify_css_path.exists()
+    minify_js_path = Path('build') / 'static' / 'scripts.min.js'
+    assert not minify_js_path.exists()
 
-    # When preview starts combined.min.js should be created
+    # When preview starts scripts.min.js and style.min.css will be created
     with (
         run_preview(run_start, args) as base_url,
         requests.Session() as session,
     ):
-        assert combined_js_path.exists()
-        assert combined_css_path.exists()
+        assert minify_js_path.exists()
+        assert minify_css_path.exists()
         for status, url in urls:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == status
+            assert response.status_code == status, url
 
 
 def test_preview_no_css_minify_js_minify(run_start: CliRunner) -> None:
     args = ['--no-css-minify', '--js-minify']
     urls = (
-        (404, '/static/combined.min.css'),
-        (200, '/static/combined.min.js'),
+        (200, '/static/style.css'),
+        (404, '/static/style.min.css'),
+        (200, '/static/scripts.min.js'),
+        (404, '/static/scripts.js'),
     )
     js_path = Path('static') / 'scripts.js'
     js_path.write_text('document.getElementsByTagName("body");')
 
-    combined_js_path = Path('static') / 'combined.min.js'
-    combined_css_path = Path('static') / 'combined.min.css'
-    assert not combined_js_path.exists()
-    assert not combined_css_path.exists()
+    css_path = Path('static') / 'style.css'
+    assert css_path.exists()
+
+    minified_js_path = Path('build') / 'static' / 'scripts.min.js'
+    minified_css_path = Path('build') / 'static' / 'style.min.css'
+    assert not minified_js_path.exists()
+    assert not minified_css_path.exists()
 
     with (
         run_preview(run_start, args) as base_url,
         requests.Session() as session,
     ):
-        assert combined_js_path.exists()
-        assert not combined_css_path.exists()
+        assert minified_js_path.exists()
+        assert not minified_css_path.exists()
         for status, url in urls:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == status
+            assert response.status_code == status, url
 
 
 def test_preview_css_minify_no_js_minify(run_start: CliRunner) -> None:
     args = ['--css-minify', '--no-js-minify']
     urls = (
-        (200, '/static/combined.min.css'),
-        (404, '/static/combined.min.js'),
+        (404, '/static/style.css'),
+        (200, '/static/style.min.css'),
+        (404, '/static/scripts.min.js'),
+        (200, '/static/scripts.js'),
     )
+    js_path = Path('static') / 'scripts.js'
+    js_path.write_text('document.getElementsByTagName("body");')
     with (
         run_preview(run_start, args) as base_url,
         requests.Session() as session,
     ):
         for status, url in urls:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == status
+            assert response.status_code == status, url
 
 
 def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
     args = ['--no-css-minify', '--no-js-minify']
     urls = (
-        (404, '/static/combined.min.css'),
-        (404, '/static/combined.min.js'),
+        (200, '/static/style.css'),
+        (200, '/static/new.js'),
+        (404, '/static/style.min.css'),
+        (404, '/static/new.min.js'),
     )
+    js_path = Path('static') / 'new.js'
+    js_path.write_text('document.getElementsByTagName("body");')
     with (
         run_preview(run_start, args) as base_url,
         requests.Session() as session,
     ):
         for status, url in urls:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == status
+            assert response.status_code == status, url
 
 
 @pytest.mark.parametrize('static_dir', [
@@ -188,7 +203,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
         # Ensure directory exists
         Path(static_dir).mkdir(exist_ok=True)
 
-    url = '/static/combined.min.css'
+    url = '/static/style.min.css'
     new_style = 'p {color: red;}'
     expected = new_style.replace(' ', '').replace(';', '')
     css_path = Path(static_dir) / 'style.css'
@@ -260,7 +275,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
         # Create file to test modified files update
         js_path.write_text('document.getElementByTagName("div")')
 
-    url = '/static/combined.min.js'
+    url = '/static/script.min.js'
     expected = 'document.getElementByTagName("body")'
 
     with (
@@ -309,7 +324,7 @@ def test_preview_js_modified_but_no_changes(run_start: CliRunner) -> None:
     # Create file to test modified files update
     js_path.write_text('document.getElementByTagName("div")')
 
-    url = '/static/combined.min.js'
+    url = '/static/script.min.js'
     with (
         run_preview(run_start) as base_url,
         requests.Session() as session,
@@ -565,11 +580,11 @@ def test_preview_drafts(run_start: CliRunner) -> None:
     ):
         for status, url in urls:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == status
+            assert response.status_code == status, url
 
         for url in not_in:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == success
+            assert response.status_code == success, url
             assert 'Example Post' not in response.text
 
     # drafts should appear
@@ -580,11 +595,11 @@ def test_preview_drafts(run_start: CliRunner) -> None:
     ):
         for _status, url in urls:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == success
+            assert response.status_code == success, url
 
         for url in not_in:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == success
+            assert response.status_code == success, url
             assert 'Example Post' in response.text
 
     set_example_to_draft_build()
@@ -606,11 +621,11 @@ def test_preview_drafts(run_start: CliRunner) -> None:
     ):
         for status, url in urls:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == status
+            assert response.status_code == status, url
 
         for url in not_in:
             response = http_get(base_url + url, session=session)
-            assert response.status_code == success
+            assert response.status_code == success, url
             assert 'Example Post' not in response.text
 
 
@@ -629,48 +644,38 @@ def test_preview_when_static_folder_does_not_exist(
     with run_preview(run_start) as base_url:
         assert static_path.exists() is False
         response = http_get(base_url)
-        assert response.status_code == success
+        assert response.status_code == success, base_url
 
 
-def test_preview_when_combined_js_exists(run_start: CliRunner) -> None:
-    combined_path = Path('static') / 'combined.min.js'
+def test_preview_when_minified_js_exists(run_start: CliRunner) -> None:
+    minified_path = Path('static') / 'new.min.js'
 
-    atomic_write(combined_path, 'document.getElementByTagName("body");')
+    atomic_write(minified_path, 'document.getElementByTagName("body");')
 
     new_path = Path('static') / 'new.js'
     new_js = 'console.log("new");'
     atomic_write(new_path, new_js)
 
-    url = '/static/combined.min.js'
+    url = '/static/new.min.js'
     success = 200
     with run_preview(run_start) as base_url:
         response = http_get(base_url + url)
-        assert response.status_code == success
-        assert new_js in response.text
-
-    # invoke again will exit combine_and_minify_js() early
-    # since there is no change
-    url = '/static/combined.min.js'
-    success = 200
-    with run_preview(run_start) as base_url:
-        response = http_get(base_url + url)
-        assert response.status_code == success
+        assert response.status_code == success, url
         assert new_js in response.text
 
 
 def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     event = threading.Event()
+    static_path = Path('static')
     static_handler = preview_module.StaticHandler(
         event,
-        [],
-        Path('static'),
-        css_minify=True,
-        js_minify=True,
+        minify_css_dir=static_path,
+        minify_js_dir=static_path,
     )
 
-    # Add new file to combined.min.css
+    # Add new file to minify
     new_css = 'body { background-color: aqua;}'
-    new_css_path = Path('static') / 'new.css'
+    new_css_path = static_path / 'new.css'
     atomic_write(new_css_path, new_css)
 
     css_file_event = FileModifiedEvent(
@@ -711,6 +716,17 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
         is_synthetic=True,
     )
     static_handler.on_created(created_dir_event)
+    assert not event.is_set()
+
+    # Test SVG file
+    new_svg_path = Path('static') / 'new.svg'
+    new_svg_path.touch()
+    svg_file_event = FileModifiedEvent(
+        str(new_svg_path),
+        '',
+        is_synthetic=True,
+    )
+    static_handler.on_modified(svg_file_event)
     assert not event.is_set()
 
 
@@ -768,7 +784,7 @@ def test_favicon(run_start: CliRunner) -> None:
     success = 200
     with run_preview(run_start) as base_url:
         response = http_get(base_url + url)
-    assert response.status_code == success
+    assert response.status_code == success, url
     assert response.headers['Content-Type'] == 'image/svg+xml; charset=utf-8'
     assert len(response.content) > 0
     svg_content = (Path('static') / 'favicon.svg').read_bytes()

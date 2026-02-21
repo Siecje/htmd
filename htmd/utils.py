@@ -56,79 +56,69 @@ def create_directory(name: str) -> Path:
     return directory
 
 
-def combine_and_minify_css(static_folder: Path) -> bool:
-    # Combine and minify all .css files in the static folder
-    try:
-        css_files = sorted([
-            f
-            for f in static_folder.iterdir()
-            if (
-                f.suffix == '.css'
-                and f.name != 'combined.min.css'
-            )
-        ])
-    except FileNotFoundError:
-        # static folder does not exist
-        return False
+def get_static_files(directory: Path, extension: str) -> list[Path]:
+    """
+    Return static file paths for a given extension.
 
-    if not css_files:
-        # There are no .css files in the static folder
-        return False
+    Searches recursively in `directory` for a given
+    `extension` (e.g., '.css'), excluding files that end in '.min'
+    (e.g., '.min.css').
+    """
+    # Ensure extension starts with a dot
+    if not extension.startswith('.'):
+        extension = f'.{extension}'
 
-    # combine all .css files into one string
-    file_contents = [f.read_text() for f in css_files]
-    combined_str = '\n'.join(file_contents)
+    min_ext = f'.min{extension}'
 
-    dst_path = static_folder / 'combined.min.css'
+    # rglob("*") finds all files in directory and subdirectories
+    # filter for files that match the extension but NOT the minified extension
+    files = [
+        p
+        for p in directory.rglob(f'*{extension}')
+        if p.is_file() and not p.name.endswith(min_ext)
+    ]
 
-    try:
-        current_combined = dst_path.read_text()
-    except FileNotFoundError:
-        current_combined = ''
-
-    new_combined = compress(combined_str)
-    if new_combined == current_combined:
-        return False
-
-    atomic_write(dst_path, new_combined)
-    return True
+    return sorted(files)
 
 
-def combine_and_minify_js(static_folder: Path) -> bool:
-    # Combine and minify all .js files in the static folder
-    try:
-        js_files = sorted([
-            f
-            for f in static_folder.iterdir()
-            if (
-                f.suffix == '.js'
-                and f.name != 'combined.min.js'
-            )
-        ])
-    except FileNotFoundError:
-        # static folder does not exist
-        return False
+def minify_css_file(file_path: Path, dst_dir: Path) -> Path:
+    text = file_path.read_text()
+    minified_text = compress(text)
+    file_name = file_path.name.replace('.css', '.min.css')
+    dst = dst_dir / file_name
+    atomic_write(dst, minified_text)
+    return dst
 
-    if not js_files:
-        # There are no .js files in the static folder
-        return False
 
-    # combine all .js files into one string
-    file_contents = [f.read_text() for f in js_files]
-    combined_str = '\n'.join(file_contents)
+def minify_js_file(file_path: Path, dst_dir: Path) -> Path:
+    text = file_path.read_text()
+    minified_text = jsmin(text)
+    file_name = file_path.name.replace('.js', '.min.js')
+    dst = dst_dir / file_name
+    atomic_write(dst, minified_text)
+    return dst
 
-    dst_path = static_folder / 'combined.min.js'
-    try:
-        current_combined = dst_path.read_text()
-    except FileNotFoundError:
-        current_combined = ''
 
-    new_combined = jsmin(combined_str)
-    if new_combined == current_combined:
-        return False
+def minify_css_files(
+    source_files: list[Path],
+    destination_folder: Path,
+) -> list[str]:
+    minified_files = []
+    for css_file in source_files:
+        full_path = minify_css_file(css_file, destination_folder)
+        minified_files.append(full_path.name)
+    return minified_files
 
-    atomic_write(dst_path, new_combined)
-    return True
+
+def minify_js_files(
+    source_files: list[Path],
+    destination_folder: Path,
+) -> list[str]:
+    minified_files = []
+    for js_file in source_files:
+        full_path = minify_js_file(js_file, destination_folder)
+        minified_files.append(full_path.name)
+    return minified_files
 
 
 def copy_file(source: Path, destination: Path) -> None:

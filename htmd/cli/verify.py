@@ -8,8 +8,12 @@ from ..utils import validate_post
 
 
 @click.command('verify', short_help='Verify posts formatting is correct.')
-def verify() -> Flask:
-    app = site.create_app()
+@click.pass_context
+def verify(ctx: click.Context) -> Flask:
+    ctx.ensure_object(dict)
+    app: Flask = ctx.obj.get('flask_app')
+    if app is None:
+        app = site.create_app()
 
     correct = True
     required_fields = ['title']

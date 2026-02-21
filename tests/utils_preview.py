@@ -47,23 +47,22 @@ def _make_test_webserver(  # noqa: PLR0913
 
 
 def _wrapped_invoke(
-    runner: CliRunner,
     cmd: click.Command,
     args: list[str],
     result_future: Future[None],
 ) -> None:
     """Run Click and capture exceptions for the main thread."""
     try:
-        runner.invoke(cmd, args, catch_exceptions=False)
+        cmd.main(args=args, standalone_mode=False)
         if not result_future.done():  # pragma: no cover
             result_future.set_result(None)
-    except Exception as e:  # noqa: BLE001  # pragma: no cover
+    except BaseException as e:  # noqa: BLE001  # pragma: no cover
         result_future.set_exception(e)
 
 
 @contextmanager
 def run_preview(
-    runner: CliRunner,
+    runner: CliRunner,  # noqa: ARG001
     args: list[str] | None = None,
     *,
     threaded:  bool = False,
@@ -115,7 +114,7 @@ def run_preview(
         preview_result: Future[None] = Future()
         thread = threading.Thread(
             target=_wrapped_invoke,
-            args=(runner, preview_module.preview, args, preview_result),
+            args=(preview_module.preview, args, preview_result),
             daemon=True,
         )
         thread.start()

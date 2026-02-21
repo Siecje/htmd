@@ -8,6 +8,7 @@
     - The UUID will not change on `htmd build`.
 - `htmd preview` will set UUIDs for new draft build posts
 - `htmd preview` will populate password field for protected posts
+- Add `--minify-css/--no-minify-css` and `--minify-js/--no-minify-js` to `html preview` and `html build`.
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs
@@ -19,6 +20,8 @@
 - Show date on post page when there is no author
 - Show drafts without published during `htmd preview --drafts`
     - Date in URL will be the current date
+- Instead of one combined file with every CSS file each .css file will be added to the template
+- Instead of one combined file with every JavaScript file each .js file will be added to the template
 ### Fixed
 - Protected post subtitles are encrypted
 - Hide protected post data on list pages
@@ -36,6 +39,9 @@
     - `post` -> `posts.post`
     - `tag` -> `posts.tag`
     - `year_view` -> `posts.year_view`
+- Remove `INCLUDE_CSS`
+- Remove `INCLUDE_JS`
+- Remove combined.min.css and combined.min.js from static directory
 
 ## [6.1.0] - 2025-12-20
 ### Added

@@ -40,7 +40,7 @@ def test_build_js_minify(run_start: CliRunner) -> None:
     assert re.search(SUCCESS_REGEX, result.output)
     assert result.exit_code == 0
     contents = (Path('build') / 'index.html').read_text()
-    assert 'combined.min.js' in contents
+    assert 'app.min.js' in contents
 
 
 def test_build_js_minify_no_js_files(run_start: CliRunner) -> None:
@@ -56,16 +56,29 @@ def test_build_no_js_minify(run_start: CliRunner) -> None:
 
 
 def test_build_css_minify(run_start: CliRunner) -> None:
+    css_source_files = [
+        file.name
+        for file in (Path('static')).iterdir()
+        if file.suffix == '.css'
+    ]
+    assert sorted(css_source_files) == ['_reset.css', 'style.css']
     result = run_start.invoke(build, ['--css-minify'])
     contents = (Path('build') / 'index.html').read_text()
     assert result.exit_code == 0
     assert re.search(SUCCESS_REGEX, result.output)
-    assert 'combined.min.css' in contents
-    # combined.min.css is used instead of style.css
-    static_build_files = [
-        file.name for file in (Path('build') / 'static').iterdir()]
-    assert 'combined.min.css' in static_build_files
-    assert 'style.css' not in static_build_files
+    assert 'style.min.css' in contents
+    assert 'style.css' not in contents
+
+    css_build_files = [
+        file.name
+        for file in (Path('build') / 'static').iterdir()
+        if file.suffix == '.css'
+    ]
+    assert sorted(css_build_files) == [
+        '_reset.min.css',
+        'pygments.css',
+        'style.min.css',
+    ]
 
 
 def test_build_no_css_minify(run_start: CliRunner) -> None:

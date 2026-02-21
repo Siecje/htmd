@@ -1,4 +1,3 @@
-from pathlib import Path
 import sys
 import warnings
 
@@ -6,8 +5,6 @@ import click
 
 from .. import site
 from ..utils import (
-    combine_and_minify_css,
-    combine_and_minify_js,
     send_stderr,
     sync_posts,
 )
@@ -20,31 +17,32 @@ warnings.filterwarnings('ignore', '.*Nothing frozen for endpoints.*')
 @click.command('build', short_help='Create static version of the site.')
 @click.pass_context
 @click.option(
-    '--css-minify/--no-css-minify',
+    '--minify-css', '--css-minify',
+    '/--no-minify-css', '--no-css-minify',
     default=True,
     help='If CSS should be minified',
+    is_flag=True,
+    show_default=True,
 )
 @click.option(
-    '--js-minify/--no-js-minify',
+    '--minify-js', '--js-minify',
+    '/--no-minify-js', '--no-js-minify',
     default=True,
     help='If JavaScript should be minified',
+    is_flag=True,
+    show_default=True,
 )
 def build(
     ctx: click.Context,
     *,
-    css_minify: bool,
-    js_minify: bool,
+    minify_css: bool,
+    minify_js: bool,
 ) -> None:
-    app = ctx.invoke(verify)
+    app = site.create_app(minify_css=minify_css, minify_js=minify_js)
+    ctx.ensure_object(dict)
+    ctx.obj['flask_app'] = app
+    ctx.invoke(verify)
     # If verify fails sys.exit(1) will run
-
-    assert app.static_folder is not None
-    static_path = Path(app.static_folder)
-    if css_minify and combine_and_minify_css(static_path):
-        app.config['INCLUDE_CSS'] = app.jinja_env.globals['INCLUDE_CSS'] = True
-
-    if js_minify and combine_and_minify_js(static_path):
-        app.config['INCLUDE_JS'] = app.jinja_env.globals['INCLUDE_JS'] = True
 
     sync_posts(app)
 

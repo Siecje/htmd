@@ -1,9 +1,15 @@
 from pathlib import Path
 import uuid
 
+from click.testing import CliRunner
 from flask import Flask
 from flask_flatpages import Page
-from htmd.utils import atomic_write, set_post_metadata, validate_post
+from htmd.utils import (
+    atomic_write,
+    get_static_files,
+    set_post_metadata,
+    validate_post,
+)
 import pytest
 
 
@@ -178,3 +184,11 @@ def test_validate_post_invalid_draft_value(
         + 'It must be True, False, "build", or "build|<UUID4>".\n'
     )
     assert expected == capsys.readouterr().err
+
+
+def test_get_static_files_no_dot_in_extension(
+    run_start: CliRunner,  # noqa: ARG001
+) -> None:
+    static_files = get_static_files(Path('static'), 'css')
+    expected = ['_reset.css', 'style.css']
+    assert [file.name for file in static_files] == expected

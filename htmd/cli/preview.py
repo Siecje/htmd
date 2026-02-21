@@ -24,8 +24,11 @@ from werkzeug.serving import BaseWSGIServer, make_server
 
 from .. import site
 from ..utils import (
-    combine_and_minify_css,
-    combine_and_minify_js,
+    get_static_files,
+    minify_css_file,
+    minify_css_files,
+    minify_js_file,
+    minify_js_files,
     sync_posts,
     validate_post,
 )
@@ -112,16 +115,12 @@ class StaticHandler(BaseHandler):
     def __init__(
         self,
         event: threading.Event,
-        skips: list[str],
-        static_directory: Path,
-        *,
-        css_minify: bool,
-        js_minify: bool,
+        minify_css_dir: Path | None,
+        minify_js_dir: Path | None,
     ) -> None:
-        super().__init__(event, skips)
-        self.static_directory = static_directory
-        self.css_minify = css_minify
-        self.js_minify = js_minify
+        super().__init__(event)
+        self.minify_css_dir = minify_css_dir
+        self.minify_js_dir = minify_js_dir
 
     def handle_file(
         self,
@@ -131,20 +130,20 @@ class StaticHandler(BaseHandler):
     ) -> None:
         if (
             file_path.suffix == '.css'
-            and self.css_minify
-            and combine_and_minify_css(self.static_directory)
+            and '.min.css' not in file_path.name
+            and self.minify_css_dir
         ):
+            minify_path = minify_css_file(file_path, self.minify_css_dir)
             self.event.set()
-            dst_css = 'combined.min.css'
-            click.echo(f'Changes in {file_path.name}. Recreating {dst_css}...')
+            click.echo(f'Changes in {file_path.name}. Creating {minify_path}...')
         elif (
             file_path.suffix == '.js'
-            and self.js_minify
-            and combine_and_minify_js(self.static_directory)
+            and '.min.js' not in file_path.name
+            and self.minify_js_dir
         ):
+            minify_path = minify_js_file(file_path, self.minify_js_dir)
             self.event.set()
-            dst_js = 'combined.min.js'
-            click.echo(f'Changes in {file_path.name}. Recreating {dst_js}...')
+            click.echo(f'Changes in {file_path.name}. Creating {minify_path}...')
 
 
 class PostsCreatedHandler(BaseHandler):
@@ -171,17 +170,11 @@ class PostsCreatedHandler(BaseHandler):
         click.echo(f'Post {action} {file_path.name}.')
 
 
-def watch_disk(  # noqa: PLR0913
+def watch_disk(
     exit_event: threading.Event,
     start_event: threading.Event,
     refresh_event: threading.Event,
-    # Static
-    static_folder: str,
-    css_minify: bool,  # noqa: FBT001
-    js_minify: bool,  # noqa: FBT001
-    # Posts
     app: Flask,
-    posts_path: Path,
 ) -> None:
     """
     Watch static and posts folders for changes.
@@ -195,27 +188,33 @@ def watch_disk(  # noqa: PLR0913
         exit_event: Event to signal thread to exit.
         start_event: Event to signal thread has started.
         refresh_event: Event to signal browser refresh.
-        static_folder: Path to static files.
-        css_minify: Whether to minify CSS on changes.
-        js_minify: Whether to minify JS on changes.
         app: Flask application instance.
-        posts_path: Path to posts files.
 
     """
-    static_directory = Path(static_folder)
+    minify_css = app.config['MINIFY_CSS']
+    minify_js = app.config['MINIFY_JS']
+    assert app.static_folder is not None
+    static_directory = Path(app.static_folder)
+    if minify_css:
+        minify_css_dir = app.config.get('static_dir_css', static_directory)
+    else:
+        minify_css_dir = None
+    if minify_js:
+        minify_js_dir = app.config.get('static_dir_js', static_directory)
+    else:
+        minify_js_dir = None
+
+    posts_path = app.config['FLATPAGES_ROOT']
 
     observer = Observer()
     observer.daemon = True
 
     try:
         if static_directory.exists():
-            skips = ['combined.min.css', 'combined.min.js']
             static_handler = StaticHandler(
                 refresh_event,
-                skips,
-                static_directory,
-                css_minify=css_minify,
-                js_minify=js_minify,
+                minify_css_dir,
+                minify_js_dir,
             )
             observer.schedule(
                 static_handler,
@@ -238,10 +237,12 @@ def watch_disk(  # noqa: PLR0913
         posts = app.extensions['flatpages'][None]
         posts.reload()
         sync_posts(app)
-        if css_minify:
-            combine_and_minify_css(static_directory)
-        if js_minify:
-            combine_and_minify_js(static_directory)
+        if minify_css:
+            files_css = get_static_files(static_directory, '.css')
+            minify_css_files(files_css, minify_css_dir)
+        if minify_js:
+            files_js = get_static_files(static_directory, '.js')
+            minify_js_files(files_js, minify_js_dir)
         start_event.set()
 
         while not exit_event.is_set():
@@ -297,33 +298,53 @@ def exit_if_parent_pid_changes() -> None:
     help='Port on which to serve the files.',
 )
 @click.option(
-    '--css-minify/--no-css-minify',
-    default=True,
-    help='If CSS should be minified',
-)
-@click.option(
-    '--js-minify/--no-js-minify',
-    default=True,
-    help='If JavaScript should be minified',
-)
-@click.option(
     '--drafts',
     default=False,
     help='Show draft posts in the preview.',
     is_flag=True,
 )
+@click.option(
+    '--minify-css/--no-minify-css',
+    default=True,
+    help='If CSS should be minified',
+    is_flag=True,
+    show_default=True,
+)
+@click.option(
+    '--css-minify/--no-css-minify',
+    'minify_css',
+    default=None,
+    help='Alias for --minify-css/--no-minify-css',
+)
+@click.option(
+    '--minify-js/--no-minify-js',
+    default=True,
+    help='If JavaScript should be minified',
+    is_flag=True,
+    show_default=True,
+)
+@click.option(
+    '--js-minify/--no-js-minify',
+    'minify_js',
+    default=None,
+    help='Alias for --minify-js/--no-minify-js',
+)
 def preview(
     host: str,
     port: int,
     *,
-    css_minify: bool,
-    js_minify: bool,
     drafts: bool,
+    minify_css: bool,
+    minify_js: bool,
 ) -> None:
     stop_event = create_stop_event()
     set_stop_event_on_signal(stop_event)
 
-    app = site.create_app(show_drafts=drafts)
+    app = site.create_app(
+        show_drafts=drafts,
+        minify_css=minify_css,
+        minify_js=minify_js,
+    )
 
     ##
     # Thread: Watchdog on file changes
@@ -338,13 +359,7 @@ def preview(
             stop_event,
             watch_thread_started,
             refresh_event,
-            # static files
-            app.static_folder,
-            css_minify,
-            js_minify,
-            # posts files
             app,
-            app.config['FLATPAGES_ROOT'],
         ),
         daemon=True,
     )

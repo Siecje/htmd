@@ -27,8 +27,10 @@
     {% endif %}
   {% endblock meta_tags %}
   {% block styles %}
-    {% if INCLUDE_CSS %}
-      <link href="{{ url_for('static', filename='combined.min.css') }}" rel="stylesheet" type="text/css">
+    {% if MINIFY_CSS %}
+      {% for css_file in FILES_CSS %}
+        <link href="{{ url_for('static', filename=css_file) }}" rel="stylesheet">
+      {% endfor %}
     {% endif %}
     <link href="{{ url_for('main.pygments_css') }}" rel="stylesheet">
   {% endblock styles %}
@@ -63,8 +65,10 @@
     </footer>
   </div>
   {% block scripts %}
-    {% if INCLUDE_JS %}
-      <script src="{{ url_for('static', filename='combined.min.js') }}"></script>
+    {% if MINIFY_JS %}
+      {% for js_file in FILES_JS %}
+        <script src="{{ url_for('static', filename=js_file) }}"></script>
+      {% endfor %}
     {% endif %}
     {% if PREVIEW %}
       <script>

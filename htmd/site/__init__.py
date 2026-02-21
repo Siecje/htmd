@@ -3,9 +3,11 @@ import sys
 import tomllib
 import typing
 
-from flask import Flask
+from flask import current_app, Flask, send_from_directory
+from flask.typing import ResponseReturnValue
 from jinja2 import ChoiceLoader, FileSystemLoader
 
+from ..utils import get_static_files, minify_css_files, minify_js_files
 from .freezer import freeze_bp, freezer
 from .main import main_bp
 from .pages import pages
@@ -26,12 +28,36 @@ def get_project_dir() -> Path:
     return current_directory
 
 
-def create_app(*, show_drafts: bool = False) -> Flask:
+def custom_static(filename: str) -> ResponseReturnValue:
+    assert current_app.static_folder is not None
+    suffix = Path(filename).suffix
+    if suffix == '.css':
+        directory = current_app.config.get('static_dir_css', current_app.static_folder)
+    elif suffix == '.js':
+        directory = current_app.config.get('static_dir_js', current_app.static_folder)
+    else:
+        directory = current_app.static_folder
+    return send_from_directory(directory, filename)
+
+
+def create_app(  # noqa: PLR0915
+    *,
+    show_drafts: bool = False,
+    minify_css: bool = True,
+    minify_js: bool = True,
+) -> Flask:
     this_dir = Path(__file__).parent
     app = Flask(
         __name__,
+        # To prevent default static endpoint from being added to app
+        static_folder=None,
         # default templates
         template_folder=this_dir / '..' / 'example_site' / 'templates',
+    )
+    app.add_url_rule(
+        '/static/<path:filename>',
+        endpoint='static',
+        view_func=custom_static,
     )
     app.register_blueprint(freeze_bp)
     app.register_blueprint(main_bp)
@@ -94,16 +120,6 @@ def create_app(*, show_drafts: bool = False) -> Flask:
     app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', '.hg*']
     app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
 
-    if Path(app.static_folder).is_dir():
-        app.config['INCLUDE_CSS'] = (
-            Path(app.static_folder) / 'combined.min.css').exists()
-        app.config['INCLUDE_JS'] = (
-            Path(app.static_folder) / 'combined.min.js').exists()
-    else:
-        # During testing they can be True from a previous test
-        app.config['INCLUDE_CSS'] = False
-        app.config['INCLUDE_JS'] = False
-
     # Without clearing the cache tests will use templates from the first test
     # Even when the template folder and jinja_loader has changed
     app.jinja_env.cache = {}
@@ -112,6 +128,31 @@ def create_app(*, show_drafts: bool = False) -> Flask:
     # to be used in templates
     for key in app.config:
         app.jinja_env.globals[key] = app.config[key]
+
+    css_paths = get_static_files(Path(app.static_folder), '.css')
+    if minify_css:
+        static_source_dir = project_dir / app.config['BUILD_FOLDER'] / 'static'
+        static_source_dir.mkdir(parents=True, exist_ok=True)
+        app.config['static_dir_css'] = static_source_dir
+        files_css = minify_css_files(css_paths, static_source_dir)
+    else:
+        files_css = [str(path) for path in css_paths]
+
+    js_paths = get_static_files(Path(app.static_folder), '.js')
+    if minify_js:
+        static_source_dir = project_dir / app.config['BUILD_FOLDER'] / 'static'
+        static_source_dir.mkdir(parents=True, exist_ok=True)
+        app.config['static_dir_js'] = static_source_dir
+        files_js = minify_js_files(js_paths, static_source_dir)
+    else:
+        files_js = [str(path) for path in js_paths]
+
+    app.jinja_env.globals['FILES_CSS'] = files_css
+    app.jinja_env.globals['FILES_JS'] = files_js
+    app.config['MINIFY_CSS'] = minify_css
+    app.config['MINIFY_JS'] = minify_js
+    app.jinja_env.globals['MINIFY_CSS'] = app.config['MINIFY_CSS']
+    app.jinja_env.globals['MINIFY_JS'] = app.config['MINIFY_JS']
 
     favicon_path = Path(app.static_folder) / 'favicon.svg'
     app.jinja_env.globals['INCLUDE_DEFAULT_FAVICON'] = favicon_path.is_file()
