@@ -81,43 +81,63 @@ def get_static_files(directory: Path, extension: str) -> list[Path]:
     return sorted(files)
 
 
-def minify_css_file(file_path: Path, dst_dir: Path) -> Path:
+def minify_css_file(src_root: Path, file_path: Path, dst_root: Path) -> Path:
     text = file_path.read_text()
     minified_text = compress(text)
-    file_name = file_path.name.replace('.css', '.min.css')
-    dst = dst_dir / file_name
+    # compute path of file relative to source root
+    rel = file_path.relative_to(src_root)
+    rel = rel.with_name(rel.name.replace('.css', '.min.css'))
+    dst = dst_root / rel
+    dst.parent.mkdir(parents=True, exist_ok=True)
     atomic_write(dst, minified_text)
     return dst
 
 
-def minify_js_file(file_path: Path, dst_dir: Path) -> Path:
+def minify_js_file(src_root: Path, file_path: Path, dst_root: Path) -> Path:
     text = file_path.read_text()
     minified_text = jsmin(text)
-    file_name = file_path.name.replace('.js', '.min.js')
-    dst = dst_dir / file_name
+    # compute path of file relative to source root
+    rel = file_path.relative_to(src_root)
+    rel = rel.with_name(rel.name.replace('.js', '.min.js'))
+    dst = dst_root / rel
+    dst.parent.mkdir(parents=True, exist_ok=True)
     atomic_write(dst, minified_text)
     return dst
 
 
 def minify_css_files(
+    source_root_folder: Path,
     source_files: list[Path],
-    destination_folder: Path,
+    destination_root_folder: Path,
 ) -> list[str]:
     minified_files = []
     for css_file in source_files:
-        full_path = minify_css_file(css_file, destination_folder)
-        minified_files.append(full_path.name)
+        full_path = minify_css_file(
+            source_root_folder,
+            css_file,
+            destination_root_folder,
+        )
+        # record path relative to destination root (preserves subdirs)
+        rel = full_path.relative_to(destination_root_folder)
+        minified_files.append(rel.as_posix())
     return minified_files
 
 
 def minify_js_files(
+    source_root_folder: Path,
     source_files: list[Path],
-    destination_folder: Path,
+    destination_root_folder: Path,
 ) -> list[str]:
     minified_files = []
     for js_file in source_files:
-        full_path = minify_js_file(js_file, destination_folder)
-        minified_files.append(full_path.name)
+        full_path = minify_js_file(
+            source_root_folder,
+            js_file,
+            destination_root_folder,
+        )
+        # record path relative to destination root (preserves subdirs)
+        rel = full_path.relative_to(destination_root_folder)
+        minified_files.append(rel.as_posix())
     return minified_files
 
 

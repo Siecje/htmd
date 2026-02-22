@@ -115,10 +115,12 @@ class StaticHandler(BaseHandler):
     def __init__(
         self,
         event: threading.Event,
+        static_directory: Path,
         minify_css_dir: Path | None,
         minify_js_dir: Path | None,
     ) -> None:
         super().__init__(event)
+        self.static_directory = static_directory
         self.minify_css_dir = minify_css_dir
         self.minify_js_dir = minify_js_dir
 
@@ -133,7 +135,11 @@ class StaticHandler(BaseHandler):
             and '.min.css' not in file_path.name
             and self.minify_css_dir
         ):
-            minify_path = minify_css_file(file_path, self.minify_css_dir)
+            minify_path = minify_css_file(
+                self.static_directory,
+                file_path,
+                self.minify_css_dir,
+            )
             self.event.set()
             click.echo(f'Changes in {file_path.name}. Creating {minify_path}...')
         elif (
@@ -141,7 +147,11 @@ class StaticHandler(BaseHandler):
             and '.min.js' not in file_path.name
             and self.minify_js_dir
         ):
-            minify_path = minify_js_file(file_path, self.minify_js_dir)
+            minify_path = minify_js_file(
+                self.static_directory,
+                file_path,
+                self.minify_js_dir,
+            )
             self.event.set()
             click.echo(f'Changes in {file_path.name}. Creating {minify_path}...')
 
@@ -213,6 +223,7 @@ def watch_disk(
         if static_directory.exists():
             static_handler = StaticHandler(
                 refresh_event,
+                static_directory,
                 minify_css_dir,
                 minify_js_dir,
             )
@@ -239,10 +250,10 @@ def watch_disk(
         sync_posts(app)
         if minify_css:
             files_css = get_static_files(static_directory, '.css')
-            minify_css_files(files_css, minify_css_dir)
+            minify_css_files(static_directory, files_css, minify_css_dir)
         if minify_js:
             files_js = get_static_files(static_directory, '.js')
-            minify_js_files(files_js, minify_js_dir)
+            minify_js_files(static_directory, files_js, minify_js_dir)
         start_event.set()
 
         while not exit_event.is_set():

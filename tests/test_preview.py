@@ -669,6 +669,7 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     static_path = Path('static')
     static_handler = preview_module.StaticHandler(
         event,
+        static_path,
         minify_css_dir=static_path,
         minify_js_dir=static_path,
     )

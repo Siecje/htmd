@@ -129,12 +129,17 @@ def create_app(  # noqa: PLR0915
     for key in app.config:
         app.jinja_env.globals[key] = app.config[key]
 
-    css_paths = get_static_files(Path(app.static_folder), '.css')
+    static_src_root = Path(app.static_folder)
+    css_paths = get_static_files(static_src_root, '.css')
     if minify_css:
         static_source_dir = project_dir / app.config['BUILD_FOLDER'] / 'static'
         static_source_dir.mkdir(parents=True, exist_ok=True)
         app.config['static_dir_css'] = static_source_dir
-        files_css = minify_css_files(css_paths, static_source_dir)
+        files_css = minify_css_files(
+            static_src_root,
+            css_paths,
+            static_source_dir,
+        )
     else:
         files_css = [str(path) for path in css_paths]
 
@@ -143,7 +148,11 @@ def create_app(  # noqa: PLR0915
         static_source_dir = project_dir / app.config['BUILD_FOLDER'] / 'static'
         static_source_dir.mkdir(parents=True, exist_ok=True)
         app.config['static_dir_js'] = static_source_dir
-        files_js = minify_js_files(js_paths, static_source_dir)
+        files_js = minify_js_files(
+            static_src_root,
+            js_paths,
+            static_source_dir,
+        )
     else:
         files_js = [str(path) for path in js_paths]
 

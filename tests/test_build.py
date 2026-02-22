@@ -516,3 +516,31 @@ def test_post_without_published_and_without_author(
         not in contents
     )
     assert '<span class="meta">' not in contents
+
+
+def test_build_static_keeps_subdirs_js(run_start: CliRunner) -> None:
+    subdir_name = 'js'
+    src_dir = Path('static') / subdir_name
+    src_dir.mkdir()
+    src_path = Path('static') / subdir_name / 'app.js'
+    src_path.write_text('console.log("htmd");')
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0, result.output
+
+    dst_dir = Path('build') / 'static' / subdir_name / 'app.min.js'
+    assert dst_dir.exists()
+
+
+def test_build_static_keeps_subdirs_css(run_start: CliRunner) -> None:
+    subdir_name = 'css'
+    src_dir = Path('static') / subdir_name
+    src_dir.mkdir()
+    src_path = Path('static') / subdir_name / 'app.css'
+    src_path.write_text('console.log("htmd");')
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0, result.output
+
+    dst_dir = Path('build') / 'static' / subdir_name / 'app.min.css'
+    assert dst_dir.exists()
