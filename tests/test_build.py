@@ -8,6 +8,7 @@ from htmd.cli.build import build
 import yaml
 
 from utils import (
+    atomic_write,
     remove_fields_from_post,
     set_config_field,
     set_example_password_value,
@@ -544,3 +545,61 @@ def test_build_static_keeps_subdirs_css(run_start: CliRunner) -> None:
 
     dst_dir = Path('build') / 'static' / subdir_name / 'app.min.css'
     assert dst_dir.exists()
+
+
+def test_build_when_minified_js_exists(run_start: CliRunner) -> None:
+    # If minified file exists in source use it without minifiying anything
+    minified_path = Path('static') / 'new.min.js'
+    min_js = 'document.getElementByTagName("body");'
+    atomic_write(minified_path, min_js)
+
+    new_path = Path('static') / 'new.js'
+    new_js = 'console.log("new");'
+    atomic_write(new_path, new_js)
+
+    run_start.invoke(build)
+    build_path = Path('build') / 'static' / 'new.min.js'
+    build_text = build_path.read_text()
+    assert build_text == min_js
+
+
+def test_build_when_minified_css_exists(run_start: CliRunner) -> None:
+    # If minified file exists in source use it without minifiying anything
+    minified_path = Path('static') / 'new.min.css'
+    min_css = 'body{background:#fff;}'
+    atomic_write(minified_path, min_css)
+
+    new_path = Path('static') / 'new.css'
+    new_css = 'body{background:#00ff;}'
+    atomic_write(new_path, new_css)
+
+    run_start.invoke(build)
+    build_path = Path('build') / 'static' / 'new.min.css'
+    build_text = build_path.read_text()
+    assert build_text == min_css
+
+
+def test_minified_name_as_folder(run_start: CliRunner) -> None:
+    minified_css_dir = Path('static') / 'new.min.css'
+    minified_css_dir.mkdir()
+
+    new_path = Path('static') / 'new.css'
+    new_css = 'body{background:#00ff;}'
+    atomic_write(new_path, new_css)
+
+    minified_js_dir = Path('static') / 'new.min.js'
+    minified_js_dir.mkdir()
+
+    new_path = Path('static') / 'new.js'
+    new_js = 'console.log("new");'
+    atomic_write(new_path, new_js)
+
+    run_start.invoke(build)
+    build_path = Path('build') / 'static' / 'new.min.css'
+    build_text = build_path.read_text()
+    expected_css = new_css.replace(';', '')
+    assert build_text == expected_css
+
+    build_path = Path('build') / 'static' / 'new.min.js'
+    build_text = build_path.read_text()
+    assert build_text == new_js

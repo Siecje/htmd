@@ -647,23 +647,6 @@ def test_preview_when_static_folder_does_not_exist(
         assert response.status_code == success, base_url
 
 
-def test_preview_when_minified_js_exists(run_start: CliRunner) -> None:
-    minified_path = Path('static') / 'new.min.js'
-
-    atomic_write(minified_path, 'document.getElementByTagName("body");')
-
-    new_path = Path('static') / 'new.js'
-    new_js = 'console.log("new");'
-    atomic_write(new_path, new_js)
-
-    url = '/static/new.min.js'
-    success = 200
-    with run_preview(run_start) as base_url:
-        response = http_get(base_url + url)
-        assert response.status_code == success, url
-        assert new_js in response.text
-
-
 def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     event = threading.Event()
     static_path = Path('static')

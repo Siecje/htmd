@@ -58,11 +58,10 @@ def create_directory(name: str) -> Path:
 
 def get_static_files(directory: Path, extension: str) -> list[Path]:
     """
-    Return static file paths for a given extension.
+    Get static files to minify and use in _layout.html.
 
-    Searches recursively in `directory` for a given
-    `extension` (e.g., '.css'), excluding files that end in '.min'
-    (e.g., '.min.css').
+    Return a sorted list of static files in `directory` (recursively) for a given
+    `extension`, preferring minified versions when present.
     """
     # Ensure extension starts with a dot
     if not extension.startswith('.'):
@@ -70,18 +69,44 @@ def get_static_files(directory: Path, extension: str) -> list[Path]:
 
     min_ext = f'.min{extension}'
 
-    # rglob("*") finds all files in directory and subdirectories
-    # filter for files that match the extension but NOT the minified extension
-    files = [
-        p
-        for p in directory.rglob(f'*{extension}')
-        if p.is_file() and not p.name.endswith(min_ext)
-    ]
+    seen = set()
+    results: list[Path] = []
 
-    return sorted(files)
+    # find all files matching either extension or min extension
+    for p in directory.rglob(f'*{extension}'):
+
+        if not p.is_file():
+            continue
+
+        # base name without any ".min" suffix and extension
+        key = (p.parent, p.stem.removesuffix('.min'))
+
+        if key in seen:
+            continue
+
+        # prefer minified version if it exists
+        min_path = p.with_name(
+            p.stem + min_ext,
+        ) if not p.stem.endswith('.min') else p
+        normal_path = p.with_name((p.stem.removesuffix('.min')) + extension)
+
+        if min_path.exists() and min_path.is_file():
+            results.append(min_path)
+        else:
+            results.append(normal_path)
+
+        seen.add(key)
+
+    return sorted(results)
+
 
 
 def minify_css_file(src_root: Path, file_path: Path, dst_root: Path) -> Path:
+    if '.min' in file_path.stem:
+        rel = file_path.relative_to(src_root)
+        dst = dst_root / rel
+        shutil.copyfile(file_path, dst)
+        return dst
     text = file_path.read_text()
     minified_text = compress(text)
     # compute path of file relative to source root
@@ -94,6 +119,11 @@ def minify_css_file(src_root: Path, file_path: Path, dst_root: Path) -> Path:
 
 
 def minify_js_file(src_root: Path, file_path: Path, dst_root: Path) -> Path:
+    if '.min' in file_path.stem:
+        rel = file_path.relative_to(src_root)
+        dst = dst_root / rel
+        shutil.copyfile(file_path, dst)
+        return dst
     text = file_path.read_text()
     minified_text = jsmin(text)
     # compute path of file relative to source root
