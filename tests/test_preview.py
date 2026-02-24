@@ -821,7 +821,7 @@ def test_sse(run_start: CliRunner) -> None:
         started.wait(timeout=10)
 
         # Trigger timeout waiting for event to be set in SSE handler
-        time.sleep(1)
+        time.sleep(1.1)
 
         # Trigger two events
         set_example_contents('Different1.')
