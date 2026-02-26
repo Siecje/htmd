@@ -1,41 +1,46 @@
 from _typeshed import Incomplete
 from io import BytesIO as BytesIO, StringIO
+from typing import Any, Type
 
-PY2: Incomplete
-WIN: Incomplete
+PY2: bool
+WIN: bool
 unichr = chr
 text_type = str
-string_types: Incomplete
-integer_types: Incomplete
-iterkeys: Incomplete
-itervalues: Incomplete
-iteritems: Incomplete
-iterlists: Incomplete
-iterlistvalues: Incomplete
-int_to_byte: Incomplete
-iter_bytes: Incomplete
+string_types: tuple[Type[Any], ...]
+integer_types: tuple[Type[Any], ...]
 
-def reraise(tp, value, tb: Incomplete | None = None) -> None: ...
+# Type everything as Any/Incomplete if it's just legacy glue
+iterkeys: Any
+itervalues: Any
+iteritems: Any
+iterlists: Any
+iterlistvalues: Any
+int_to_byte: Any
+iter_bytes: Any
 
-fix_tuple_repr: Incomplete
-implements_iterator: Incomplete
-implements_to_string: Incomplete
-implements_bool: Incomplete
-native_string_result: Incomplete
+def reraise(tp: Any, value: Any, tb: Any | None = None) -> None: ...
+
+fix_tuple_repr: Any
+implements_iterator: Any
+implements_to_string: Any
+implements_bool: Any
+native_string_result: Any
 imap = map
 izip = zip
 ifilter = filter
 range_type = range
 NativeStringIO = StringIO
 
-def make_literal_wrapper(reference): ...
-def normalize_string_tuple(tup): ...
+def make_literal_wrapper(reference: Any) -> Any: ...
+def normalize_string_tuple(tup: tuple[Any, ...]) -> tuple[str, ...]: ...
 
-try_coerce_native: Incomplete
-wsgi_get_bytes: Incomplete
+try_coerce_native: Any
+wsgi_get_bytes: Any
 
-def wsgi_decoding_dance(s, charset: str = 'utf-8', errors: str = 'replace'): ...
-def wsgi_encoding_dance(s, charset: str = 'utf-8', errors: str = 'replace'): ...
-def to_bytes(x, charset=..., errors: str = 'strict'): ...
-def to_native(x, charset=..., errors: str = 'strict'): ...
-def to_unicode(x, charset=..., errors: str = 'strict', allow_none_charset: bool = False): ...
+# The "Dancing" functions usually handle bytes/str conversion
+def wsgi_decoding_dance(s: Any, charset: str = 'utf-8', errors: str = 'replace') -> str: ...
+def wsgi_encoding_dance(s: Any, charset: str = 'utf-8', errors: str = 'replace') -> str: ...
+
+def to_bytes(x: Any, charset: Any = ..., errors: str = 'strict') -> bytes: ...
+def to_native(x: Any, charset: Any = ..., errors: str = 'strict') -> str: ...
+def to_unicode(x: Any, charset: Any = ..., errors: str = 'strict', allow_none_charset: bool = False) -> str: ...

@@ -5,10 +5,10 @@ import shutil
 
 from click.testing import CliRunner
 from htmd.cli.build import build
+from htmd.utils import atomic_write
 import yaml
 
 from utils import (
-    atomic_write,
     remove_fields_from_post,
     set_config_field,
     set_example_password_value,

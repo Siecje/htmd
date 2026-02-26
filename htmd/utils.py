@@ -389,9 +389,8 @@ def sync_posts(
         for post in _posts:
             file_updates: dict[str, str] = {}
             if 'password' in post.meta and post.meta['password'] is None:
-                _, post.meta['password'] = generate_private_key()
-                assert isinstance(post.meta['password'], str)
-                file_updates['password'] = post.meta['password']
+                _, password = generate_private_key()
+                post.meta['password'] = file_updates['password'] = password
 
             if post.meta.get('draft', False):
                 if (

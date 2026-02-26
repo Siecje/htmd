@@ -11,7 +11,7 @@ from ..utils import validate_post
 @click.pass_context
 def verify(ctx: click.Context) -> Flask:
     ctx.ensure_object(dict)
-    app: Flask = ctx.obj.get('flask_app')
+    app: Flask | None = ctx.obj.get('flask_app')
     if app is None:
         app = site.create_app()
 

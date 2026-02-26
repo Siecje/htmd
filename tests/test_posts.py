@@ -14,8 +14,8 @@ def test_Posts_without_app() -> None:  # noqa: N802
     assert posts.show_drafts is False
     # Doesn't error and can still change show_drafts
     posts.reload(show_drafts=True)
-    assert posts.show_drafts is True
     assert posts.published_posts == []
+    assert posts.show_drafts is True
 
 
 def test_post_without_tags(run_start: CliRunner) -> None:

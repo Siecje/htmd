@@ -19,7 +19,7 @@ def _make_test_webserver(  # noqa: PLR0913
     *,
     url_future: Future[str],
     preview_ready: threading.Event,
-    webserver_collector: list | None,
+    webserver_collector: list[BaseWSGIServer] | None,
 ) -> BaseWSGIServer:
     webserver = make_server(host, port, app, threaded=True)
     webserver.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -64,7 +64,7 @@ def run_preview(
     runner: CliRunner,  # noqa: ARG001
     args: list[str] | None = None,
     *,
-    webserver_collector: list | None = None,
+    webserver_collector: list[BaseWSGIServer] | None = None,
 ) -> Generator[str]:
     preview_ready = threading.Event()
 

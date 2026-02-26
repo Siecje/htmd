@@ -1,1 +1,16 @@
-def minify(input: str, remove_comments: bool = False, remove_empty_space: bool = False, remove_all_empty_space: bool = False, reduce_empty_attributes: bool = True, reduce_boolean_attributes: bool = False, remove_optional_attribute_quotes: bool = True, convert_charrefs: bool = True, keep_pre: bool = False, pre_tags=..., pre_attr: str = 'pre', cls=...) -> str: ...
+from typing import Any, Iterable, Type
+
+def minify(
+    input: str, 
+    remove_comments: bool = False, 
+    remove_empty_space: bool = False, 
+    remove_all_empty_space: bool = False, 
+    reduce_empty_attributes: bool = True, 
+    reduce_boolean_attributes: bool = False, 
+    remove_optional_attribute_quotes: bool = True, 
+    convert_charrefs: bool = True, 
+    keep_pre: bool = False, 
+    pre_tags: Iterable[str] | Any = ..., 
+    pre_attr: str = 'pre', 
+    cls: Type[Any] | Any = ...
+) -> str: ...

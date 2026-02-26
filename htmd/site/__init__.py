@@ -186,3 +186,12 @@ def create_app(  # noqa: PLR0915
     freezer.init_app(app)
 
     return app
+
+
+# Explicitly export everything for mypy
+__all__ = [
+    'create_app',
+    'freezer',
+    'pages',
+    'posts',
+]

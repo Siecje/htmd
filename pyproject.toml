@@ -69,6 +69,16 @@ omit = [
   "/private/*",
 ]
 
+[tool.mypy]
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+pretty = true
+python_version = "3.13"
+show_column_numbers = true
+show_error_codes = true
+strict = true
+warn_unreachable = true
+
 [tool.pytest]
 filterwarnings = [
   "ignore::flask_frozen.MissingURLGeneratorWarning"
