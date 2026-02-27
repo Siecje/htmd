@@ -58,7 +58,7 @@
     by <a href="{{ url_for('posts.author', author=post.author or DEFAULT_AUTHOR) }}">{{ post.author }}</a>
     {% endif %}
     {% if post.published %}
-      on {{ post.published.strftime('%Y-%m-%d') }}.
+      on {{ post.published.strftime('%Y-%m-%d') }}
     {% endif %}
   </p>
   {% if post.meta.tags|length %}
