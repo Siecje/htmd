@@ -38,3 +38,9 @@ default_name = ""
 default_twitter = ""
 # facebook URL
 default_facebook = ""
+
+[markdown]
+extensions = [
+    "codehilite",
+    "fenced_code",
+]

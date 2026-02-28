@@ -99,6 +99,8 @@ def create_app(  # noqa: PLR0915
         'DEFAULT_AUTHOR': ('author', 'default_name', ''),
         'DEFAULT_AUTHOR_TWITTER': ('author', 'default_twitter', ''),
         'DEFAULT_AUTHOR_FACEBOOK': ('author', 'default_facebook', ''),
+
+        'FLATPAGES_MARKDOWN_EXTENSIONS': ('markdown', 'extensions', None),
     }
     # Update app.config using the configuration keys
     for flask_key, (table, key, default) in config_keys.items():
