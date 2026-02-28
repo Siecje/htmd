@@ -9,6 +9,7 @@
 - `htmd preview` will set UUIDs for new draft build posts
 - `htmd preview` will populate password field for protected posts
 - Add `--minify-css/--no-minify-css` and `--minify-js/--no-minify-js` to `html preview` and `html build`.
+- Support markdown extensions to load in config.toml under `[markdown]` section with key `extensions`
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs
