@@ -201,7 +201,7 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
 ])
 def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
     if static_dir != 'static':
-        set_config_field('static', static_dir)
+        set_config_field('folders', 'static', static_dir)
         # Ensure directory exists
         Path(static_dir).mkdir(exist_ok=True)
 
@@ -269,7 +269,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
 def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
     js_path = Path(static_dir) / 'script.js'
     if static_dir != 'static':
-        set_config_field('static', static_dir)
+        set_config_field('folders', 'static', static_dir)
 
         # Ensure directory exists
         Path(static_dir).mkdir(exist_ok=True)
@@ -373,7 +373,7 @@ def test_preview_when_posts_change(
 ) -> None:
     if posts_dir != 'posts':
         # Change static directory in config.toml
-        set_config_field('posts', posts_dir)
+        set_config_field('folders', 'posts', posts_dir)
 
         # Ensure directory exists
         Path(posts_dir).mkdir(exist_ok=True)
@@ -454,7 +454,7 @@ def test_preview_shows_pages_change_without_reload(
 ) -> None:
     if pages_dir != 'pages':
         # Change static directory in config.toml
-        set_config_field('pages', pages_dir)
+        set_config_field('folders', 'pages', pages_dir)
 
         # Ensure directory exists
         Path(pages_dir).mkdir(exist_ok=True)
@@ -573,7 +573,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
     )
     not_in = (
         '/',
-        '/all/',
+        '/blog/',
     )
     # drafts should not appear
     with (
@@ -615,7 +615,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
     )
     not_in = (
         '/',
-        '/all/',
+        '/blog/',
     )
     with (
         run_preview(run_start) as base_url,

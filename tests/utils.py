@@ -103,21 +103,134 @@ def set_example_subtitle(value: str) -> None:
     set_example_field('subtitle', value)
 
 
-def set_config_field(field: str, value: str | bool) -> None: # noqa: FBT001
+def _format_value(v: str | bool | list[str]) -> str:  # noqa: FBT001
+    """
+    Format a Python value for insertion into TOML.
+
+    Supports:
+    - bool -> true/false
+    - str -> quoted string
+    - list/tuple -> TOML array with elements formatted recursively
+    """
+    # Booleans must be lower-case literals in TOML
+    if isinstance(v, bool):
+        return str(v).lower()
+
+    # Lists / tuples -> format each element recursively
+    if isinstance(v, (list, tuple)):
+        inner = ', '.join(_format_value(el) for el in v)
+        return f'[{inner}]'
+
+    # Fallback to string representation quoted
+    return f'"{v}"'
+
+
+def _replace_key_in_section(
+    lines: list[str],
+    section: str,
+    field: str,
+    new_line: str,
+) -> tuple[list[str], bool, bool]:
+    out: list[str] = []
+    replaced = False
+    section_found = False
+    current: str | None = None
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('[') and stripped.endswith(']'):
+            current = stripped[1:-1].strip()
+            if current == section:
+                section_found = True
+        if current == section and line.lstrip().startswith(f'{field} ='):
+            out.append(new_line if new_line.endswith('\n') else new_line + '\n')
+            replaced = True
+            continue
+        out.append(line)
+    return out, replaced, section_found
+
+
+def _insert_after_section(
+    lines: list[str],
+    section: str,
+    new_line: str,
+) -> list[str]:
+    out: list[str] = []
+    inserted = False
+    curr: str | None = None
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('[') and stripped.endswith(']'):
+            curr = stripped[1:-1].strip()
+            out.append(line)
+            if curr == section and not inserted:
+                out.append(
+                    new_line if new_line.endswith('\n') else new_line + '\n',
+                )
+                inserted = True
+            continue
+        out.append(line)
+    return out
+
+
+def set_config_field(
+    section: str,
+    field: str,
+    value: str | bool | list[str],  # noqa: FBT001
+) -> None:
+    """
+    Set or add `field` inside `section` in `config.toml`.
+
+    The function will replace the existing key inside the given TOML
+    section. If the section exists but the key is missing it will be
+    inserted immediately after the section header. If the section does
+    not exist it will be appended at the end of the file and the key
+    added beneath it.
+    """
     config_path = Path('config.toml')
     lines = config_path.read_text().splitlines(keepends=True)
 
-    content = ''
-    for line in lines:
-        if line.startswith(f'{field} ='):
-            if isinstance(value, bool):
-                content += f'{field} = {str(value).lower()}\n'
-            else:
-                content += f'{field} = "{value}"\n'
-        else:
-            content += line + '\n'
+    formatted_value = _format_value(value)
+    new_line = f'{field} = {formatted_value}'
 
-    atomic_write(config_path, content)
+    new_lines, replaced, section_found = _replace_key_in_section(
+        lines,
+        section,
+        field,
+        new_line,
+    )
+
+    if not replaced:
+        if section_found:
+            new_lines = _insert_after_section(new_lines, section, new_line)
+        else:
+            new_lines.append(f'[{section}]\n')
+            new_lines.append(
+                new_line if new_line.endswith('\n') else new_line + '\n',
+            )
+
+    atomic_write(config_path, ''.join(new_lines))
+
+
+def remove_from_config_field(field: str) -> None:
+    """
+    Remove the line that starts with '<field> =' from config.toml.
+
+    The match is performed against the start of the line (no leading
+    whitespace is trimmed), so callers should pass the field name used in
+    the file (e.g. 'base_path').
+    """
+    config_path = Path('config.toml')
+    lines = config_path.read_text().splitlines(keepends=True)
+
+    new_lines: list[str] = []
+    prefix = f'{field} ='
+    for line in lines:
+        if line.startswith(prefix):
+            # skip this line
+            continue
+        new_lines.append(line)
+
+    atomic_write(config_path, ''.join(new_lines))
 
 
 def get_post_field(url_path: str, field: str) -> None | str:

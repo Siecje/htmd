@@ -10,6 +10,7 @@
 - `htmd preview` will populate password field for protected posts
 - Add `--minify-css/--no-minify-css` and `--minify-js/--no-minify-js` to `html preview` and `html build`.
 - Support markdown extensions to load in config.toml under `[markdown]` section with key `extensions`
+- Set URL for `posts.all_posts` in config.toml under `[posts]` section with key `base_url`.
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

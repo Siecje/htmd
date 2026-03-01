@@ -20,9 +20,6 @@ from flask_flatpages import FlatPages, Page
 from ..password_protect import encrypt_post
 
 
-posts_bp = Blueprint('posts', __name__)
-
-
 class Posts(FlatPages):
     def __init__(self, app: Flask | None = None) -> None:
         super().__init__(app)
@@ -51,20 +48,15 @@ class Posts(FlatPages):
         self.published_posts = new_published_posts
 
 
-posts = Posts()
-
-
 def truncate_post_html(post_html: str) -> str:
     return BeautifulSoup(post_html[:255], 'html.parser').prettify()
 
 
-@posts_bp.record_once
 def on_load(state: BlueprintSetupState) -> None:
     # state.app is the actual Flask app instance
     state.app.jinja_env.globals['truncate_post_html'] = truncate_post_html
 
 
-@posts_bp.route('/feed.atom')
 def feed() -> Response:
     name = current_app.config.get('SITE_NAME')
     subtitle = (
@@ -111,7 +103,6 @@ def feed() -> Response:
     return ret
 
 
-@posts_bp.route('/all/')
 def all_posts() -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]
     latest = sorted(
@@ -155,7 +146,6 @@ def render_password_protected_post(post: Page) -> ResponseReturnValue:
 
 
 # If month and day are ints then Flask removes leading zeros
-@posts_bp.route('/<year>/<month>/<day>/<path:path>/')
 def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     date_str = f'{year}-{month}-{day}'
     try:
@@ -177,7 +167,6 @@ def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     return render_template('post.html', active=path, post=post)
 
 
-@posts_bp.route('/draft/<post_uuid>/')
 def draft(post_uuid: str) -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]
     for post in _posts:
@@ -194,7 +183,6 @@ def draft(post_uuid: str) -> ResponseReturnValue:
     )
 
 
-@posts_bp.route('/tags/')
 def all_tags() -> ResponseReturnValue:
     tag_counts: dict[str, int] = {}
     _posts = current_app.extensions['flatpages'][None]
@@ -213,7 +201,6 @@ def no_posts_shown(post_list: list[Page]) -> bool:
     )
 
 
-@posts_bp.route('/tags/<string:tag>/')
 def tag(tag: str) -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]
     # Not using published_posts because build draft can link to a tag
@@ -253,7 +240,6 @@ def tag(tag: str) -> ResponseReturnValue:
     )
 
 
-@posts_bp.route('/author/<author>/')
 def author(author: str) -> ResponseReturnValue:
     # if the author has a draft build
     # page is served without displaying posts
@@ -297,7 +283,6 @@ def author(author: str) -> ResponseReturnValue:
     )
 
 
-@posts_bp.route('/<int:year>/')
 def year_view(year: int) -> ResponseReturnValue:
     year_str = str(year)
     if len(year_str) != len('YYYY'):
@@ -323,7 +308,6 @@ def year_view(year: int) -> ResponseReturnValue:
     )
 
 
-@posts_bp.route('/<year>/<month>/')
 def month_view(year: str, month: str) -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]
     month_posts = [
@@ -349,7 +333,6 @@ def month_view(year: str, month: str) -> ResponseReturnValue:
     )
 
 
-@posts_bp.route('/<year>/<month>/<day>/')
 def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]
     day_posts = [
@@ -370,3 +353,53 @@ def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
         day=day,
         posts=day_posts,
     )
+
+
+def create_posts_blueprint(posts_base_path: str = '/blog/') -> tuple[Blueprint, Posts]:
+    """
+    Create a fresh Blueprint and Posts instance for an app.
+
+    `posts_base_path` is the URL path where the "all posts" view will be
+    mounted (for example: '/blog/' or '/all/'). Returns (blueprint,
+    posts_instance). This allows each Flask app to have an independent
+    blueprint and FlatPages extension object so tests and multiple app
+    instances don't share mutable state.
+    """
+    bp = Blueprint('posts', __name__)
+    posts = Posts()
+
+    # Register the on_load function so templates get the helper
+    bp.record_once(on_load)
+
+    # Register routes on the blueprint (endpoints will be prefixed with
+    # the blueprint name when the blueprint is registered on the app).
+    bp.add_url_rule('/feed.atom', endpoint='feed', view_func=feed)
+    bp.add_url_rule(
+        '/<year>/<month>/<day>/<path:path>/',
+        endpoint='post',
+        view_func=post,
+    )
+    bp.add_url_rule('/draft/<post_uuid>/', endpoint='draft', view_func=draft)
+    bp.add_url_rule('/tags/', endpoint='all_tags', view_func=all_tags)
+    bp.add_url_rule('/tags/<string:tag>/', endpoint='tag', view_func=tag)
+    bp.add_url_rule('/author/<author>/', endpoint='author', view_func=author)
+    bp.add_url_rule('/<int:year>/', endpoint='year_view', view_func=year_view)
+    bp.add_url_rule(
+        '/<year>/<month>/',
+        endpoint='month_view',
+        view_func=month_view,
+    )
+    bp.add_url_rule(
+        '/<year>/<month>/<day>/',
+        endpoint='day_view',
+        view_func=day_view,
+    )
+
+    # Register the all_posts view at the configurable base path.
+    bp.add_url_rule(
+        posts_base_path,
+        endpoint='all_posts',
+        view_func=all_posts,
+    )
+
+    return bp, posts

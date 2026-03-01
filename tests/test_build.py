@@ -103,7 +103,7 @@ def test_build_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
 
 
 def test_build_html_pretty_true(run_start: CliRunner) -> None:
-    set_config_field('pretty', 'true')
+    set_config_field('html', 'pretty', 'true')
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -111,7 +111,7 @@ def test_build_html_pretty_true(run_start: CliRunner) -> None:
 
 
 def test_build_html_minify_true(run_start: CliRunner) -> None:
-    set_config_field('minify', 'true')
+    set_config_field('html', 'minify', 'true')
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -284,7 +284,7 @@ def test_build_vcs_repo(run_start: CliRunner) -> None:
 
 
 def test_build_with_default_author(run_start: CliRunner) -> None:
-    set_config_field('default_name', 'Taylor')
+    set_config_field('author', 'default_name', 'Taylor')
 
     remove_fields_from_post('example', ('draft',))
 
@@ -347,7 +347,7 @@ def test_build_password_protect(run_start: CliRunner) -> None:
 
     # Verify list pages
     home_path = Path('build') / 'index.html'
-    all_path = Path('build') / 'all' / 'index.html'
+    all_path = Path('build') / 'blog' / 'index.html'
     tag_path = Path('build') / 'tags' / 'first' / 'index.html'
     author_path = Path('build') / 'author' / 'Taylor' / 'index.html'
     year_path = Path('build') / '2014' / 'index.html'
@@ -496,7 +496,7 @@ def test_post_without_published_and_without_author(
     run_start: CliRunner,
 ) -> None:
     # Set config to not show author
-    set_config_field('show', value=False)
+    set_config_field('author', 'show', value=False)
     set_example_to_draft_build()
     remove_fields_from_post('example', ('published', 'updated'))
     assert 'author' in (Path('posts') / 'example.md').read_text()

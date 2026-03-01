@@ -11,7 +11,7 @@ from ..utils import get_static_files, minify_css_files, minify_js_files
 from .freezer import freeze_bp, freezer
 from .main import main_bp
 from .pages import pages
-from .posts import posts, posts_bp
+from .posts import create_posts_blueprint
 
 
 def get_project_dir() -> Path:
@@ -54,15 +54,7 @@ def create_app(  # noqa: PLR0915
         # default templates
         template_folder=this_dir / '..' / 'example_site' / 'templates',
     )
-    app.add_url_rule(
-        '/static/<path:filename>',
-        endpoint='static',
-        view_func=custom_static,
-    )
-    app.register_blueprint(freeze_bp)
-    app.register_blueprint(main_bp)
-    app.register_blueprint(pages)
-    app.register_blueprint(posts_bp)
+
     project_dir = get_project_dir()
 
     try:
@@ -91,6 +83,7 @@ def create_app(  # noqa: PLR0915
         'TEMPLATE_FOLDER': ('folders', 'templates', 'templates'),
 
         'POSTS_EXTENSION': ('posts', 'extension', '.md'),
+        'POSTS_BASE_PATH': ('posts', 'base_path', '/blog/'),
 
         'PRETTY_HTML': ('html', 'pretty', False),
         'MINIFY_HTML': ('html', 'minify', False),
@@ -179,6 +172,21 @@ def create_app(  # noqa: PLR0915
         FileSystemLoader(pages.template_folder),
         app.jinja_loader,
     ])
+
+    app.add_url_rule(
+        '/static/<path:filename>',
+        endpoint='static',
+        view_func=custom_static,
+    )
+    # Register freezer blueprint so /404.html exists for frozen builds
+    app.register_blueprint(freeze_bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(pages)
+
+    # Create a fresh blueprint and Posts instance for this app
+    posts_base_path = app.config.get('POSTS_BASE_PATH', '/blog/')
+    posts_bp, posts = create_posts_blueprint(posts_base_path)
+    app.register_blueprint(posts_bp)
 
     posts.init_app(app)
     # populate publish_posts

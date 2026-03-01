@@ -4,7 +4,12 @@ from click.testing import CliRunner
 from htmd.cli.build import build
 from htmd.site.posts import Posts
 
-from utils import remove_fields_from_post, set_example_field
+from utils import (
+    remove_fields_from_post,
+    remove_from_config_field,
+    set_config_field,
+    set_example_field,
+)
 
 
 def test_Posts_without_app() -> None:  # noqa: N802
@@ -41,3 +46,31 @@ def test_post_without_tags(run_start: CliRunner) -> None:
     assert build_tags.is_file()
     contents = build_tags.read_text()
     assert '<h1>All Tags</h1>' in contents
+
+
+def test_posts_base_path(run_start: CliRunner) -> None:
+    """Ensure [posts] base_path from config.toml is used when building."""
+    # test default behavior (base_path should be /blog/)
+    remove_from_config_field('base_path')
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    blog_index = Path('build') / 'blog' / 'index.html'
+    assert blog_index.is_file()
+    contents = blog_index.read_text()
+    # The all posts page should include the heading and the example post
+    assert '<h1>All Posts</h1>' in contents
+    assert 'Example Post' in contents
+
+    # Set posts.base_path to /all/ in config.toml
+    set_config_field('posts', 'base_path', '/all/')
+    assert 'base_path = "/all/"' in Path('config.toml').read_text()
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    all_index = Path('build') / 'all' / 'index.html'
+    assert all_index.is_file()
+    assert blog_index.exists() is False
+    contents = all_index.read_text()
+    assert '<h1>All Posts</h1>' in contents
+    assert 'Example Post' in contents

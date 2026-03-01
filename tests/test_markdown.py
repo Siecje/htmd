@@ -3,7 +3,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from htmd.cli.build import build
 
-from utils import set_example_contents
+from utils import set_config_field, set_example_contents
 
 
 def test_code_blocks(run_start: CliRunner) -> None:
@@ -45,18 +45,8 @@ def test_code_blocks(run_start: CliRunner) -> None:
     assert 'class="codehilite"' not in contents
 
     # 3) enable markdown extensions by appending a [markdown] section
-    cfg = Path('config.toml')
-    cfg_text = cfg.read_text()
-    extensions_block = (
-        'extensions = [\n'
-        '    "codehilite",\n'
-        '    "fenced_code",\n'
-        ']\n'
-    )
-
-    # Append a new [markdown] section with the extensions
-    cfg_text += '\n[markdown]\n' + extensions_block
-    cfg.write_text(cfg_text)
+    extensions = ['codehilite', 'fenced_code']
+    set_config_field('markdown', 'extensions', extensions)
 
     # 4) rebuild and verify code block is rendered
     result = run_start.invoke(build)

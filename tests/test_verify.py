@@ -91,7 +91,7 @@ def test_verify_site_name_empty(run_start: CliRunner) -> None:
         '[site] name is not set in config.toml.\n'
     )
 
-    set_config_field('name', '')
+    set_config_field('site', 'name', '')
 
     result = run_start.invoke(verify)
     # [site] name isn't required

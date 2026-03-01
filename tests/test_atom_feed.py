@@ -59,7 +59,7 @@ def validate_example_feed(
     feed_links = root.findall('atom:link', ns)
     feed_url = link_to_str(feed_links[1])
     all_url = link_to_str(feed_links[0])
-    assert all_url == f'<link href="{base_url}/all/"/>'
+    assert all_url == f'<link href="{base_url}/blog/"/>'
     assert feed_url == f'<link href="{base_url}/feed.atom" rel="self"/>'
 
     # --- Entry Content ---
@@ -122,7 +122,7 @@ def test_without_updated_build(run_start: CliRunner) -> None:
     assert 'updated:' not in contents
 
     server_name = 'example.com'
-    set_config_field('url', server_name)
+    set_config_field('site', 'url', server_name)
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -142,7 +142,7 @@ def test_without_updated_preview(run_start: CliRunner) -> None:
     assert 'updated:' not in contents
 
     server_name = 'example.com'
-    set_config_field('url', server_name)
+    set_config_field('site', 'url', server_name)
     base_url = f'http://{server_name}'
 
     with run_preview(run_start) as preview_base_url:
@@ -158,7 +158,7 @@ def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
     assert 'updated:' not in contents
 
     server_name = 'example.com'
-    set_config_field('url', server_name)
+    set_config_field('site', 'url', server_name)
     base_url = f'http://{server_name}'
 
     result = run_start.invoke(build)
@@ -193,7 +193,7 @@ def test_with_updated(run_start: CliRunner) -> None:
     assert get_example_field('updated') is None
 
     server_name = 'example.com'
-    set_config_field('url', server_name)
+    set_config_field('site', 'url', server_name)
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -232,7 +232,7 @@ def test_without_updated_no_build_preview(run_start: CliRunner) -> None:
     assert 'updated:' not in (Path('posts') / 'example.md').read_text()
 
     server_name = 'example.com'
-    set_config_field('url', server_name)
+    set_config_field('site', 'url', server_name)
 
     base_url = f'http://{server_name}'
     with run_preview(run_start) as preview_base_url:
@@ -250,7 +250,7 @@ def test_without_updated_no_build_preview(run_start: CliRunner) -> None:
 
 def test_with_site_description(run_start: CliRunner) -> None:
     description = 'This is my blog description.'
-    set_config_field('description', description)
+    set_config_field('site', 'description', description)
 
     result = run_start.invoke(build)
     assert result.exit_code == 0

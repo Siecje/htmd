@@ -86,7 +86,7 @@ def test_no_drafts_atom_feed(build_draft: CliRunner) -> None:  # noqa: ARG001
 
 
 def test_no_drafts_all_posts(build_draft: CliRunner) -> None:  # noqa: ARG001
-    build_all = (Path('build') / 'all' / 'index.html').read_text()
+    build_all = (Path('build') / 'blog' / 'index.html').read_text()
     assert 'Example Post' not in build_all
 
 
