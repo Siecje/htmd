@@ -63,6 +63,25 @@ def static_password_protect() -> ResponseReturnValue:
     )
 
 
+@main_bp.route('/static/htmd.css')
+def static_htmd_styles() -> ResponseReturnValue:
+    this_dir = Path(__file__).parent
+    return send_from_directory(
+        this_dir / '..' / 'example_site' / 'static',
+        'htmd.css',
+    )
+
+
+@main_bp.route('/static/htmd.js')
+def static_htmd_js() -> ResponseReturnValue:
+    this_dir = Path(__file__).parent
+    return send_from_directory(
+        this_dir / '..' / 'example_site' / 'static',
+        'htmd.js',
+    )
+
+
+
 @main_bp.route('/')
 def index() -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]

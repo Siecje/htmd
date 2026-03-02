@@ -77,6 +77,7 @@ def test_build_css_minify(run_start: CliRunner) -> None:
     ]
     assert sorted(css_build_files) == [
         '_reset.min.css',
+        'htmd.css',
         'pygments.css',
         'style.min.css',
     ]

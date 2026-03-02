@@ -27,6 +27,7 @@
     {% endif %}
   {% endblock meta_tags %}
   {% block styles %}
+    <link href="{{ url_for('static', filename='htmd.css') }}" rel="stylesheet">
     {% if MINIFY_CSS %}
       {% for css_file in FILES_CSS %}
         <link href="{{ url_for('static', filename=css_file) }}" rel="stylesheet">
@@ -65,6 +66,7 @@
     </footer>
   </div>
   {% block scripts %}
+    <script src="{{ url_for('static', filename='htmd.js') }}"></script>
     {% if MINIFY_JS %}
       {% for js_file in FILES_JS %}
         <script src="{{ url_for('static', filename=js_file) }}"></script>

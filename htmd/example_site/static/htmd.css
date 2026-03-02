@@ -1,0 +1,30 @@
+h2,h3,h4,h5,h6{
+  display:inline-flex;
+  align-items:center;
+}
+.heading-link-icon{
+  text-decoration:none;
+  opacity:0;
+  cursor:pointer;
+  font-size:0.9em;
+  transition:opacity .12s ease,color .12s ease;
+  pointer-events:none;
+  width:1em;
+  height:1em;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+h2:hover .heading-link-icon,
+h3:hover .heading-link-icon,
+h4:hover .heading-link-icon,
+h5:hover .heading-link-icon,
+h6:hover .heading-link-icon,
+h2:focus-within .heading-link-icon,
+h3:focus-within .heading-link-icon,
+h4:focus-within .heading-link-icon,
+h5:focus-within .heading-link-icon,
+h6:focus-within .heading-link-icon{
+  opacity:.6;
+  pointer-events:auto;
+}
