@@ -26,6 +26,7 @@ def start(*, all_templates: bool) -> None:
 
     dir_pages = create_directory('pages/')
     copy_site_file(dir_pages, 'about.html')
+    copy_site_file(dir_pages, 'search.html')
 
     dir_posts = create_directory('posts/')
     copy_site_file(dir_posts, 'example.md')

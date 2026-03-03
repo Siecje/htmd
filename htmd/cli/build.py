@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import warnings
 
@@ -54,5 +55,25 @@ def build(
         sys.exit(1)
 
     build_dir = app.config.get('FREEZER_DESTINATION')
+    pagefind_dir = app.config.get('PAGEFIND_OUTPUT', 'pagefind')
+    output = build_dir / pagefind_dir
+    exclude = pagefind_dir = app.config['PAGEFIND_EXCLUDE_SELECTORS']
+    keep_index_url = app.config['PAGEFIND_KEEP_INDEX_URL']
+    cmd = [
+        sys.executable, '-m', 'pagefind',
+        '--site', str(build_dir),
+        '--output-path', str(output),
+        '--exclude-selectors', ','.join(exclude),
+    ]
+
+    if keep_index_url:
+        cmd.append('--keep-index-url')
+
+    try:
+        click.echo(click.style('Running Pagefind indexing...', fg='cyan'))
+        subprocess.run(cmd, check=True, capture_output=True, text=True)  # noqa: S603
+    except subprocess.CalledProcessError as e:  # pragma: no cover
+        click.echo(click.style(f'Pagefind failed: {e.stderr}', fg='red'), err=True)
+
     msg = f'Static site was created in {build_dir}'
     click.echo(click.style(msg, fg='green'))

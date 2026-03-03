@@ -23,6 +23,7 @@ dependencies = [
   "Frozen-Flask",
   "htmlmin2",
   "jsmin",
+  "pagefind[extended]",
   "Pygments",
   "watchdog",
   "Werkzeug",

@@ -8,6 +8,7 @@ import requests
 
 SUCCESS_REGEX = (
     'All posts are correctly formatted.\n'
+    'Running Pagefind indexing...\n'
     r'Static site was created in .*build\n'
 )
 

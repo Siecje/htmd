@@ -1,0 +1,37 @@
+{% extends '_layout.html' %}
+
+{% block title %}Search{% endblock title %}
+
+{% block meta_tags %}
+  {{ super() }}
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="{{ url_for('pages.page', path='search') }}">
+  <meta property="og:title" content="Search">
+  <meta property="og:description" content="This is the search page.">
+  {# static/search.png is an example and does not exist #}
+  {#
+  <meta property="og:image" content="{{ url_for('static', filename='search.png', _external=True) }}">
+  #}
+{% endblock meta_tags %}
+
+{% block styles %}
+  {{ super() }}
+  <link href="/pagefind/pagefind-ui.css" rel="stylesheet">
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="/pagefind/pagefind-ui.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', (event) => {
+      new PagefindUI({ element: "#search", showSubResults: true });
+    });
+  </script>
+{% endblock %}
+
+{% block content %}
+  <article>
+    <h1>Search</h1>
+    <div id="search"></div>
+  </article>
+{% endblock content %}

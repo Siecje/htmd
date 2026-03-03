@@ -94,6 +94,14 @@ def create_app(  # noqa: PLR0915
         'DEFAULT_AUTHOR_FACEBOOK': ('author', 'default_facebook', ''),
 
         'FLATPAGES_MARKDOWN_EXTENSIONS': ('markdown', 'extensions', None),
+
+        'PAGEFIND_OUTPUT': ('pagefind', 'output', 'pagefind'),
+        'PAGEFIND_EXCLUDE_SELECTORS': (
+            'pagefind',
+            'exclude_selectors',
+            ['nav', 'footer', '.post-preview'],
+        ),
+        'PAGEFIND_KEEP_INDEX_URL': ('pagefind', 'keep_index_url', False),
     }
     # Update app.config using the configuration keys
     for flask_key, (table, key, default) in config_keys.items():

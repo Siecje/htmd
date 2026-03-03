@@ -47,6 +47,7 @@
           <li {{ 'class=active' if active == 'posts' }}><a href="{{ url_for('posts.all_posts') }}">Posts</a></li>
           <li {{ 'class=active' if active == 'tags' }}><a href="{{ url_for('posts.all_tags') }}">Tags</a></li>
           <li {{ 'class=active' if active == 'about' }}><a href="{{ url_for('pages.page', path='about') }}">About</a></li>
+          <li {{ 'class=active' if active == 'search' }}><a href="{{ url_for('pages.page', path='search') }}">Search</a></li>
           {% endblock menu %}
         </ul>
       </nav>

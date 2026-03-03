@@ -234,7 +234,11 @@ def test_build_without_pages(run_start: CliRunner) -> None:
     # Remove link from _layout.html
     layout_path = Path('templates') / '_layout.html'
     lines = layout_path.read_text().splitlines(keepends=True)
-    new_lines = [line for line in lines if 'about' not in line]
+    new_lines = [
+        line
+        for line in lines
+        if 'about' not in line and 'search' not in line
+    ]
     layout_path.write_text(''.join(new_lines))
 
     result = run_start.invoke(build)
@@ -604,3 +608,15 @@ def test_minified_name_as_folder(run_start: CliRunner) -> None:
     build_path = Path('build') / 'static' / 'new.min.js'
     build_text = build_path.read_text()
     assert build_text == new_js
+
+
+def test_build_search_config(run_start: CliRunner) -> None:
+    set_config_field('pagefind', 'keep_index_url', 'True')
+
+    result = run_start.invoke(build)
+    assert re.search(SUCCESS_REGEX, result.output)
+    assert result.exit_code == 0
+
+    pagefind_path = Path('build') / 'pagefind'
+    assert pagefind_path.exists()
+    assert pagefind_path.is_dir()
