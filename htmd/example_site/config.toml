@@ -19,10 +19,6 @@ posts = "posts"
 static = "static"
 templates = "templates"
 
-[posts]
-base_path = "/blog/"
-extension = ".md"
-
 [html]
 # How to format HTML
 # Only set one to True
@@ -30,7 +26,11 @@ extension = ".md"
 pretty = false
 minify = false
 
-[author]
+[posts]
+base_path = "/blog/"
+extension = ".md"
+
+[posts.author]
 # Show author at the top of every post?
 show = true
 # Author to use if author is not specified in the post file
@@ -40,7 +40,7 @@ default_twitter = ""
 # facebook URL
 default_facebook = ""
 
-[markdown]
+[posts.markdown]
 extensions = [
     "codehilite",
     "fenced_code",

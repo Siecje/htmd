@@ -40,6 +40,21 @@ def custom_static(filename: str) -> ResponseReturnValue:
     return send_from_directory(directory, filename)
 
 
+def toml_config_get(
+    cfg: dict[str, typing.Any],
+    section: str,
+    key: str,
+    default: typing.Any,  # noqa: ANN401
+) -> typing.Any:  # noqa: ANN401
+    node = cfg
+    for part in section.split('.'):
+        node = node.get(part, {})
+    try:
+        return node.get(key, default)
+    except AttributeError:
+        return default
+
+
 def create_app(  # noqa: PLR0915
     *,
     show_drafts: bool = False,
@@ -82,18 +97,18 @@ def create_app(  # noqa: PLR0915
         'STATIC_FOLDER': ('folders', 'static', 'static'),
         'TEMPLATE_FOLDER': ('folders', 'templates', 'templates'),
 
-        'POSTS_EXTENSION': ('posts', 'extension', '.md'),
-        'POSTS_BASE_PATH': ('posts', 'base_path', '/blog/'),
-
         'PRETTY_HTML': ('html', 'pretty', False),
         'MINIFY_HTML': ('html', 'minify', False),
 
-        'SHOW_AUTHOR': ('author', 'show', True),
-        'DEFAULT_AUTHOR': ('author', 'default_name', ''),
-        'DEFAULT_AUTHOR_TWITTER': ('author', 'default_twitter', ''),
-        'DEFAULT_AUTHOR_FACEBOOK': ('author', 'default_facebook', ''),
+        'POSTS_EXTENSION': ('posts', 'extension', '.md'),
+        'POSTS_BASE_PATH': ('posts', 'base_path', '/blog/'),
 
-        'FLATPAGES_MARKDOWN_EXTENSIONS': ('markdown', 'extensions', None),
+        'SHOW_AUTHOR': ('posts.author', 'show', True),
+        'DEFAULT_AUTHOR': ('posts.author', 'default_name', ''),
+        'DEFAULT_AUTHOR_TWITTER': ('posts.author', 'default_twitter', ''),
+        'DEFAULT_AUTHOR_FACEBOOK': ('posts.author', 'default_facebook', ''),
+
+        'FLATPAGES_MARKDOWN_EXTENSIONS': ('posts.markdown', 'extensions', None),
 
         'PAGEFIND_OUTPUT': ('pagefind', 'output', 'pagefind'),
         'PAGEFIND_EXCLUDE_SELECTORS': (
@@ -105,7 +120,7 @@ def create_app(  # noqa: PLR0915
     }
     # Update app.config using the configuration keys
     for flask_key, (table, key, default) in config_keys.items():
-        app.config[flask_key] = htmd_config.get(table, {}).get(key, default)
+        app.config[flask_key] = toml_config_get(htmd_config, table, key, default)
     app.config['SERVER_NAME'] = app.config['SITE_URL']
     app.config['SHOW_DRAFTS'] = show_drafts
 

@@ -23,10 +23,9 @@ def test_code_blocks(run_start: CliRunner) -> None:
     # Remove [markdown] section from config
     cfg_path = Path('config.toml')
     cfg_lines = cfg_path.read_text().splitlines(keepends=True)
-    # Remove a possible multi-line extensions = [ .. ] block
     out_lines: list[str] = []
     for line in cfg_lines:  # pragma: no branch
-        if line == '[markdown]\n':
+        if line == '[posts.markdown]\n':
             break
         out_lines.append(line)
     cfg_path.write_text(''.join(out_lines))
@@ -46,7 +45,7 @@ def test_code_blocks(run_start: CliRunner) -> None:
 
     # 3) enable markdown extensions by appending a [markdown] section
     extensions = ['codehilite', 'fenced_code']
-    set_config_field('markdown', 'extensions', extensions)
+    set_config_field('posts.markdown', 'extensions', extensions)
 
     # 4) rebuild and verify code block is rendered
     result = run_start.invoke(build)

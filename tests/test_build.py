@@ -289,7 +289,7 @@ def test_build_vcs_repo(run_start: CliRunner) -> None:
 
 
 def test_build_with_default_author(run_start: CliRunner) -> None:
-    set_config_field('author', 'default_name', 'Taylor')
+    set_config_field('posts.author', 'default_name', 'Taylor')
 
     remove_fields_from_post('example', ('draft',))
 
@@ -501,7 +501,7 @@ def test_post_without_published_and_without_author(
     run_start: CliRunner,
 ) -> None:
     # Set config to not show author
-    set_config_field('author', 'show', value=False)
+    set_config_field('posts.author', 'show', value=False)
     set_example_to_draft_build()
     remove_fields_from_post('example', ('published', 'updated'))
     assert 'author' in (Path('posts') / 'example.md').read_text()
@@ -620,3 +620,19 @@ def test_build_search_config(run_start: CliRunner) -> None:
     pagefind_path = Path('build') / 'pagefind'
     assert pagefind_path.exists()
     assert pagefind_path.is_dir()
+
+
+def test_config_with_sub_section_as_value(run_start: CliRunner) -> None:
+    # Remove [posts.author] section from config
+    cfg_path = Path('config.toml')
+    cfg_lines = cfg_path.read_text().splitlines(keepends=True)
+    out_lines: list[str] = []
+    for line in cfg_lines:  # pragma: no branch
+        if line == '[posts.author]\n':
+            break
+        out_lines.append(line)
+    cfg_path.write_text(''.join(out_lines))
+
+    set_config_field('posts', 'author', 'foo')
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
