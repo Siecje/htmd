@@ -7,6 +7,7 @@ import socket
 import threading
 import time
 import types
+import typing
 
 import click
 from flask import Flask
@@ -124,11 +125,12 @@ class StaticHandler(BaseHandler):
         self.minify_css_dir = minify_css_dir
         self.minify_js_dir = minify_js_dir
 
+    @typing.override
     def handle_file(
         self,
         file_path: Path,
         *,
-        is_new: bool,  # noqa: ARG002
+        is_new: bool,
     ) -> None:
         if (
             file_path.suffix == '.css'
@@ -165,6 +167,7 @@ class PostsCreatedHandler(BaseHandler):
         super().__init__(event)
         self.app = app
 
+    @typing.override
     def handle_file(self, file_path: Path, *, is_new: bool) -> None:
         if file_path.suffix != '.md':
             return
