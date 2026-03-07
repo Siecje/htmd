@@ -82,7 +82,7 @@ def create_app(  # noqa: PLR0915
     # Flask configs are flat, config.toml is not
     # Define the configuration keys and their default values
     # 'Flask config': [section, key, default]
-    config_keys : dict[str, tuple[str, str, typing.Any]] = {
+    config_keys: dict[str, tuple[str, str, typing.Any]] = {
         'SITE_NAME': ('site', 'name', ''),
         'SITE_URL': ('site', 'url', ''),
         'SITE_LOGO': ('site', 'logo', ''),
@@ -226,5 +226,4 @@ __all__ = [
     'create_app',
     'freezer',
     'pages',
-    'posts',
 ]

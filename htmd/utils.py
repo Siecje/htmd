@@ -100,7 +100,6 @@ def get_static_files(directory: Path, extension: str) -> list[Path]:
     return sorted(results)
 
 
-
 def minify_css_file(src_root: Path, file_path: Path, dst_root: Path) -> Path:
     if '.min' in file_path.stem:
         rel = file_path.relative_to(src_root)
@@ -271,7 +270,10 @@ def send_stderr(message: str) -> None:
     click.echo(click.style(message, fg='red'), err=True)
 
 
-def validate_post(post: Page, required_fields: list[str]) -> bool: # noqa: C901
+def validate_post(  # noqa: C901
+    post: Page,
+    required_fields: list[str],
+) -> bool:
     correct = True
     for field in required_fields:
         if field not in post.meta:
@@ -298,7 +300,7 @@ def validate_post(post: Page, required_fields: list[str]) -> bool: # noqa: C901
             send_stderr(msg)
     if 'draft' in post.meta:
         draft = post.meta['draft']
-        if draft in [True, False, 'build']:
+        if draft in {True, False, 'build'}:
             pass
         elif 'build|' in draft:
             draft_id = draft.split('|')[1]
@@ -322,8 +324,8 @@ def validate_post(post: Page, required_fields: list[str]) -> bool: # noqa: C901
 
 
 def _get_published(
-    published: None | datetime.date,
-    updated: None | datetime.date,
+    published: datetime.date | None,
+    updated: datetime.date | None,
     now: datetime.datetime,
 ) -> datetime.datetime:
     if isinstance(published, datetime.datetime):

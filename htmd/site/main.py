@@ -81,7 +81,6 @@ def static_htmd_js() -> ResponseReturnValue:
     )
 
 
-
 @main_bp.route('/')
 def index() -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]

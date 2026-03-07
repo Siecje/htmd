@@ -124,7 +124,7 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
 
 
 def test_validate_post_invalid_updated(
-    flask_app: Flask, # noqa: ARG001
+    flask_app: Flask,  # noqa: ARG001
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     invalid_date = '2025-12-3'
@@ -145,7 +145,7 @@ def test_validate_post_invalid_updated(
 
 
 def test_validate_post_invalid_draft_uuid(
-    flask_app: Flask, # noqa: ARG001
+    flask_app: Flask,  # noqa: ARG001
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     invalid_draft = 'build|2025-12-03'
@@ -166,7 +166,7 @@ def test_validate_post_invalid_draft_uuid(
 
 
 def test_validate_post_invalid_draft_value(
-    flask_app: Flask, # noqa: ARG001
+    flask_app: Flask,  # noqa: ARG001
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     invalid_draft = 'foo'

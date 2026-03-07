@@ -296,7 +296,7 @@ def exit_if_parent_pid_changes() -> None:
     If that happens the process will exit.
     """
     parent_pid = os.getppid()
-    while os.getppid() == parent_pid: # pragma: no branch
+    while os.getppid() == parent_pid:  # pragma: no branch
         time.sleep(1)
     os._exit(0)  # pragma: no cover
 

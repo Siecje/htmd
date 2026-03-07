@@ -63,9 +63,9 @@ def run_preview_subprocess(
     host = '::1'
     port = '9090'
     for i, arg in enumerate(args):
-        if arg in ('--host', '-h') and i + 1 < len(args):
+        if arg in {'--host', '-h'} and i + 1 < len(args):
             host = args[i + 1]
-        if arg in ('--port', '-p') and i + 1 < len(args):
+        if arg in {'--port', '-p'} and i + 1 < len(args):
             port = args[i + 1]
     url_host = f'[{host}]' if ':' in host and not host.startswith('[') else host
     base_url = f'http://{url_host}:{port}'
