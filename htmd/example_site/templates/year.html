@@ -7,7 +7,7 @@
   <h1>Posts from {{ year }}</h1>
   <hr class="small">
   {% for post in posts %}
-    {% with show_text=False %}
+    {% with show_text=False, loop_state=loop %}
       {% include "_list.html" %}
     {% endwith %}
   {% endfor %}

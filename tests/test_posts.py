@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 from click.testing import CliRunner
 from htmd.cli.build import build
@@ -74,3 +75,24 @@ def test_posts_base_path(run_start: CliRunner) -> None:
     contents = all_index.read_text()
     assert '<h1>All Posts</h1>' in contents
     assert 'Example Post' in contents
+
+
+def test_hr_only_between_posts(run_start: CliRunner) -> None:
+    # build with one post shouldn't have <hr>
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    blog_index = Path('build') / 'blog' / 'index.html'
+    assert blog_index.is_file()
+    contents = blog_index.read_text()
+    assert '<hr>' not in contents
+
+    # Create a second post
+    src_path = Path('posts') / 'example.md'
+    dst_path = Path('posts') / 'copy.md'
+    shutil.copy(src_path, dst_path)
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert blog_index.is_file()
+    contents = blog_index.read_text()
+    assert '<hr>' in contents

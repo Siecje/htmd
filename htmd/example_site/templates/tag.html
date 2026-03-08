@@ -6,7 +6,7 @@
   <article>
     <span class="subheading">{% block site_description %}{% endblock site_description %}</span>
     {% for post in posts %}
-      {% with show_text=False %}
+      {% with show_text=False, loop_state=loop %}
         {% include "_list.html" %}
       {% endwith %}
     {% endfor %}

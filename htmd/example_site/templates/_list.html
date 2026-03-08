@@ -69,4 +69,6 @@
     </p>
   {% endif %}
 </div>
-<hr>
+{% if not loop_state.last %}
+  <hr>
+{% endif %}

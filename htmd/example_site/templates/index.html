@@ -18,7 +18,7 @@
 {% block content %}
   <article>
   {% for post in posts %}
-    {% with show_text=True %}
+    {% with show_text=True, loop_state=loop %}
       {% include "_list.html" %}
     {% endwith %}
   {% endfor %}
