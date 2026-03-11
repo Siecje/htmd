@@ -80,10 +80,16 @@ def page() -> Iterator[tuple[str, dict[str, str]]]:
     pages_folder = pages.template_folder
     if not isinstance(pages_folder, Path) or not pages_folder.is_dir():
         return
-    for page in pages_folder.iterdir():
-        if (
-            page.is_file()
-            and not page.name.startswith('.')
-            and page.suffix == '.html'
-        ):
-            yield 'pages.page', {'path': page.stem}
+
+    # rglob("*") recursively finds all files and directories
+    for item in pages_folder.rglob('*.html'):
+        if not item.is_file():
+            continue
+        # Calculate the relative path from the base templates folder
+        # Example: 'blog/about.html' -> 'blog/about'
+        relative_path = item.relative_to(pages_folder).with_suffix('')
+
+        # Convert to POSIX string (forward slashes) for the URL
+        path_str = relative_path.as_posix()
+
+        yield 'pages.page', {'path': path_str}

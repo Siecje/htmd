@@ -13,15 +13,17 @@ pages = Blueprint('pages', __name__)
 
 @pages.route('/<path:path>/')
 def page(path: str) -> ResponseReturnValue:
-    # ensure page is from pages directory
-    # otherwise this will load any templates in the template folder
-    pages_folder = pages.template_folder
-    if not isinstance(pages_folder, Path) or not pages_folder.is_dir():
+    assert pages.template_folder is not None
+    pages_folder = Path(pages.template_folder)
+    target_file = pages_folder / f'{path}.html'
+
+    try:
+        target_file.resolve().relative_to(pages_folder.resolve())
+    except ValueError:
         abort(404)
-    for page_path in pages_folder.iterdir():
-        if path == page_path.stem:
-            break
-    else:
+
+    if not target_file.is_file():
         abort(404)
-    ret = render_template(path + '.html', active=path)
+
+    ret = render_template(f'{path}.html', active=path)
     return ret

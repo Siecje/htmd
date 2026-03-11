@@ -636,3 +636,32 @@ def test_config_with_sub_section_as_value(run_start: CliRunner) -> None:
     set_config_field('posts', 'author', 'foo')
     result = run_start.invoke(build)
     assert result.exit_code == 0
+
+
+def test_build_page_from_sub_dir(run_start: CliRunner) -> None:
+    sub_dir = Path('pages') / 'sub'
+    sub_dir.mkdir()
+    dir_with_dot_html = sub_dir / '.html'
+    dir_with_dot_html.mkdir()
+    shutil.copy(Path('pages') / 'about.html', sub_dir / 'new.html')
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    build_path = Path('build') / 'sub' / 'new' / 'index.html'
+    assert build_path.exists()
+    assert build_path.is_file()
+
+
+def test_build_page_traversal_404(run_start: CliRunner) -> None:
+    # Linking to a path that attempts to escape the pages directory
+    # will trigger the ValueError in the .relative_to() check
+    about_path = Path('pages') / 'about.html'
+
+    traversal_path = '../../etc/passwd'
+    link_target = f"{{{{ url_for('pages.page', path='{traversal_path}') }}}}"
+    new_line = f'<p><a href="{link_target}">Hack</a></p>\n'
+    about_path.write_text(new_line)
+
+    result = run_start.invoke(build)
+
+    assert '404 NOT FOUND' in result.output
+    assert result.exit_code == 1

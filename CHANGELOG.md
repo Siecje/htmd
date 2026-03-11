@@ -13,6 +13,7 @@
 - Set URL for `posts.all_posts` in config.toml under `[posts]` section with key `base_url`.
 - Add `static/htmd.css` and `static/htmd.js` to add a fragment link next to headings
 - Add search with [Pagefind](https://pagefind.app/) to `htmd build`
+- Support pages in sub directories
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

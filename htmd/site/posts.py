@@ -16,8 +16,15 @@ from flask import (
 from flask.blueprints import BlueprintSetupState
 from flask.typing import ResponseReturnValue
 from flask_flatpages import FlatPages, Page
+from werkzeug.routing import BaseConverter, Map
 
 from ..password_protect import encrypt_post
+
+
+class RegexConverter(BaseConverter):
+    def __init__(self, url_map: Map, *items: str) -> None:
+        super().__init__(url_map)
+        self.regex = items[0]
 
 
 class Posts(FlatPages):
@@ -55,6 +62,8 @@ def truncate_post_html(post_html: str) -> str:
 def on_load(state: BlueprintSetupState) -> None:
     # state.app is the actual Flask app instance
     state.app.jinja_env.globals['truncate_post_html'] = truncate_post_html
+    # add regex type to routes
+    state.app.url_map.converters['regex'] = RegexConverter
 
 
 def feed() -> Response:
@@ -148,10 +157,6 @@ def render_password_protected_post(post: Page) -> ResponseReturnValue:
 # If month and day are ints then Flask removes leading zeros
 def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     date_str = f'{year}-{month}-{day}'
-    try:
-        datetime.date.fromisoformat(date_str)
-    except ValueError:
-        abort(404)
     _posts = current_app.extensions['flatpages'][None]
     post = _posts.get_or_404(path)
     if draft_and_not_shown(post):
@@ -283,15 +288,12 @@ def author(author: str) -> ResponseReturnValue:
     )
 
 
-def year_view(year: int) -> ResponseReturnValue:
-    year_str = str(year)
-    if len(year_str) != len('YYYY'):
-        abort(404)
+def year_view(year: str) -> ResponseReturnValue:
     _posts = current_app.extensions['flatpages'][None]
     year_posts = [
         p
         for p in _posts.published_posts
-        if year_str == p.meta['published'].strftime('%Y')
+        if year == p.meta['published'].strftime('%Y')
     ]
     if not year_posts:
         abort(404)
@@ -302,8 +304,8 @@ def year_view(year: int) -> ResponseReturnValue:
     )
     return render_template(
         'year.html',
-        active=year_str,
-        year=year_str,
+        active=year,
+        year=year,
         posts=sorted_posts,
     )
 
@@ -375,7 +377,7 @@ def create_posts_blueprint(posts_base_path: str = '/blog/') -> tuple[Blueprint, 
     # the blueprint name when the blueprint is registered on the app).
     bp.add_url_rule('/feed.atom', endpoint='feed', view_func=feed)
     bp.add_url_rule(
-        '/<year>/<month>/<day>/<path:path>/',
+        r'/<regex("\d{4}"):year>/<regex("\d{2}"):month>/<regex("\d{2}"):day>/<path:path>/',
         endpoint='post',
         view_func=post,
     )
@@ -383,14 +385,18 @@ def create_posts_blueprint(posts_base_path: str = '/blog/') -> tuple[Blueprint, 
     bp.add_url_rule('/tags/', endpoint='all_tags', view_func=all_tags)
     bp.add_url_rule('/tags/<string:tag>/', endpoint='tag', view_func=tag)
     bp.add_url_rule('/author/<author>/', endpoint='author', view_func=author)
-    bp.add_url_rule('/<int:year>/', endpoint='year_view', view_func=year_view)
     bp.add_url_rule(
-        '/<year>/<month>/',
+        r'/<regex("\d{4}"):year>/',
+        endpoint='year_view',
+        view_func=year_view,
+    )
+    bp.add_url_rule(
+        r'/<regex("\d{4}"):year>/<regex("\d{2}"):month>/',
         endpoint='month_view',
         view_func=month_view,
     )
     bp.add_url_rule(
-        '/<year>/<month>/<day>/',
+        r'/<regex("\d{4}"):year>/<regex("\d{2}"):month>/<regex("\d{2}"):day>/',
         endpoint='day_view',
         view_func=day_view,
     )
