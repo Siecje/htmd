@@ -3,7 +3,7 @@ import shutil
 
 from click.testing import CliRunner
 from htmd.cli.build import build
-from htmd.site.posts import Posts
+from htmd.site.posts import Posts, truncate_post_html
 
 from utils import (
     remove_fields_from_post,
@@ -96,3 +96,53 @@ def test_hr_only_between_posts(run_start: CliRunner) -> None:
     assert blog_index.is_file()
     contents = blog_index.read_text()
     assert '<hr>' in contents
+
+
+def test_truncate_post_ellipsis() -> None:
+    original = '<p>This is the post <strong>text</strong>.</p>'
+    post_html = truncate_post_html(original)
+    assert post_html == original
+
+    # count text without HTML elements
+    text_length = len('This is the post text.')
+    # ellipsis will only be added
+    # when there are 4 or more characters remaining
+    # Otherwise it will show entire text.
+    post_html = truncate_post_html(original, text_length - 1)
+    assert post_html == original
+    post_html = truncate_post_html(original, text_length - 2)
+    assert post_html == original
+    post_html = truncate_post_html(original, text_length - 3)
+    assert post_html == original
+    post_html = truncate_post_html(original, text_length - 4)
+    expected = '<p>This is the post <strong>t...</strong></p>'
+    assert post_html == expected
+
+
+def test_truncate_sibling_extraction() -> None:
+    original = '<p>This is <strong>text</strong><em>more</em></p>'
+    limit = 10
+    output = truncate_post_html(original, limit)
+    # Expected: The <em> tag should be completely gone.
+    assert '<em>' not in output
+    assert output == '<p>This is <strong>te...</strong></p>'
+
+
+def test_truncate_chaos_nesting() -> None:
+    html = '<div>Level 1<section><p>Level 2 <b>Level 3 <i>Level 4</i></b>!</p><aside>Remove</aside></section><footer>Remove</footer></div>'  # noqa: E501
+
+    # "Level 1" (7) + "Level 2 " (8) + "Level" (5) = 20
+    limit = 20
+    output = truncate_post_html(html, limit)
+
+    assert 'Level 4' not in output
+    assert '<aside>' not in output
+    assert '<footer>' not in output
+    assert '!' not in output
+
+    # 20 chars lands exactly after the second 'l' in 'Level 3'
+    assert '<b>Level...</b>' in output
+
+    # Verify the structure is still intact
+    expected = '<div>Level 1<section><p>Level 2 <b>Level...</b></p></section></div>'
+    assert output == expected

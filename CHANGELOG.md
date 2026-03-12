@@ -27,11 +27,13 @@
     - Date in URL will be the current date
 - Instead of one combined file with every CSS file each .css file will be added to the template
 - Instead of one combined file with every JavaScript file each .js file will be added to the template
+- Add limit argument to `truncate_post_html` template function with default 255
 ### Fixed
 - Protected post subtitles are encrypted
 - Hide protected post data on list pages
 - Only update post updated if there are changes
 - Prevent preview from locking up from waiting forever in SSE handler
+- Prevent `truncate_post_html` from adding additional whitespace
 ### Breaking
 - Anchor elements in templates need to update `url_for` argument
     - `index` -> `main.index`

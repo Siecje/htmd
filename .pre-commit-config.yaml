@@ -11,7 +11,6 @@ repos:
         additional_dependencies: [
           Flask,
           pytest,
-          types-beautifulsoup4,
           types-Pygments,
           types-PyYAML, 
           types-requests,

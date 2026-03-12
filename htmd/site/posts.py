@@ -3,6 +3,7 @@ from collections.abc import Iterator
 import datetime
 
 from bs4 import BeautifulSoup
+from bs4.element import NavigableString, PageElement
 from feedwerk.atom import AtomFeed
 from flask import (
     abort,
@@ -55,8 +56,38 @@ class Posts(FlatPages):
         self.published_posts = new_published_posts
 
 
-def truncate_post_html(post_html: str) -> str:
-    return BeautifulSoup(post_html[:255], 'html.parser').prettify()
+def truncate_post_html(post_html: str, limit: int = 255) -> str:
+    soup = BeautifulSoup(post_html, 'html.parser')
+    all_text_nodes = list(soup.find_all(string=True))
+    full_text_len = len(soup.get_text())
+
+    current_count = 0
+    suffix = '...'
+    for node in all_text_nodes:
+        node_len = len(node)
+
+        if current_count + node_len > limit:
+            if full_text_len - limit <= len(suffix):
+                return soup.decode()
+
+            # truncate current node
+            chars_to_keep = limit - current_count
+            new_content = node[:chars_to_keep].rstrip() + suffix
+            new_node = NavigableString(new_content)
+            node.replace_with(new_node)
+
+            # prune the tree
+            curr: PageElement | None = new_node
+            while curr and curr != soup:
+                for sibling in list(curr.next_siblings):
+                    sibling.extract()
+                curr = curr.parent
+            break
+
+        current_count += node_len
+
+    ret = soup.decode()
+    return ret
 
 
 def on_load(state: BlueprintSetupState) -> None:
