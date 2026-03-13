@@ -7,6 +7,7 @@ from flask import current_app, Flask, send_from_directory
 from flask.typing import ResponseReturnValue
 from jinja2 import ChoiceLoader, FileSystemLoader
 
+from ..constants import CONFIG_FILE
 from ..utils import get_static_files, minify_css_files, minify_js_files
 from .freezer import freeze_bp, freezer
 from .main import main_bp
@@ -17,7 +18,7 @@ from .posts import create_posts_blueprint
 def get_project_dir() -> Path:
     current_directory = Path.cwd()
 
-    while not (current_directory / 'config.toml').is_file():
+    while not (current_directory / CONFIG_FILE).is_file():
         parent_directory = current_directory.parent
 
         if current_directory == parent_directory:
@@ -73,10 +74,10 @@ def create_app(  # noqa: PLR0915
     project_dir = get_project_dir()
 
     try:
-        with (project_dir / 'config.toml').open('rb') as config_file:
+        with (project_dir / CONFIG_FILE).open('rb') as config_file:
             htmd_config = tomllib.load(config_file)
     except FileNotFoundError:
-        msg = 'Can not find config.toml'
+        msg = f'Can not find {CONFIG_FILE}'
         sys.exit(msg)
 
     # Flask configs are flat, config.toml is not

@@ -4,6 +4,7 @@ import click
 from flask import Flask
 
 from .. import site
+from ..constants import CONFIG_FILE
 from ..utils import validate_post
 
 
@@ -33,7 +34,7 @@ def verify(ctx: click.Context) -> Flask:
     site_name = app.config.get('SITE_NAME')
     if not site_name:
         # SITE_NAME is not required
-        message = '[site] name is not set in config.toml.'
+        message = f'[site] name is not set in {CONFIG_FILE}.'
         click.echo(click.style(message, fg='yellow'))
 
     if not correct:

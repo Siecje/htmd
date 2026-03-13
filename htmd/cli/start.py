@@ -2,6 +2,7 @@ from pathlib import Path
 
 import click
 
+from ..constants import CONFIG_FILE
 from ..utils import copy_missing_templates, copy_site_file, create_directory
 
 
@@ -33,5 +34,5 @@ def start(*, all_templates: bool) -> None:
     create_directory('posts/password-protect/')
     Path('posts/password-protect/.keep').touch()
 
-    copy_site_file(Path(), 'config.toml')
-    click.echo('Add the site name and edit settings in config.toml')
+    copy_site_file(Path(), CONFIG_FILE)
+    click.echo(f'Add the site name and edit settings in {CONFIG_FILE}')
