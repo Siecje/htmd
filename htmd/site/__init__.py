@@ -119,9 +119,11 @@ def create_app(  # noqa: PLR0915
         ),
         'PAGEFIND_KEEP_INDEX_URL': ('pagefind', 'keep_index_url', False),
     }
+
     # Update app.config using the configuration keys
     for flask_key, (table, key, default) in config_keys.items():
         app.config[flask_key] = toml_config_get(htmd_config, table, key, default)
+
     app.config['SERVER_NAME'] = app.config['SITE_URL']
     app.config['SHOW_DRAFTS'] = show_drafts
 
@@ -162,7 +164,7 @@ def create_app(  # noqa: PLR0915
     else:
         files_css = [str(path) for path in css_paths]
 
-    js_paths = get_static_files(Path(app.static_folder), '.js')
+    js_paths = get_static_files(static_src_root, '.js')
     if minify_js:
         static_source_dir = project_dir / app.config['BUILD_FOLDER'] / 'static'
         static_source_dir.mkdir(parents=True, exist_ok=True)
@@ -175,15 +177,20 @@ def create_app(  # noqa: PLR0915
     else:
         files_js = [str(path) for path in js_paths]
 
-    app.jinja_env.globals['FILES_CSS'] = files_css
-    app.jinja_env.globals['FILES_JS'] = files_js
-    app.config['MINIFY_CSS'] = minify_css
-    app.config['MINIFY_JS'] = minify_js
-    app.jinja_env.globals['MINIFY_CSS'] = app.config['MINIFY_CSS']
-    app.jinja_env.globals['MINIFY_JS'] = app.config['MINIFY_JS']
+    favicon_path = static_src_root / 'favicon.svg'
 
-    favicon_path = Path(app.static_folder) / 'favicon.svg'
-    app.jinja_env.globals['INCLUDE_DEFAULT_FAVICON'] = favicon_path.is_file()
+    app.jinja_env.globals.update({
+        'FILES_CSS': files_css,
+        'FILES_JS': files_js,
+        'MINIFY_CSS': minify_css,
+        'MINIFY_JS': minify_js,
+        'INCLUDE_DEFAULT_FAVICON': favicon_path.is_file(),
+    })
+
+    app.config.update({
+        'MINIFY_CSS': minify_css,
+        'MINIFY_JS': minify_js,
+    })
 
     pages.template_folder = project_dir / app.config['PAGES_FOLDER']
 
@@ -202,6 +209,7 @@ def create_app(  # noqa: PLR0915
         endpoint='static',
         view_func=custom_static,
     )
+
     # Register freezer blueprint so /404.html exists for frozen builds
     app.register_blueprint(freeze_bp)
     app.register_blueprint(main_bp)
