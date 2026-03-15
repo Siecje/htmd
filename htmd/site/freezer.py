@@ -1,11 +1,12 @@
 from collections.abc import Iterator
 from pathlib import Path
 
-from flask import Blueprint, current_app, render_template
+from flask import Blueprint, render_template
 from flask.typing import ResponseReturnValue
 from flask_frozen import Freezer
 
 from .pages import pages
+from .posts import get_posts
 
 
 freezer = Freezer(
@@ -32,7 +33,7 @@ def add_404() -> Iterator[str]:
 # Telling Frozen-Flask about routes that are not linked to in templates
 @freezer.register_generator
 def year_view() -> Iterator[tuple[str, dict[str, int]]]:
-    posts = current_app.extensions['flatpages'][None]
+    posts = get_posts()
     for post in posts.published_posts:
         yield 'posts.year_view', {
             'year': post.meta['published'].year,
@@ -41,7 +42,7 @@ def year_view() -> Iterator[tuple[str, dict[str, int]]]:
 
 @freezer.register_generator
 def month_view() -> Iterator[tuple[str, dict[str, int | str]]]:
-    posts = current_app.extensions['flatpages'][None]
+    posts = get_posts()
     for post in posts.published_posts:
         yield 'posts.month_view', {
             'month': post.meta['published'].strftime('%m'),
@@ -51,7 +52,7 @@ def month_view() -> Iterator[tuple[str, dict[str, int | str]]]:
 
 @freezer.register_generator
 def day_view() -> Iterator[tuple[str, dict[str, int | str]]]:
-    posts = current_app.extensions['flatpages'][None]
+    posts = get_posts()
     for post in posts.published_posts:
         yield 'posts.day_view', {
             'day': post.meta['published'].strftime('%d'),
@@ -62,7 +63,7 @@ def day_view() -> Iterator[tuple[str, dict[str, int | str]]]:
 
 @freezer.register_generator
 def draft() -> Iterator[tuple[str, dict[str, str]]]:
-    posts = current_app.extensions['flatpages'][None]
+    posts = get_posts()
     draft_posts = [
         p
         for p in posts

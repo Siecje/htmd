@@ -14,6 +14,7 @@ from flask_flatpages import Page
 from jsmin import jsmin
 
 from .password_protect import generate_private_key
+from .site.posts import get_posts
 
 
 def atomic_write(path: Path, content: str) -> None:
@@ -386,9 +387,9 @@ def sync_posts(
     Set hash using title and post contents.
     """
     now = datetime.datetime.now(tz=datetime.UTC)
-    _posts = app.extensions['flatpages'][None]
+    posts = get_posts(app)
     with app.app_context():
-        for post in _posts:
+        for post in posts:
             file_updates: dict[str, str] = {}
             if 'password' in post.meta and post.meta['password'] is None:
                 _, password = generate_private_key()

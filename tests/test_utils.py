@@ -4,6 +4,7 @@ import uuid
 from click.testing import CliRunner
 from flask import Flask
 from flask_flatpages import Page
+from htmd.site.posts import get_posts
 from htmd.utils import (
     atomic_write,
     get_static_files,
@@ -22,8 +23,9 @@ def test_set_post_metadata_with_field_in_title(flask_app: Flask) -> None:
     lines = [title_line if 'title:' in line else line for line in lines]
     atomic_write(example_path, ''.join(lines))
 
-    posts = flask_app.extensions['flatpages'][None]
+    posts = get_posts(flask_app)
     post = posts.get('example')
+    assert isinstance(post, Page)
     post.meta['draft'] = 'build|' + str(uuid.uuid4())
     set_post_metadata(
         flask_app,
@@ -65,8 +67,9 @@ tn4eotA4itJskbKscvxLLhOkokWxz5+itKtp47bfAoGBAKBTLFXAikBjRpkpg5NX
 +Bo9eUZiDMoKiK2/zSishCmn12WUQE4FSSl/xttRtpS8TQplv9hdFkYUQSTxdbZk
 I6UzQGcHpLQFzw2AV6rcA1RlVLrNpPQXgq1vFZAiOJotkn9oj6/3BZSPDPjkw2f5
 gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
-    posts = flask_app.extensions['flatpages'][None]
+    posts = get_posts(flask_app)
     old_post = posts.get('example')
+    assert old_post is not None
     set_post_metadata(
         flask_app,
         old_post,
@@ -74,6 +77,7 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     )
     posts.reload()
     post = posts.get('example')
+    assert post is not None
     with flask_app.app_context():
         assert post.html == old_post.html
     assert post.meta['password'].rstrip() == password
@@ -91,6 +95,7 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     )
     posts.reload()
     post = posts.get('example')
+    assert post is not None
     with flask_app.app_context():
         assert post.html == old_post.html
     assert post.meta['password'].rstrip() == new_password
@@ -113,6 +118,7 @@ gRdZDizOd3mXWl0Pa6u4Uh+F'''  # noqa: S105
     )
     posts.reload()
     post = posts.get('example')
+    assert post is not None
     with flask_app.app_context():
         assert post.html == old_post.html
     assert post.meta['password'].rstrip() == new_password

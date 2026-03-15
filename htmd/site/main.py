@@ -14,6 +14,8 @@ from flask.typing import ResponseReturnValue
 from flask_flatpages import pygments_style_defs
 from htmlmin import minify
 
+from .posts import get_posts
+
 
 main_bp = Blueprint('main', __name__)
 
@@ -83,9 +85,9 @@ def static_htmd_js() -> ResponseReturnValue:
 
 @main_bp.route('/')
 def index() -> ResponseReturnValue:
-    _posts = current_app.extensions['flatpages'][None]
+    posts = get_posts()
     latest = sorted(
-        _posts.published_posts,
+        posts.published_posts,
         reverse=True,
         key=lambda p: p.meta['published'],
     )
