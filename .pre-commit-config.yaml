@@ -9,7 +9,10 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [
+          beautifulsoup4,
           Flask,
+          Flask-FlatPages,
+          Frozen-Flask,
           pytest,
           types-Pygments,
           types-PyYAML, 
