@@ -126,6 +126,15 @@ nav ul li a {
   }
 }
 
+#cusdis_thread {
+  height: 100%
+}
+
+#cusdis_thread iframe {
+  min-height: 32em;
+  max-height: 100em;
+}
+
 /* Footer */
 footer {
   padding-top: 2em;

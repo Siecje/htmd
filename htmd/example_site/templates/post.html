@@ -76,11 +76,24 @@
     {% endif %}
 
     <hr class="small">
+
     {% if post.tags %}
       <p><strong>Tags</strong></p>
       {% for tag in post.meta.get('tags') %}
         <a class="tag" href="{{ url_for('posts.tag', tag=tag) }}">{{ tag }}</a>
       {% endfor %}
+    {% endif %}
+
+    {% if CUSDIS_ENABLED and not encrypted_content and 'draft' not in post.meta %}
+      <hr class="small">
+
+      <div id="cusdis_thread"
+        data-host="{{ CUSDIS_HOST }}"
+        data-app-id="{{ CUSDIS_APP_ID }}"
+        data-page-id="{{ post.path }}"
+        data-page-url="{{ url_for('posts.post', year=post.meta['published'].year, month=post.meta['published'].strftime('%m'), day=post.meta['published'].strftime('%d'), path=post.path, _external=True) }}"
+        data-page-title="{{ post.title }}">
+      </div>
     {% endif %}
   </article>
 {% endblock content %}
@@ -98,5 +111,7 @@
         await decryptPost(password, cipherHTML, cipherTitle, cipherSubtitle);
       });
     </script>
+  {% elif CUSDIS_ENABLED and CUSDIS_HOST and 'draft' not in post.meta %}
+    <script async src="{{ CUSDIS_HOST }}/js/cusdis.es.js"></script>
   {% endif %}
 {% endblock scripts %}

@@ -14,6 +14,7 @@
 - Add `static/htmd.css` and `static/htmd.js` to add a fragment link next to headings
 - Add search with [Pagefind](https://pagefind.app/) to `htmd build`
 - Support pages in sub directories
+- Support [cusdis](https://cusdis.com/) comments
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

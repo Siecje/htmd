@@ -109,6 +109,10 @@ def create_app(  # noqa: PLR0915
         'DEFAULT_AUTHOR_TWITTER': ('posts.author', 'default_twitter', ''),
         'DEFAULT_AUTHOR_FACEBOOK': ('posts.author', 'default_facebook', ''),
 
+        'CUSDIS_ENABLED': ('posts.comments', 'enabled', False),
+        'CUSDIS_HOST': ('posts.comments', 'cusdis_host', ''),
+        'CUSDIS_APP_ID': ('posts.comments', 'cusdis_app_id', ''),
+
         'FLATPAGES_MARKDOWN_EXTENSIONS': ('posts.markdown', 'extensions', None),
 
         'PAGEFIND_OUTPUT': ('pagefind', 'output', 'pagefind'),

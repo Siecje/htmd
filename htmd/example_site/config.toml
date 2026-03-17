@@ -40,6 +40,15 @@ default_twitter = ""
 # facebook URL
 default_facebook = ""
 
+[posts.comments]
+# https://cusdis.com/doc#/advanced/sdk
+enabled = true
+# If self-hosting change to your own domain
+cusdis_host = "https://cusdis.com"
+# Your unique Cusdis App ID
+# Value can be found on Cusdis website under *Embeded Code*
+cusdis_app_id = ""
+
 [posts.markdown]
 extensions = [
     "codehilite",
