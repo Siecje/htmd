@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+import uuid
 
 from click.testing import CliRunner
 from htmd.cli.build import build
@@ -146,3 +147,21 @@ def test_truncate_chaos_nesting() -> None:
     # Verify the structure is still intact
     expected = '<div>Level 1<section><p>Level 2 <b>Level...</b></p></section></div>'
     assert output == expected
+
+
+def test_post_comments(run_start: CliRunner) -> None:
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
+    post_contents = post_path.read_text()
+    assert '<div id="cusdis_thread"' not in post_contents
+
+    app_id = str(uuid.uuid4())
+    set_config_field('posts.comments', 'enabled', True)  # noqa: FBT003
+    set_config_field('posts.comments', 'cusdis_app_id', app_id)
+    set_config_field('posts.comments', 'cusdis_host', 'https://cusdis.com')
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
+    post_contents = post_path.read_text()
+    assert '<div id="cusdis_thread"' in post_contents

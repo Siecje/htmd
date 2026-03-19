@@ -1,5 +1,7 @@
 {% extends "_layout.html" %}
 
+{% set show_comments = CUSDIS_ENABLED and CUSDIS_HOST and CUSDIS_APP_ID and not encrypted_content and 'draft' not in post.meta %}
+
 {% block title %}
   {% if not encrypted_title %}
     {{ post.title }}
@@ -84,7 +86,7 @@
       {% endfor %}
     {% endif %}
 
-    {% if CUSDIS_ENABLED and not encrypted_content and 'draft' not in post.meta %}
+    {% if show_comments %}
       <hr class="small">
 
       <div id="cusdis_thread"
@@ -111,7 +113,7 @@
         await decryptPost(password, cipherHTML, cipherTitle, cipherSubtitle);
       });
     </script>
-  {% elif CUSDIS_ENABLED and CUSDIS_HOST and 'draft' not in post.meta %}
+  {% elif show_comments %}
     <script async src="{{ CUSDIS_HOST }}/js/cusdis.es.js"></script>
   {% endif %}
 {% endblock scripts %}
