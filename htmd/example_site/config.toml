@@ -49,6 +49,9 @@ cusdis_host = "https://cusdis.com"
 # Value can be found on Cusdis website under *Embeded Code*
 cusdis_app_id = ""
 
+[posts.discovery]
+random_post_enabled = true
+
 [posts.markdown]
 extensions = [
     "codehilite",

@@ -15,6 +15,7 @@
 - Add search with [Pagefind](https://pagefind.app/) to `htmd build`
 - Support pages in sub directories
 - Support [cusdis](https://cusdis.com/) comments
+- Visit a random unvisited post
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

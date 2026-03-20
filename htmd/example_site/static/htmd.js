@@ -1,3 +1,28 @@
+async function goToRandomPost() {
+    const response = await fetch('/posts.json');
+    const allPosts = await response.json();
+    
+    const visited = JSON.parse(localStorage.getItem('visitedPosts')) || [];
+    
+    const unread = allPosts.filter(url => !visited.includes(url));
+    
+    // Fallback to allPosts if they've read everything
+    const pool = unread.length > 0 ? unread : allPosts;
+    const randomTarget = pool[Math.floor(Math.random() * pool.length)];
+    
+    window.location.href = randomTarget;
+}
+
+function markCurrentPostAsVisited () {
+  const currentPost = window.location.pathname;
+  const visited = JSON.parse(localStorage.getItem('visitedPosts')) || [];
+
+  if (!visited.includes(currentPost)) {
+      visited.push(currentPost);
+      localStorage.setItem('visitedPosts', JSON.stringify(visited));
+  }
+}
+
 (function addHeadingAnchors(options = {}) {
   const {
     selector = 'h2,h3,h4,h5,h6',

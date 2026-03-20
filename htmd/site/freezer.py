@@ -1,7 +1,7 @@
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 
-from flask import Blueprint, render_template
+from flask import Blueprint, current_app, render_template, url_for
 from flask.typing import ResponseReturnValue
 from flask_frozen import Freezer
 
@@ -94,3 +94,9 @@ def page() -> Iterator[tuple[str, dict[str, str]]]:
         path_str = relative_path.as_posix()
 
         yield 'pages.page', {'path': path_str}
+
+
+@freezer.register_generator
+def posts_json() -> Iterable[str]:
+    if current_app.config.get('RANDOM_POST_ENABLED'):
+        yield url_for('posts.posts_json')

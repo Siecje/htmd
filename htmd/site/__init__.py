@@ -113,6 +113,8 @@ def create_app(  # noqa: PLR0915
         'CUSDIS_HOST': ('posts.comments', 'cusdis_host', ''),
         'CUSDIS_APP_ID': ('posts.comments', 'cusdis_app_id', ''),
 
+        'RANDOM_POST_ENABLED': ('posts.discovery', 'random_post_enabled', False),
+
         'FLATPAGES_MARKDOWN_EXTENSIONS': ('posts.markdown', 'extensions', None),
 
         'PAGEFIND_OUTPUT': ('pagefind', 'output', 'pagefind'),
@@ -221,7 +223,11 @@ def create_app(  # noqa: PLR0915
 
     # Create a fresh blueprint and Posts instance for this app
     posts_base_path = app.config.get('POSTS_BASE_PATH', '/blog/')
-    posts_bp, posts = create_posts_blueprint(posts_base_path)
+    random_post_enabled = app.config['RANDOM_POST_ENABLED']
+    posts_bp, posts = create_posts_blueprint(
+        posts_base_path,
+        random_post_enabled=random_post_enabled,
+    )
     app.register_blueprint(posts_bp)
 
     posts.init_app(app)

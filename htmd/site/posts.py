@@ -10,6 +10,7 @@ from flask import (
     Blueprint,
     current_app,
     Flask,
+    jsonify,
     render_template,
     Response,
     url_for,
@@ -148,6 +149,21 @@ def feed() -> Response:
         )
     ret = atom.get_response()
     return ret
+
+
+def posts_json() -> ResponseReturnValue:
+    posts = get_posts()
+    with current_app.app_context():
+        urls = [
+            '/{year}/{month}/{day}/{path}/'.format(
+                year=post.meta['published'].strftime('%Y'),
+                month=post.meta['published'].strftime('%m'),
+                day=post.meta['published'].strftime('%d'),
+                path=post.path,
+            )
+            for post in posts.published_posts
+        ]
+    return jsonify(urls)
 
 
 def all_posts() -> ResponseReturnValue:
@@ -395,7 +411,11 @@ def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
     )
 
 
-def create_posts_blueprint(posts_base_path: str = '/blog/') -> tuple[Blueprint, Posts]:
+def create_posts_blueprint(
+    posts_base_path: str = '/blog/',
+    *,
+    random_post_enabled: bool = False,
+) -> tuple[Blueprint, Posts]:
     """
     Create a fresh Blueprint and Posts instance for an app.
 
@@ -414,6 +434,8 @@ def create_posts_blueprint(posts_base_path: str = '/blog/') -> tuple[Blueprint, 
     # Register routes on the blueprint (endpoints will be prefixed with
     # the blueprint name when the blueprint is registered on the app).
     bp.add_url_rule('/feed.atom', endpoint='feed', view_func=feed)
+    if random_post_enabled:
+        bp.add_url_rule('/posts.json', endpoint='posts_json', view_func=posts_json)
     bp.add_url_rule(
         r'/<regex("\d{4}"):year>/<regex("\d{2}"):month>/<regex("\d{2}"):day>/<path:path>/',
         endpoint='post',

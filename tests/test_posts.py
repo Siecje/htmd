@@ -165,3 +165,26 @@ def test_post_comments(run_start: CliRunner) -> None:
     post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
     post_contents = post_path.read_text()
     assert '<div id="cusdis_thread"' in post_contents
+
+
+def test_random_post(run_start: CliRunner) -> None:
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    post_json_path = Path('build') / 'posts.json'
+    assert post_json_path.is_file()
+    index_path = Path('build') / 'index.html'
+    index_contents = index_path.read_text()
+    expected = 'onclick="goToRandomPost()"'
+    assert expected in index_contents
+
+    set_config_field(
+        'posts.discovery',
+        'random_post_enabled',
+        False,  # noqa: FBT003
+    )
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert not post_json_path.is_file()
+    index_path = Path('build') / 'index.html'
+    index_contents = index_path.read_text()
+    assert expected not in index_contents
