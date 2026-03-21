@@ -121,7 +121,7 @@ def test_without_updated_build(run_start: CliRunner) -> None:
     contents = path.read_text()
     assert 'updated:' not in contents
 
-    server_name = 'example.com'
+    server_name = 'https://example.com'
     set_config_field('site', 'url', server_name)
 
     result = run_start.invoke(build)
@@ -131,8 +131,7 @@ def test_without_updated_build(run_start: CliRunner) -> None:
     feed_path = Path('build') / 'feed.atom'
     feed_contents = feed_path.read_text()
 
-    base_url = f'http://{server_name}'
-    validate_example_feed(base_url, feed_contents)
+    validate_example_feed(server_name, feed_contents)
 
 
 def test_without_updated_preview(run_start: CliRunner) -> None:
@@ -141,14 +140,13 @@ def test_without_updated_preview(run_start: CliRunner) -> None:
     contents = path.read_text()
     assert 'updated:' not in contents
 
-    server_name = 'example.com'
+    server_name = 'http://example.com'
     set_config_field('site', 'url', server_name)
-    base_url = f'http://{server_name}'
 
     with run_preview(run_start) as preview_base_url:
         response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
-        validate_example_feed(base_url, response.text)
+        validate_example_feed(server_name, response.text)
 
 
 def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
@@ -157,9 +155,8 @@ def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
     contents = path.read_text()
     assert 'updated:' not in contents
 
-    server_name = 'example.com'
+    server_name = 'http://example.com'
     set_config_field('site', 'url', server_name)
-    base_url = f'http://{server_name}'
 
     result = run_start.invoke(build)
     assert result.exit_code == 0, result.output
@@ -170,14 +167,14 @@ def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
     feed_path = Path('build') / 'feed.atom'
     feed_contents = feed_path.read_text()
 
-    validate_example_feed(base_url, feed_contents)
+    validate_example_feed(server_name, feed_contents)
 
     with run_preview(run_start) as preview_base_url:
         updated = get_example_field('updated')
         response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(
-            base_url,
+            server_name,
             response.text,
             published=published,
             updated=updated,
@@ -192,7 +189,7 @@ def test_with_updated(run_start: CliRunner) -> None:
 
     assert get_example_field('updated') is None
 
-    server_name = 'example.com'
+    server_name = 'http://example.com'
     set_config_field('site', 'url', server_name)
 
     result = run_start.invoke(build)
@@ -205,9 +202,8 @@ def test_with_updated(run_start: CliRunner) -> None:
     updated = get_example_field('updated')
     assert get_example_field('updated') is not None
 
-    base_url = f'http://{server_name}'
     validate_example_feed(
-        base_url,
+        server_name,
         feed_contents,
         published=published,
         updated=updated,
@@ -217,7 +213,7 @@ def test_with_updated(run_start: CliRunner) -> None:
         response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(
-            base_url,
+            server_name,
             response.text,
             published=published,
             updated=updated,
@@ -231,17 +227,16 @@ def test_without_updated_no_build_preview(run_start: CliRunner) -> None:
 
     assert 'updated:' not in (Path('posts') / 'example.md').read_text()
 
-    server_name = 'example.com'
+    server_name = 'http://example.com'
     set_config_field('site', 'url', server_name)
 
-    base_url = f'http://{server_name}'
     with run_preview(run_start) as preview_base_url:
         updated = get_example_field('updated')
         assert updated is not None
         response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
         validate_example_feed(
-            base_url,
+            server_name,
             response.text,
             published=published,
             updated=updated,

@@ -665,3 +665,10 @@ def test_build_page_traversal_404(run_start: CliRunner) -> None:
 
     assert '404 NOT FOUND' in result.output
     assert result.exit_code == 1
+
+
+def test_site_url_values(run_start: CliRunner) -> None:
+    # No protocol
+    set_config_field('site', 'url', 'example.com')
+    result = run_start.invoke(build)
+    assert result.exit_code == 0

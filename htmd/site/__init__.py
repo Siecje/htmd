@@ -2,6 +2,7 @@ from pathlib import Path
 import sys
 import tomllib
 import typing
+from urllib.parse import urlparse
 
 from flask import current_app, Flask, send_from_directory
 from flask.typing import ResponseReturnValue
@@ -130,7 +131,12 @@ def create_app(  # noqa: PLR0915
     for flask_key, (table, key, default) in config_keys.items():
         app.config[flask_key] = toml_config_get(htmd_config, table, key, default)
 
-    app.config['SERVER_NAME'] = app.config['SITE_URL']
+    site_url = app.config['SITE_URL']
+    app.config['FREEZER_BASE_URL'] = site_url
+    if site_url.startswith('http'):
+        site_url = urlparse(site_url).netloc
+    app.config['SERVER_NAME'] = site_url
+
     app.config['SHOW_DRAFTS'] = show_drafts
 
     app.static_folder = project_dir / app.config['STATIC_FOLDER']
