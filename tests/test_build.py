@@ -672,3 +672,33 @@ def test_site_url_values(run_start: CliRunner) -> None:
     set_config_field('site', 'url', 'example.com')
     result = run_start.invoke(build)
     assert result.exit_code == 0
+
+
+def test_build_includes_images_and_fonts(run_start: CliRunner) -> None:
+    font_folder = Path('static') / 'fonts'
+    font_folder.mkdir()
+    font_path = font_folder / 'foo.woff'
+    font_path.touch()
+    img_folder = Path('static') / 'img'
+    img_folder.mkdir()
+    img_path = img_folder / 'bar.webp'
+    img_path.touch()
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    assert (Path('build') / 'static' / 'fonts' / 'foo.woff').is_file()
+    assert (Path('build') / 'static' / 'img' / 'bar.webp').is_file()
+
+
+def test_build_without_css_js_without_reference(run_start: CliRunner) -> None:
+    css_path = Path('static') / 'foo.css'
+    css_path.touch()
+    js_path = Path('static') / 'bar.js'
+    js_path.touch()
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    assert not (Path('build') / 'static' / 'foo.css').is_file()
+    assert not (Path('build') / 'static' / 'bar.js').is_file()

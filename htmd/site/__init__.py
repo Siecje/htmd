@@ -151,6 +151,7 @@ def create_app(  # noqa: PLR0915
     app.config['FREEZER_REMOVE_EXTRA_FILES'] = True
     # Allow build to be version controlled
     app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', '.hg*']
+    app.config['FREEZER_STATIC_IGNORE'] = ['*.css', '*.js']
     app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
 
     # Without clearing the cache tests will use templates from the first test

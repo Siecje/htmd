@@ -16,6 +16,7 @@
 - Support pages in sub directories
 - Support [cusdis](https://cusdis.com/) comments
 - Visit a random unvisited post
+- Include all non CSS and non JS static files automatically
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

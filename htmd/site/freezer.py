@@ -10,7 +10,7 @@ from .posts import get_posts
 
 
 freezer = Freezer(
-    with_static_files=False,
+    with_static_files=True,
     with_no_argument_rules=False,
 )
 
