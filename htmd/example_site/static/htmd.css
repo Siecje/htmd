@@ -28,3 +28,21 @@ h6:focus-within .heading-link-icon{
   opacity:.6;
   pointer-events:auto;
 }
+
+#comments {
+  margin: 1.625rem 0;
+}
+
+#cusdis_thread {
+  height: 100%
+}
+
+#cusdis_thread iframe {
+  min-height: 20em;
+  max-height: 100em;
+}
+
+#search {
+  margin-bottom: 3em;
+  min-height: 10em;
+}
