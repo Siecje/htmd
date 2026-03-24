@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from pathlib import Path
 import threading
 
@@ -98,3 +98,12 @@ def index() -> ResponseReturnValue:
 @main_bp.app_errorhandler(404)
 def page_not_found(_e: Exception | int) -> ResponseReturnValue:
     return render_template('404.html'), 404
+
+
+def create_redirect_view(destination_url: str) -> Callable[[], ResponseReturnValue]:
+    def view() -> ResponseReturnValue:
+        return render_template(
+            'redirect.html',
+            destination_url=destination_url,
+        )
+    return view

@@ -100,3 +100,8 @@ def page() -> Iterator[tuple[str, dict[str, str]]]:
 def posts_json() -> Iterable[tuple[str, dict[str, str]]]:
     if current_app.config.get('RANDOM_POST_ENABLED'):
         yield 'posts.posts_json', {}
+
+
+@freezer.register_generator
+def redirects() -> Iterable[str]:
+    yield from current_app.config['redirects']

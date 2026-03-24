@@ -14,6 +14,7 @@ def test_templates(run_start: CliRunner) -> None:
         'templates/index.html was created.\n'
         'templates/month.html was created.\n'
         'templates/post.html was created.\n'
+        'templates/redirect.html was created.\n'
         'templates/tag.html was created.\n'
         'templates/year.html was created.\n'
     )

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" data-pagefind-ignore="true">
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting to: {{ destination_url }}</title>
+    <link rel="canonical" href="{{ destination_url }}">
+    <meta name="robots" content="noindex, follow">
+    <meta http-equiv="refresh" content="0; url={{ destination_url }}">
+    <script type="text/javascript">
+        window.location.replace("{{ destination_url }}");
+    </script>
+  </head>
+  <body>
+    <div>
+        <h1>Page Moved</h1>
+        <p>This post has a new home. You are being redirected...</p>
+        <p>If you are not redirected automatically, 
+           <a href="{{ destination_url }}">click here</a>.
+        </p>
+    </div>
+  </body>
+</html>

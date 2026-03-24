@@ -68,6 +68,7 @@ def test_start_all_templates() -> None:
         'templates/index.html was created.\n'
         'templates/month.html was created.\n'
         'templates/post.html was created.\n'
+        'templates/redirect.html was created.\n'
         'templates/tag.html was created.\n'
         'templates/year.html was created.\n'
         'static/ was created.\n'

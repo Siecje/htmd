@@ -702,3 +702,15 @@ def test_build_without_css_js_without_reference(run_start: CliRunner) -> None:
 
     assert not (Path('build') / 'static' / 'foo.css').is_file()
     assert not (Path('build') / 'static' / 'bar.js').is_file()
+
+
+def test_redirect(run_start: CliRunner) -> None:
+    set_config_field('redirects', '"/foo/"', '/')
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    build_path = Path('build') / 'foo' / 'index.html'
+    assert build_path.is_file()
+    contents = build_path.read_text()
+    expected = '<link rel="canonical" href="/">'
+    assert expected in contents

@@ -17,6 +17,7 @@
 - Support [cusdis](https://cusdis.com/) comments
 - Visit a random unvisited post
 - Include all non CSS and non JS static files automatically
+- Redirects specified in `[redirects]`
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

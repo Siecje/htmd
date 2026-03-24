@@ -11,7 +11,7 @@ from jinja2 import ChoiceLoader, FileSystemLoader
 from ..constants import CONFIG_FILE
 from ..utils import get_static_files, minify_css_files, minify_js_files
 from .freezer import freeze_bp, freezer
-from .main import main_bp
+from .main import create_redirect_view, main_bp
 from .pages import pages
 from .posts import create_posts_blueprint
 
@@ -222,6 +222,17 @@ def create_app(  # noqa: PLR0915
         endpoint='static',
         view_func=custom_static,
     )
+
+    redirects = htmd_config.get('redirects', {})
+    for source, destination in redirects.items():
+        endpoint_name = f"redirect_{source.replace('/', '_').strip('_')}"
+        app.add_url_rule(
+            source,
+            endpoint=endpoint_name,
+            view_func=create_redirect_view(destination),
+        )
+    # Add to config so that pages can be created on freeze
+    app.config['redirects'] = redirects
 
     # Register freezer blueprint so /404.html exists for frozen builds
     app.register_blueprint(freeze_bp)
