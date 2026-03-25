@@ -55,6 +55,7 @@
 - Remove `INCLUDE_JS`
 - Remove combined.min.css and combined.min.js from static directory
 - Use `[posts.author]` config section instead of `[author]`
+- `_list.html` needs `loop_state`
 
 ## [6.1.0] - 2025-12-20
 ### Added
