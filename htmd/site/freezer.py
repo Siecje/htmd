@@ -30,6 +30,11 @@ def add_404() -> Iterator[str]:
     yield '/404.html'
 
 
+@freezer.register_generator
+def home_page() -> Iterator[tuple[str, dict[str, str]]]:
+    yield 'main.index', {}
+
+
 # Telling Frozen-Flask about routes that are not linked to in templates
 @freezer.register_generator
 def year_view() -> Iterator[tuple[str, dict[str, int]]]:

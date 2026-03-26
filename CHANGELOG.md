@@ -18,6 +18,7 @@
 - Visit a random unvisited post
 - Include all non CSS and non JS static files automatically
 - Redirects specified in `[redirects]`
+- Homepage will always be included in the build
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

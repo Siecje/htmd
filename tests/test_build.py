@@ -714,3 +714,15 @@ def test_redirect(run_start: CliRunner) -> None:
     contents = build_path.read_text()
     expected = '<link rel="canonical" href="/">'
     assert expected in contents
+
+
+def test_build_index_is_always_included(run_start: CliRunner) -> None:
+    layout_path = Path('templates') / '_layout.html'
+    contents = layout_path.read_text()
+    contents = contents.replace("{{ url_for('main.index') }}", '"/"')
+    layout_path.write_text(contents)
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    build_index = Path('build') / 'index.html'
+    assert build_index.is_file()
