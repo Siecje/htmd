@@ -1,25 +1,29 @@
 async function goToRandomPost() {
     const response = await fetch('/posts.json');
     const allPosts = await response.json();
-    
-    const visited = JSON.parse(localStorage.getItem('visitedPosts')) || [];
-    
-    const unread = allPosts.filter(url => !visited.includes(url));
-    
-    // Fallback to allPosts if they've read everything
-    const pool = unread.length > 0 ? unread : allPosts;
-    const randomTarget = pool[Math.floor(Math.random() * pool.length)];
-    
-    window.location.href = randomTarget;
+
+    const visited = new Set(JSON.parse(localStorage.getItem('visitedPosts')) || []);
+
+    let pool = allPosts.filter(url => !visited.has(url));
+
+    // Fallback: If everything is read, use everything EXCEPT the current page
+    if (pool.length === 0) {
+        const currentPath = window.location.pathname;
+        pool = allPosts.filter(url => url !== currentPath);
+    }
+
+    if (pool.length > 0) {
+        const randomTarget = pool[Math.floor(Math.random() * pool.length)];
+        window.location.href = randomTarget;
+    }
 }
 
 function markCurrentPostAsVisited () {
   const currentPost = window.location.pathname;
-  const visited = JSON.parse(localStorage.getItem('visitedPosts')) || [];
-
-  if (!visited.includes(currentPost)) {
-      visited.push(currentPost);
-      localStorage.setItem('visitedPosts', JSON.stringify(visited));
+  const visited = new Set(JSON.parse(localStorage.getItem('visitedPosts')) || []);
+  if (!visited.has(currentPost)) {
+    visited.add(currentPost);
+    localStorage.setItem('visitedPosts', JSON.stringify([...visited]));
   }
 }
 
