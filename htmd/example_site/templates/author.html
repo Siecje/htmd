@@ -5,7 +5,7 @@
 {% block content %}
   <article>
   <h1>Posts by {{ author }}</h1>
-  <hr class="small">
+
   {% for post in posts %}
     {% with show_text=False, loop_state=loop %}
       {% include "_list.html" %}
