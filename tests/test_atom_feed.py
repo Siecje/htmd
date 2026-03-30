@@ -146,6 +146,7 @@ def test_without_updated_preview(run_start: CliRunner) -> None:
     with run_preview(run_start) as preview_base_url:
         response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
+        assert response.text is not None
         validate_example_feed(server_name, response.text)
 
 
@@ -173,6 +174,7 @@ def test_without_updated_build_and_preview(run_start: CliRunner) -> None:
         updated = get_example_field('updated')
         response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
+        assert response.text is not None
         validate_example_feed(
             server_name,
             response.text,
@@ -212,6 +214,7 @@ def test_with_updated(run_start: CliRunner) -> None:
     with run_preview(run_start) as preview_base_url:
         response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
+        assert response.text is not None
         validate_example_feed(
             server_name,
             response.text,
@@ -235,6 +238,7 @@ def test_without_updated_no_build_preview(run_start: CliRunner) -> None:
         assert updated is not None
         response = http_get(preview_base_url + '/feed.atom')
         assert response.status_code == 200  # noqa: PLR2004
+        assert response.text is not None
         validate_example_feed(
             server_name,
             response.text,

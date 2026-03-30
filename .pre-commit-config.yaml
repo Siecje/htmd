@@ -15,8 +15,7 @@ repos:
           Frozen-Flask,
           pytest,
           types-Pygments,
-          types-PyYAML, 
-          types-requests,
+          types-PyYAML,
           watchdog,
           Werkzeug,
         ]

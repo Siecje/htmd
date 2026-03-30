@@ -13,8 +13,8 @@ from click.testing import CliRunner
 from flask import Flask
 import htmd.cli.preview as preview_module
 from htmd.utils import atomic_write
+import niquests
 import pytest
-import requests
 from watchdog.events import (
     DirCreatedEvent,
     DirMovedEvent,
@@ -94,7 +94,7 @@ def test_preview_lifecycle(run_start: CliRunner) -> None:
         saved_url = live_url
 
     # After the 'with' block, the server should be shut down
-    with pytest.raises(requests.exceptions.ConnectionError):
+    with pytest.raises(niquests.exceptions.ConnectionError):
         http_get(saved_url)
 
 
@@ -118,7 +118,7 @@ def test_preview_css_minify_js_minify(run_start: CliRunner) -> None:
     # When preview starts scripts.min.js and style.min.css will be created
     with (
         run_preview(run_start, args) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         assert minify_js_path.exists()
         assert minify_css_path.exists()
@@ -148,7 +148,7 @@ def test_preview_no_css_minify_js_minify(run_start: CliRunner) -> None:
 
     with (
         run_preview(run_start, args) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         assert minified_js_path.exists()
         assert not minified_css_path.exists()
@@ -169,7 +169,7 @@ def test_preview_css_minify_no_js_minify(run_start: CliRunner) -> None:
     js_path.write_text('document.getElementsByTagName("body");')
     with (
         run_preview(run_start, args) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         for status, url in urls:
             response = http_get(base_url + url, session=session)
@@ -188,7 +188,7 @@ def test_preview_no_css_minify_no_js_minify(run_start: CliRunner) -> None:
     js_path.write_text('document.getElementsByTagName("body");')
     with (
         run_preview(run_start, args) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         for status, url in urls:
             response = http_get(base_url + url, session=session)
@@ -217,10 +217,11 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
     new_content = existing_content + '\n' + expected + '\n'
     with (
         run_preview(run_start) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url + url, session=session)
         before = response.text
+        assert before is not None
         assert expected not in before
 
         atomic_write(css_path, new_content)
@@ -237,21 +238,22 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
                 if response.status_code != 200:  # noqa: PLR2004
                     continue
             except (
-                requests.exceptions.ChunkedEncodingError,
-                requests.exceptions.ConnectionError,
-                requests.exceptions.ReadTimeout,
+                niquests.exceptions.ChunkedEncodingError,
+                niquests.exceptions.ConnectionError,
+                niquests.exceptions.ReadTimeout,
             ):  # pragma: no cover
                 # Check if server actually died
                 try:
                     http_get(base_url, session=session)
                 except (
-                    requests.exceptions.ChunkedEncodingError,
-                    requests.exceptions.ConnectionError,
-                    requests.exceptions.ReadTimeout,
+                    niquests.exceptions.ChunkedEncodingError,
+                    niquests.exceptions.ConnectionError,
+                    niquests.exceptions.ReadTimeout,
                 ):  # pragma: no cover
                     read_timeout = True
                     break
             else:
+                assert response.text is not None
                 after = response.text
             attempts += 1
 
@@ -259,6 +261,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
         not read_timeout
     ), 'Preview server crashed or reloaded unexpectedly.'
     assert before != after
+    assert after is not None
     assert expected in after
 
 
@@ -282,10 +285,11 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
 
     with (
         run_preview(run_start) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url + url, session=session)
         before = response.text
+        assert before is not None
         assert expected not in before
 
         if static_dir != 'static':
@@ -304,19 +308,21 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
             try:
                 response = http_get(base_url + url, session=session)
             except (
-                requests.exceptions.ChunkedEncodingError,
-                requests.exceptions.ConnectionError,
-                requests.exceptions.ReadTimeout,
+                niquests.exceptions.ChunkedEncodingError,
+                niquests.exceptions.ConnectionError,
+                niquests.exceptions.ReadTimeout,
             ):  # pragma: no cover
                 read_timeout = True  # pragma: no cover
                 break
             else:
+                assert response.text is not None
                 after = response.text
 
             attempts += 1
 
     assert read_timeout is False, 'Preview did reload.'
     assert before != after
+    assert after is not None
     assert expected in after
 
 
@@ -329,7 +335,7 @@ def test_preview_js_modified_but_no_changes(run_start: CliRunner) -> None:
     url = '/static/script.min.js'
     with (
         run_preview(run_start) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url + url, session=session)
         before = response.text
@@ -347,9 +353,9 @@ def test_preview_js_modified_but_no_changes(run_start: CliRunner) -> None:
             try:
                 response = http_get(base_url + url, session=session)
             except (
-                requests.exceptions.ChunkedEncodingError,
-                requests.exceptions.ConnectionError,
-                requests.exceptions.ReadTimeout,
+                niquests.exceptions.ChunkedEncodingError,
+                niquests.exceptions.ConnectionError,
+                niquests.exceptions.ReadTimeout,
             ):  # pragma: no cover
                 # happens during restart
                 read_timeout = True
@@ -390,10 +396,11 @@ def test_preview_when_posts_change(
     post_path = Path(posts_dir) / 'example.md'
     with (
         run_preview(run_start) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url, session=session)
         before = response.text
+        assert before is not None
         assert expected not in before
         assert title not in before
 
@@ -409,20 +416,22 @@ def test_preview_when_posts_change(
             try:
                 response = http_get(base_url, session=session)
             except (
-                requests.exceptions.ChunkedEncodingError,
-                requests.exceptions.ConnectionError,
-                requests.exceptions.ReadTimeout,
+                niquests.exceptions.ChunkedEncodingError,
+                niquests.exceptions.ConnectionError,
+                niquests.exceptions.ReadTimeout,
             ):  # pragma: no cover
                 # happens during restart
                 read_timeout = True
                 break
             else:
+                assert response.text is not None
                 after = response.text
 
             attempts += 1
 
         assert read_timeout is False, 'Preview did reload.'
         assert before != after
+        assert after is not None
         assert expected in after
         assert title in after
 
@@ -473,10 +482,11 @@ def test_preview_shows_pages_change_without_reload(
     )
     with (
         run_preview_subprocess(['--port', str(unused_port)]) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url + url, session=session)
         before = response.text
+        assert before is not None
         assert expected not in before
 
         atomic_write(page_path, contents)
@@ -492,20 +502,22 @@ def test_preview_shows_pages_change_without_reload(
             try:
                 response = http_get(base_url + url, session=session)
             except (
-                requests.exceptions.ChunkedEncodingError,
-                requests.exceptions.ConnectionError,
-                requests.exceptions.ReadTimeout,
+                niquests.exceptions.ChunkedEncodingError,
+                niquests.exceptions.ConnectionError,
+                niquests.exceptions.ReadTimeout,
             ):  # pragma: no cover
                 # happens during restart
                 read_timeout = True  # pragma: no cover
                 break
             else:
+                assert response.text is not None
                 after = response.text
 
             attempts += 1
 
         assert read_timeout is False, 'Preview did reload.'
         assert before != after, 'Page did not change.'
+        assert after is not None
         assert expected in after
 
 
@@ -522,11 +534,12 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:
     url = '/new/'
     with (
         run_preview(run_start) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url + url, session=session)
         before = response.text
         assert response.status_code == 404  # noqa: PLR2004
+        assert before is not None
         assert expected not in before
 
         atomic_write(new_path_path, contents)
@@ -542,20 +555,22 @@ def test_preview_shows_new_pages(run_start: CliRunner) -> None:
             try:
                 response = http_get(base_url + url, session=session)
             except (
-                requests.exceptions.ChunkedEncodingError,
-                requests.exceptions.ConnectionError,
-                requests.exceptions.ReadTimeout,
+                niquests.exceptions.ChunkedEncodingError,
+                niquests.exceptions.ConnectionError,
+                niquests.exceptions.ReadTimeout,
             ):  # pragma: no cover
                 # happens during restart
                 read_timeout = True  # pragma: no cover
                 break
             else:
+                assert response.text is not None
                 after = response.text
 
             attempts += 1
 
         assert read_timeout is False, 'Preview did reload.'
         assert before != after
+        assert after is not None
         assert expected in after
 
 
@@ -578,7 +593,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
     # drafts should not appear
     with (
         run_preview(run_start) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         for status, url in urls:
             response = http_get(base_url + url, session=session)
@@ -587,13 +602,14 @@ def test_preview_drafts(run_start: CliRunner) -> None:
         for url in not_in:
             response = http_get(base_url + url, session=session)
             assert response.status_code == success, url
+            assert response.text is not None
             assert 'Example Post' not in response.text
 
     # drafts should appear
     args = ['--drafts']
     with (
         run_preview(run_start, args) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         for _status, url in urls:
             response = http_get(base_url + url, session=session)
@@ -602,6 +618,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
         for url in not_in:
             response = http_get(base_url + url, session=session)
             assert response.status_code == success, url
+            assert response.text is not None
             assert 'Example Post' in response.text
 
     set_example_to_draft_build()
@@ -619,7 +636,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
     )
     with (
         run_preview(run_start) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         for status, url in urls:
             response = http_get(base_url + url, session=session)
@@ -628,6 +645,7 @@ def test_preview_drafts(run_start: CliRunner) -> None:
         for url in not_in:
             response = http_get(base_url + url, session=session)
             assert response.status_code == success, url
+            assert response.text is not None
             assert 'Example Post' not in response.text
 
 
@@ -772,6 +790,7 @@ def test_favicon(run_start: CliRunner) -> None:
         response = http_get(base_url + url)
     assert response.status_code == success, url
     assert response.headers['Content-Type'] == 'image/svg+xml; charset=utf-8'
+    assert response.content is not None
     assert len(response.content) > 0
     svg_content = (Path('static') / 'favicon.svg').read_bytes()
     assert response.content == svg_content
@@ -791,7 +810,7 @@ def test_sse(run_start: CliRunner) -> None:
         changes: list[str],
     ) -> None:
         start_event.set()
-        with requests.get(
+        with niquests.get(
             url,
             stream=True,
             timeout=30,
@@ -811,6 +830,7 @@ def test_sse(run_start: CliRunner) -> None:
     ended = threading.Event()
     with run_preview(run_start) as base_url:
         response = http_get(base_url)
+        assert response.text is not None
         assert expected_js in response.text
 
         thread = threading.Thread(
@@ -846,7 +866,7 @@ def test_webserver_will_be_restarted(run_start: CliRunner) -> None:
 
     with (
         run_preview(run_start, webserver_collector=webservers) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url, session=session)
         assert response.status_code == 200  # noqa: PLR2004

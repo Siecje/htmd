@@ -3,7 +3,7 @@ from pathlib import Path
 import time
 
 from htmd.utils import atomic_write
-import requests
+import niquests
 
 
 SUCCESS_REGEX = (
@@ -283,10 +283,10 @@ def http_get(
     url: str,
     *,
     headers: dict[str, str] | None = None,
-    session: requests.Session | None = None,
+    session: niquests.Session | None = None,
     timeout: float = 1,
-) -> requests.Response:
+) -> niquests.Response:
     if session is None and headers is None:
         headers = {'Connection': 'close'}
-    caller = session or requests
+    caller = session or niquests
     return caller.get(url, headers=headers, timeout=timeout)

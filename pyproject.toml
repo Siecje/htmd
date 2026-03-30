@@ -41,15 +41,14 @@ version = "6.1.0"
 dev = [
   "coverage",
   "mypy",
+  "niquests",
   "pre-commit",
   "pytest",
   "PyYAML",
-  "requests",
   "ruff",
   "tox",
   "types-Pygments",
   "types-PyYAML",
-  "types-requests",
 ]
 
 [project.scripts]

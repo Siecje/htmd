@@ -7,8 +7,8 @@ from click.testing import CliRunner
 from htmd.cli.build import build
 from htmd.cli.start import start
 from htmd.utils import atomic_write
+import niquests
 import pytest
-import requests
 
 from utils import (
     get_example_field,
@@ -147,6 +147,7 @@ def test_draft_build_and_without_published(run_start: CliRunner) -> None:
         response = http_get(base_url + '/author/Taylor/')
         contents = response.text
         assert response.status_code == 200  # noqa: PLR2004
+        assert contents is not None
         assert 'Example Post' in contents
         assert anchor_text in contents
 
@@ -155,6 +156,7 @@ def test_draft_build_and_without_published(run_start: CliRunner) -> None:
         contents = response.text
         # draft post is in build and links to author so author page exists
         assert response.status_code == 200  # noqa: PLR2004
+        assert contents is not None
         assert 'Example Post' not in contents
         assert anchor_text not in contents
 
@@ -172,6 +174,7 @@ def test_draft_build_preview(run_start: CliRunner) -> None:
         response = http_get(base_url + f'/draft/{draft_uuid}/')
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
+        assert contents is not None
         assert 'Example Post' in contents
 
 
@@ -189,6 +192,7 @@ def test_draft_build_preview_without_published(run_start: CliRunner) -> None:
         response = http_get(base_url + f'/draft/{draft_uuid}/')
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
+        assert contents is not None
         assert 'Example Post' in contents
 
 
@@ -204,6 +208,7 @@ def test_draft_during_preview(run_start: CliRunner) -> None:
         response = http_get(base_url + f'/draft/{post_uuid}/')
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
+        assert contents is not None
         assert 'Example Post' in contents
 
 
@@ -222,6 +227,7 @@ def test_new_draft_during_preview(run_start: CliRunner) -> None:
         response = http_get(base_url + f'/draft/{post_uuid}/')
         assert response.status_code == 200  # noqa: PLR2004
         contents = response.text
+        assert contents is not None
         assert 'Example Post' in contents
 
 
@@ -236,11 +242,12 @@ def test_tag_with_draft_without_published(run_start: CliRunner) -> None:
     day = today.strftime('%d')
     with (
         run_preview(run_start, ['--drafts']) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url + f'/tags/{tag}/', session=session)
         assert response.status_code == 200  # noqa: PLR2004
         post_url = f'/{year}/{month}/{day}/example/'
+        assert response.text is not None
         assert post_url in response.text
 
         response = http_get(
@@ -261,11 +268,12 @@ def test_author_with_draft_without_published(run_start: CliRunner) -> None:
     day = today.strftime('%d')
     with (
         run_preview(run_start, ['--drafts']) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url + f'/author/{author}/', session=session)
         assert response.status_code == 200  # noqa: PLR2004
         post_url = f'/{year}/{month}/{day}/example/'
+        assert response.text is not None
         assert post_url in response.text
 
         response = http_get(
@@ -284,7 +292,7 @@ def test_draft_without_published_year_month_day(run_start: CliRunner) -> None:
     day = today.strftime('%d')
     with (
         run_preview(run_start, ['--drafts']) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(base_url + f'/{year}/', session=session)
         assert response.status_code == 404  # noqa: PLR2004

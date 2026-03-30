@@ -2,7 +2,7 @@ from pathlib import Path
 import shutil
 
 from click.testing import CliRunner
-import requests
+import niquests
 
 from utils import (
     get_example_field,
@@ -18,7 +18,7 @@ def test_set_protected_during_preview(run_start: CliRunner) -> None:
     post_path = Path('posts') / 'example.md'
     with (
         run_preview(run_start) as base_url,
-        requests.Session() as session,
+        niquests.Session() as session,
     ):
         response = http_get(
             base_url + f'/2014/10/30/{post_path.stem}/',
@@ -27,6 +27,7 @@ def test_set_protected_during_preview(run_start: CliRunner) -> None:
         set_example_password_value('')
         assert response.status_code == 200  # noqa: PLR2004
         expected = 'password-protect.js'
+        assert response.text is not None
         assert expected not in response.text
         wait_for_str_not_in_file(post_path, 'password: \n')
         password = get_example_field('password')
@@ -36,6 +37,7 @@ def test_set_protected_during_preview(run_start: CliRunner) -> None:
             session=session,
         )
         assert response.status_code == 200  # noqa: PLR2004
+        assert response.text is not None
         assert expected in response.text
 
 
@@ -49,4 +51,5 @@ def test_new_protected_post_during_preview(run_start: CliRunner) -> None:
         assert password != ''
         response = http_get(base_url + f'/2014/10/30/{post_path.stem}/')
         assert response.status_code == 200  # noqa: PLR2004
+        assert response.text is not None
         assert 'password-protect.js' in response.text
