@@ -55,14 +55,14 @@
   </a>
   <p class="post-meta">Posted
     {% if SHOW_AUTHOR %}
-    by <a href="{{ url_for('posts.author', author=post.author or DEFAULT_AUTHOR) }}">{{ post.author }}</a>
+    by <a href="{{ url_for('posts.author', author=post.author or DEFAULT_AUTHOR) }}" aria-label="Author {{ post.author }}">{{ post.author }}</a>
     {% endif %}
     {% if post.published %}
       on {{ post.published.strftime('%Y-%m-%d') }}
     {% endif %}
   </p>
   {% if post.meta.tags|length %}
-    <p>
+    <p aria-label="Tags">
       {% for post_tag in post.meta.tags %}
         <a href="{{ url_for("posts.tag", tag=post_tag) }}" class="tag">{{ post_tag }}</a>
       {% endfor %}
