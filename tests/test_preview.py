@@ -896,3 +896,98 @@ def test_preview_with_port(run_start: CliRunner, unused_port: int) -> None:
         assert base_url == f'http://[::1]:{unused_port}'
         response = http_get(base_url)
         assert response.status_code == 200  # noqa: PLR2004
+
+
+def test_preview_new_template(run_start: CliRunner) -> None:
+    url = '/blog/'
+    with (
+        run_preview(run_start) as base_url,
+        niquests.Session() as session,
+    ):
+        response = http_get(base_url + url, session=session)
+        assert response.status_code == 200, url  # noqa: PLR2004
+        before = response.text
+        assert before is not None
+        assert '<h1>All Posts</h1>' in before
+        assert '<h1>All New</h1>' not in before
+
+        template_path = Path('templates') / 'all_posts.html'
+        # simulate how most people create a new file
+        template_path.touch()
+        # ensure event for empty file has been processed
+        # otherwise when it checks the size the file on disk
+        # has already been modified
+        time.sleep(0.2)
+
+        # don't use the empty file
+        response = http_get(base_url + url, session=session)
+        assert response.status_code == 200, url  # noqa: PLR2004
+        before = response.text
+        assert before is not None
+        assert '<h1>All Posts</h1>' in before
+        assert '<h1>All New</h1>' not in before
+
+        contents = '''
+{% extends "_layout.html" %}
+
+{% block title %}Posts{% endblock title %}
+
+{% block content %}
+  <article>
+  <h1>All New</h1>
+
+  {% for post in posts %}
+    {% with show_text=False, loop_state=loop %}
+      {% include "_list.html" %}
+    {% endwith %}
+  {% endfor %}
+  </article>
+{% endblock content %}
+'''
+        atomic_write(template_path, contents)
+        # Ensure webserver did not reload
+        read_timeout = False
+        after = before
+        max_attempts = 20
+        attempts = 1
+
+        while after == before and attempts < max_attempts:
+            try:
+                response = http_get(base_url + url, session=session)
+            except (
+                niquests.exceptions.ChunkedEncodingError,
+                niquests.exceptions.ConnectionError,
+                niquests.exceptions.ReadTimeout,
+            ):  # pragma: no cover
+                # happens during restart
+                read_timeout = True
+                break
+            else:
+                assert response.text is not None
+                after = response.text
+
+            attempts += 1
+
+        assert read_timeout is False, 'Preview did reload.'
+        assert response.status_code == 200, url  # noqa: PLR2004
+        assert after is not None
+        assert '<h1>All Posts</h1>' not in after
+        assert '<h1>All New</h1>' in after
+
+
+def test_preview_when_template_folder_does_not_exist(
+    run_start: CliRunner,
+) -> None:
+    template_path = Path('templates')
+    for file_in_dir in template_path.iterdir():
+        file_in_dir.unlink()
+
+    template_path.rmdir()
+
+    assert template_path.exists() is False
+
+    success = 200
+    with run_preview(run_start) as base_url:
+        assert template_path.exists() is False
+        response = http_get(base_url)
+        assert response.status_code == success, base_url

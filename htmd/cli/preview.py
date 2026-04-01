@@ -183,6 +183,21 @@ class PostsCreatedHandler(BaseHandler):
         click.echo(f'Post {action} {file_path.name}.')
 
 
+class TemplateHandler(BaseHandler):
+    def __init__(self, event: threading.Event, app: Flask) -> None:
+        super().__init__(event)
+        self.app = app
+
+    @typing.override
+    def handle_file(self, file_path: Path, *, is_new: bool) -> None:
+        if file_path.suffix != '.html' or file_path.stat().st_size == 0:
+            return
+        self.app.jinja_env.cache.clear()  # type: ignore[union-attr]
+        self.event.set()
+        action = 'created' if is_new else 'updated'
+        click.echo(f'Template {action} {file_path.name}.')
+
+
 def watch_disk(
     exit_event: threading.Event,
     start_event: threading.Event,
@@ -218,6 +233,7 @@ def watch_disk(
         minify_js_dir = None
 
     posts_path = app.config['FLATPAGES_ROOT']
+    template_path = Path(app.config['TEMPLATE_FOLDER'])
 
     observer = Observer()
     observer.daemon = True
@@ -244,6 +260,12 @@ def watch_disk(
             path=str(posts_path),
             recursive=True,
         )
+        if template_path.exists():
+            template_handler = TemplateHandler(refresh_event, app)
+            observer.schedule(
+                template_handler,
+                path=str(template_path),
+            )
         observer.start()
 
         # If webserver starts before watchdog then updates can be missed
