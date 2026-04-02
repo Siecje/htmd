@@ -72,7 +72,7 @@ def run_preview_subprocess(
     try:
         for _ in range(max_tries):  # pragma: no branch
             try:
-                with socket.create_connection((host, int(port)), timeout=0.05):
+                with socket.create_connection((host, port), timeout=0.05):
                     break
             except (ConnectionRefusedError, OSError):
                 time.sleep(0.05)
