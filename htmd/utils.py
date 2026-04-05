@@ -353,11 +353,36 @@ def _get_published(
     return now
 
 
-def _get_post_hash(title: str, contents: str) -> str:
+def get_post_hash(post: Page) -> str:
+    title = post.meta.get('title', '')
+    contents = post.html
+    author = post.meta.get('author', '')
+    tags = post.meta.get('tags', [])
+    tags_str = ','.join(sorted(str(t) for t in tags))
+    image = post.meta.get('image', '')
+    published = post.meta.get('published')
+    date_str = published.strftime('%Y-%m-%d') if published else ''
+    draft_raw = str(post.meta.get('draft', ''))
+    # Only use the value up until '|'
+    draft_val = draft_raw.split('|', maxsplit=1)[0].strip()
+
     hash_obj = hashlib.sha256()
 
     separator = b'\x00'
 
+    fields = (
+        title,
+        date_str,
+        author,
+        tags_str,
+        contents,
+        image,
+        draft_val,
+    )
+
+    for field in fields:
+        hash_obj.update(field.encode('utf-8'))
+        hash_obj.update(separator)
     hash_obj.update(title.encode('utf-8'))
     hash_obj.update(separator)
     hash_obj.update(contents.encode('utf-8'))
@@ -420,10 +445,7 @@ def sync_posts(
                 now,
             )
 
-            post_hash = _get_post_hash(
-                post.meta.get('title') or '',
-                post.html,
-            )
+            post_hash = get_post_hash(post)
 
             hash_changed = current_hash != post_hash
 

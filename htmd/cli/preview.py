@@ -1,5 +1,7 @@
 from abc import abstractmethod
 import contextlib
+import dataclasses
+import hashlib
 import os
 from pathlib import Path
 import signal
@@ -13,11 +15,14 @@ import click
 from flask import Flask
 from watchdog.events import (
     DirCreatedEvent,
+    DirDeletedEvent,
     DirModifiedEvent,
     DirMovedEvent,
     FileCreatedEvent,
+    FileDeletedEvent,
     FileModifiedEvent,
     FileMovedEvent,
+    FileSystemEvent,
     FileSystemEventHandler,
 )
 from watchdog.observers import Observer
@@ -25,6 +30,7 @@ from werkzeug.serving import BaseWSGIServer, make_server
 
 from .. import site
 from ..utils import (
+    get_post_hash,
     get_static_files,
     minify_css_file,
     minify_css_files,
@@ -58,58 +64,101 @@ def set_stop_event_on_signal(
     signal.signal(signal.SIGINT, handle_signal)
 
 
+def get_file_hash(file_path: Path) -> str:
+    with file_path.open('rb') as f:
+        digest = hashlib.file_digest(f, 'sha256')
+    return digest.hexdigest()
+
+
+class EventUpdates(typing.TypedDict):
+    src_path: str
+    dest_path: str
+
+
 class BaseHandler(FileSystemEventHandler):
     def __init__(
         self,
         event: threading.Event,
+        extensions: tuple[str, ...] | None = None,
         skips: list[str] | None = None,
     ) -> None:
         super().__init__()
-        self._seen_mtimes: dict[str, int] = {}
+        self._file_hashes: dict[str, str] = {}
         self.event = event
-        self.skips = ['.swp', '.tmp'] + (skips or [])
+        self.extensions = extensions or ()
+        self.skips = ['.swp', '.tmp', '.swx'] + (skips or [])
+
+    def _remove_file_hash(self, path: Path) -> None:
+        file_hash_key = str(path.resolve())
+        self._file_hashes.pop(file_hash_key, None)
+
+    def dispatch(self, event: FileSystemEvent) -> None:
+        if event.is_directory:
+            return
+        # Ensure paths are str
+        updates: EventUpdates = {
+            'src_path': os.fsdecode(event.src_path),
+            'dest_path': os.fsdecode(event.dest_path),
+        }
+        event = dataclasses.replace(event, **updates)
+        super().dispatch(event)
 
     def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
-        if event.is_directory:
+        path_obj = Path(typing.cast('str', event.src_path))
+        self.handle_event(path_obj, event.event_type)
+
+    def on_deleted(self, event: DirDeletedEvent | FileDeletedEvent) -> None:
+        path_obj = Path(typing.cast('str', event.src_path))
+        if path_obj.exists():
             return
-        self.handle_event(event.src_path, is_new=True)
+        self.handle_event(path_obj, event.event_type)
+        self._remove_file_hash(path_obj)
 
     def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
-        if event.is_directory:
-            return
-        self.handle_event(event.src_path, is_new=False)
+        path_obj = Path(typing.cast('str', event.src_path))
+        self.handle_event(path_obj, event.event_type)
 
     def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
-        if event.is_directory:
-            return
-        # A move/replace is essentially an update to the destination file
-        self.handle_event(event.dest_path, is_new=False)
+        path_obj = Path(typing.cast('str', event.src_path))
+        self._remove_file_hash(path_obj)
+
+        dst_path = Path(typing.cast('str', event.dest_path))
+        self.handle_event(dst_path, event.event_type)
 
     @abstractmethod
-    def handle_file(self, file_path: Path, *, is_new: bool) -> None:
+    def handle_file(self, file_path: Path, event_type: str) -> None:
         """Handle a file event."""
 
-    def handle_event(self, path_str: str | bytes, *, is_new: bool) -> None:
-        if isinstance(path_str, bytes):
-            path_str = path_str.decode('utf-8')
-        path_obj = Path(path_str)
-        if path_obj.name in self.skips or path_obj.suffix in self.skips:
+    def handle_event(self, file_path: Path, event_type: str) -> None:
+        if file_path.name in self.skips or file_path.suffix in self.skips:
+            return
+
+        if self.extensions and file_path.suffix not in self.extensions:
+            return
+
+        if event_type == 'deleted':
+            self.handle_file(file_path, event_type)
             return
 
         try:
-            new_mtime = path_obj.stat().st_mtime_ns
+            # Ignore empty files
+            if file_path.stat().st_size == 0:
+                return
+            file_hash = get_file_hash(file_path)
         except FileNotFoundError:  # pragma: no cover
-            # File was deleted before we could stat it
             return
-        seen_key = str(path_obj.resolve())
-        if self._seen_mtimes.get(seen_key) == new_mtime:
+
+        hash_key = str(file_path.resolve())
+        if self._file_hashes.get(hash_key) == file_hash:
             # This was likely a metadata event or a double-trigger
             return
-        self.handle_file(path_obj, is_new=is_new)
+
+        self.handle_file(file_path, event_type)
+
         # Set mtime from before processing so we don't miss events
         # even though it means we will try to handle the same file again
         # if it is modified in self.handle_file()
-        self._seen_mtimes[seen_key] = new_mtime
+        self._file_hashes[hash_key] = file_hash
 
 
 class StaticHandler(BaseHandler):
@@ -120,7 +169,7 @@ class StaticHandler(BaseHandler):
         minify_css_dir: Path | None,
         minify_js_dir: Path | None,
     ) -> None:
-        super().__init__(event)
+        super().__init__(event, ('.css', '.js'))
         self.static_directory = static_directory
         self.minify_css_dir = minify_css_dir
         self.minify_js_dir = minify_js_dir
@@ -129,73 +178,90 @@ class StaticHandler(BaseHandler):
     def handle_file(
         self,
         file_path: Path,
-        *,
-        is_new: bool,
+        event_type: str,
     ) -> None:
-        if (
-            file_path.suffix == '.css'
-            and '.min.css' not in file_path.name
-            and self.minify_css_dir
-        ):
-            minify_path = minify_css_file(
-                self.static_directory,
-                file_path,
-                self.minify_css_dir,
-            )
-            self.event.set()
-            click.echo(f'Changes in {file_path.name}. Creating {minify_path}...')
-        elif (
-            file_path.suffix == '.js'
-            and '.min.js' not in file_path.name
-            and self.minify_js_dir
-        ):
-            minify_path = minify_js_file(
-                self.static_directory,
-                file_path,
-                self.minify_js_dir,
-            )
-            self.event.set()
-            click.echo(f'Changes in {file_path.name}. Creating {minify_path}...')
+        # Determine which minification directory to use
+        target_dir = None
+        if file_path.suffix == '.css' and '.min.css' not in file_path.name:
+            target_dir = self.minify_css_dir
+        elif file_path.suffix == '.js' and '.min.js' not in file_path.name:
+            target_dir = self.minify_js_dir
+
+        if not target_dir:
+            return
+
+        # Construct the path where the minified file lives/would live
+        # This mirrors the logic inside your minify functions
+        relative_path = file_path.relative_to(self.static_directory)
+        min_suffix = f'.min{file_path.suffix}'
+        minify_path = target_dir / relative_path.with_suffix(min_suffix)
+
+        if event_type == 'deleted':
+            try:
+                minify_path.unlink()
+            except FileNotFoundError:
+                pass
+            else:
+                self.event.set()
+                click.echo(f'Source deleted. Removed minified file: {minify_path.name}')
+            return
+
+        if file_path.suffix == '.css':
+            minify_css_file(self.static_directory, file_path, target_dir)
+        else:
+            minify_js_file(self.static_directory, file_path, target_dir)
+
+        self.event.set()
+        click.echo(f'Changes in {file_path.name}. Updated {minify_path.name}')
 
 
-class PostsCreatedHandler(BaseHandler):
+class PostHandler(BaseHandler):
     def __init__(
         self,
         event: threading.Event,
         app: Flask,
     ) -> None:
-        super().__init__(event)
+        super().__init__(event, ('.md',))
         self.app = app
+        self._post_hashes: dict[str, str] = {}
 
     @typing.override
-    def handle_file(self, file_path: Path, *, is_new: bool) -> None:
-        if file_path.suffix != '.md':
-            return
+    def handle_file(self, file_path: Path, event_type: str) -> None:
+        hash_key = str(file_path.resolve())
+        # if the post hash is the same exit early
         posts = site.posts.get_posts(self.app)
         posts.reload()
         sync_posts(self.app)
-        for post in posts:
-            validate_post(post, [])
+        post = posts.get(file_path.stem)
+        if not post:
+            self._post_hashes.pop(hash_key, None)
+            if event_type == 'deleted':  # pragma: no branch
+                self.event.set()
+                click.echo(f'Post {event_type} {file_path.name}.')
+            return
+        with self.app.app_context():
+            post_hash = get_post_hash(post)
+        if self._post_hashes.get(hash_key) == post_hash:
+            return
+        for p in posts:
+            validate_post(p, [])
 
+        self._post_hashes[hash_key] = post_hash
         self.event.set()
-
-        action = 'created' if is_new else 'updated'
-        click.echo(f'Post {action} {file_path.name}.')
+        click.echo(f'Post {event_type} {file_path.name}.')
 
 
 class TemplateHandler(BaseHandler):
     def __init__(self, event: threading.Event, app: Flask) -> None:
-        super().__init__(event)
+
+        super().__init__(event, ('.html',))
         self.app = app
 
     @typing.override
-    def handle_file(self, file_path: Path, *, is_new: bool) -> None:
-        if file_path.suffix != '.html' or file_path.stat().st_size == 0:
-            return
+    def handle_file(self, file_path: Path, event_type: str) -> None:
         self.app.jinja_env.cache.clear()  # type: ignore[union-attr]
         self.event.set()
-        action = 'created' if is_new else 'updated'
-        click.echo(f'Template {action} {file_path.name}.')
+        click.echo(f'Template {event_type} {file_path.name}.')
 
 
 def watch_disk(
@@ -251,7 +317,7 @@ def watch_disk(
                 path=str(static_directory),
                 recursive=True,
             )
-        posts_handler = PostsCreatedHandler(
+        posts_handler = PostHandler(
             refresh_event,
             app,
         )

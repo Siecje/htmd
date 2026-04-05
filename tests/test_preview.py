@@ -17,8 +17,10 @@ import niquests
 import pytest
 from watchdog.events import (
     DirCreatedEvent,
+    DirDeletedEvent,
     DirMovedEvent,
     FileCreatedEvent,
+    FileDeletedEvent,
     FileModifiedEvent,
 )
 from werkzeug.serving import BaseWSGIServer  # noqa: TC002
@@ -682,12 +684,12 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     new_css_path = static_path / 'new.css'
     atomic_write(new_css_path, new_css)
 
-    css_file_event = FileModifiedEvent(
-        bytes(new_css_path),
+    css_file_event = FileCreatedEvent(
+        str(new_css_path),
         '',
         is_synthetic=True,
     )
-    static_handler.on_modified(css_file_event)
+    static_handler.on_created(css_file_event)
     assert event.is_set()
     event.clear()
 
@@ -707,7 +709,7 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     assert not event.is_set()
 
     moved_dir_event = DirMovedEvent(
-        bytes(new_js_path),
+        str(new_js_path),
         '',
         is_synthetic=True,
     )
@@ -715,11 +717,11 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     assert not event.is_set()
 
     created_dir_event = DirCreatedEvent(
-        bytes(new_js_path),
+        str(new_js_path),
         '',
         is_synthetic=True,
     )
-    static_handler.on_created(created_dir_event)
+    static_handler.dispatch(created_dir_event)
     assert not event.is_set()
 
     # Test SVG file
@@ -733,18 +735,58 @@ def test_static_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     static_handler.on_modified(svg_file_event)
     assert not event.is_set()
 
+    deleted_dir_event = DirDeletedEvent(
+        str(new_js_path),
+        '',
+        is_synthetic=True,
+    )
+    static_handler.on_deleted(deleted_dir_event)
+    assert not event.is_set()
 
-def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
+    new_js_path.unlink()
+    deleted_file_event = FileDeletedEvent(
+        str(new_js_path),
+        '',
+        is_synthetic=True,
+    )
+    static_handler.on_deleted(deleted_file_event)
+    assert event.is_set()
+    event.clear()
+
+    # minified file
+    new_css = 'body{background-color:aqua}'
+    new_css_path = static_path / 'new.min.css'
+    atomic_write(new_css_path, new_css)
+
+    css_file_event = FileCreatedEvent(
+        str(new_css_path),
+        '',
+        is_synthetic=True,
+    )
+    static_handler.on_created(css_file_event)
+    assert not event.is_set()
+
+    # delete file without minified file existing
+    new_css_path = static_path / 'deleted.css'
+    css_deleted_event = FileDeletedEvent(
+        str(new_css_path),
+        '',
+        is_synthetic=True,
+    )
+    static_handler.on_deleted(css_deleted_event)
+    assert not event.is_set()
+
+
+def test_posts_handler(run_start: CliRunner, flask_app: Flask) -> None:  # noqa: ARG001
     event = threading.Event()
-    app = Flask(__name__)
-    posts_handler = preview_module.PostsCreatedHandler(event, app)
+    posts_handler = preview_module.PostHandler(event, flask_app)
 
     # Add non .md file
     non_md_path = Path('posts') / 'not_markdown.txt'
     atomic_write(non_md_path, 'This is not markdown.')
 
     new_file_event = FileCreatedEvent(
-        bytes(non_md_path),
+        str(non_md_path),
         '',
         is_synthetic=True,
     )
@@ -752,35 +794,54 @@ def test_posts_handler(run_start: CliRunner) -> None:  # noqa: ARG001
     assert not event.is_set()
 
     posts_path = Path('posts')
-    new_dir_event = DirCreatedEvent(bytes(posts_path), '', is_synthetic=True)
+    new_dir_event = DirCreatedEvent(str(posts_path), '', is_synthetic=True)
     posts_handler.on_created(new_dir_event)
     assert not event.is_set()
 
-    moved_dir_event = DirMovedEvent(bytes(posts_path), '', is_synthetic=True)
+    moved_dir_event = DirMovedEvent(str(posts_path), '', is_synthetic=True)
     posts_handler.on_moved(moved_dir_event)
     assert not event.is_set()
+
+    post_path = Path('posts') / 'deleted.md'
+    # FileCreatedEvent but post doesn't exist
+    post_created_event = FileCreatedEvent(
+        str(post_path),
+        '',
+        is_synthetic=True,
+    )
+    posts_handler.on_created(post_created_event)
+
+    post_deleted_event = FileDeletedEvent(
+        str(post_path),
+        '',
+        is_synthetic=True,
+    )
+    posts_handler.on_deleted(post_deleted_event)
+    assert event.is_set()
+
+
 
 
 def test_posts_handler_double_event(flask_app: Flask) -> None:
     # Simulate when editor triggers created and modified events
     refresh_event = threading.Event()
-    handler = preview_module.PostsCreatedHandler(refresh_event, flask_app)
+    handler = preview_module.PostHandler(refresh_event, flask_app)
     example_path = Path('posts') / 'example.md'
     copy_path = Path('posts') / 'copy.md'
     shutil.copy(example_path, copy_path)
 
     # First call: Processes normally
     handler.on_created(
-        FileCreatedEvent(bytes(copy_path), '', is_synthetic=True),
+        FileCreatedEvent(str(copy_path), '', is_synthetic=True),
     )
     assert refresh_event.is_set()
     refresh_event.clear()
-    # Since the file was changed in the first event it will be processed again
-    # This is to prevent missing file changes between first event start and end
+
+    # Since the file has not changed it will not trigger a refresh
     handler.on_modified(
-        FileModifiedEvent(bytes(copy_path), '', is_synthetic=True),
+        FileModifiedEvent(str(copy_path), '', is_synthetic=True),
     )
-    assert refresh_event.is_set()
+    assert not refresh_event.is_set()
 
 
 def test_favicon(run_start: CliRunner) -> None:
@@ -975,6 +1036,68 @@ def test_preview_new_template(run_start: CliRunner) -> None:
         assert '<h1>All New</h1>' in after
 
 
+def test_preview_delete_template(run_start: CliRunner) -> None:
+    url = '/blog/'
+    template_path = Path('templates') / 'all_posts.html'
+    contents = '''
+{% extends "_layout.html" %}
+
+{% block title %}Posts{% endblock title %}
+
+{% block content %}
+  <article>
+  <h1>All New</h1>
+
+  {% for post in posts %}
+    {% with show_text=False, loop_state=loop %}
+      {% include "_list.html" %}
+    {% endwith %}
+  {% endfor %}
+  </article>
+{% endblock content %}
+'''
+    atomic_write(template_path, contents)
+    with (
+        run_preview(run_start) as base_url,
+        niquests.Session() as session,
+    ):
+        response = http_get(base_url + url, session=session)
+        assert response.status_code == 200, url  # noqa: PLR2004
+        before = response.text
+        assert before is not None
+
+        template_path.unlink()
+
+        # Ensure webserver did not reload
+        read_timeout = False
+        after = before
+        max_attempts = 20
+        attempts = 1
+
+        while after == before and attempts < max_attempts:
+            try:
+                response = http_get(base_url + url, session=session)
+            except (
+                niquests.exceptions.ChunkedEncodingError,
+                niquests.exceptions.ConnectionError,
+                niquests.exceptions.ReadTimeout,
+            ):  # pragma: no cover
+                # happens during restart
+                read_timeout = True
+                break
+            else:
+                assert response.text is not None
+                after = response.text
+
+            attempts += 1
+
+        assert read_timeout is False, 'Preview did reload.'
+        assert response.status_code == 200, url  # noqa: PLR2004
+        assert after is not None
+        assert '<h1>All Posts</h1>' in after
+        assert '<h1>All New</h1>' not in after
+
+
 def test_preview_when_template_folder_does_not_exist(
     run_start: CliRunner,
 ) -> None:
@@ -991,3 +1114,35 @@ def test_preview_when_template_folder_does_not_exist(
         assert template_path.exists() is False
         response = http_get(base_url)
         assert response.status_code == success, base_url
+
+
+def test_preview_move_post(run_start: CliRunner) -> None:
+    old_path = Path('posts') / 'example.md'
+    new_path = Path('posts') / 'moved.md'
+
+    old_url = '/2014/10/30/example/'
+    new_url = '/2014/10/30/moved/'
+    with (
+        run_preview(run_start) as base_url,
+        niquests.Session() as session,
+    ):
+        response = http_get(base_url + old_url, session=session)
+        assert response.status_code == 200, old_url  # noqa: PLR2004
+        response = http_get(base_url + new_url, session=session)
+        assert response.status_code == 404, new_url  # noqa: PLR2004
+
+        shutil.move(old_path, new_path)
+        time.sleep(0.2)
+
+        response = http_get(base_url + new_url, session=session)
+        assert response.status_code == 200, new_url  # noqa: PLR2004
+        response = http_get(base_url + old_url, session=session)
+        assert response.status_code == 404, old_url  # noqa: PLR2004
+
+        shutil.move(new_path, old_path)
+        time.sleep(0.2)
+
+        response = http_get(base_url + old_url, session=session)
+        assert response.status_code == 200, old_url  # noqa: PLR2004
+        response = http_get(base_url + new_url, session=session)
+        assert response.status_code == 404, new_url  # noqa: PLR2004
