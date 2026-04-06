@@ -41,8 +41,12 @@
 {% endblock meta_tags %}
 
 {% block content %}
-  {# TODO: use post.image #}
   <article>
+    {% if post.image %}
+      <div class="post-image">
+        <img src="{{ url_for('static', filename=post.image) }}" alt="{{ post.title }}">
+      </div>
+    {% endif %}
     <h1>
       {% if encrypted_title %}
         <span id="post-title"></span>

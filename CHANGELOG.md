@@ -19,6 +19,7 @@
 - Include all non CSS and non JS static files automatically
 - Redirects specified in `[redirects]`
 - Homepage will always be included in the build
+- Use post `image` metadata in `_list.html` and `post.html` templates
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

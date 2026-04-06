@@ -166,6 +166,9 @@ footer ul li a {
 }
 
 .post-preview-link {
+  display: flex;
+  gap: 1.25em;
+  align-items: start;
   text-decoration: none;
   color: black;
 }
@@ -180,4 +183,14 @@ footer ul li a {
 
 li.active {
   font-weight: bold;
+}
+
+.post-thumbnail {
+    flex: 0 0 9.375em;
+}
+
+@media (max-width: 37.5em) {
+    .post-preview-link {
+        flex-direction: column;
+    }
 }
