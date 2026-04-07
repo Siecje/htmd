@@ -38,6 +38,19 @@ jobs:
         run: echo "::add-matcher::.github/mypy-matcher.json"
       - name: Run Mypy
         run: mypy . --no-error-summary --show-column-numbers
+      - name: Check for TODOs
+        run: |
+          # Look for TODOs in relevant file types
+          # We use ! to invert the exit code because grep returns 0 if it FINDS something.
+          # If grep finds a TODO, we want the step to FAIL.
+          ! grep -rin "TODO" . \
+            --include="*.py" \
+            --include="*.html" \
+            --include="*.md" \
+            --include="*.toml" \
+            --include="*.css" \
+            --include="*.js" \
+            --exclude-dir=".git"
   unit-test:
     strategy:
       fail-fast: false

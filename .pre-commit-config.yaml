@@ -20,3 +20,11 @@ repos:
           Werkzeug,
         ]
         files: .
+  - repo: local
+    hooks:
+    - id: forbid-todos
+      name: check for TODOs
+      entry: grep -rin "TODO"
+      language: system
+      # Scan python, templates, and static files
+      types_or: [python, html, markdown, css, javascript, toml]
