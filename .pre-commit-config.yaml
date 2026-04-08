@@ -24,7 +24,6 @@ repos:
     hooks:
     - id: forbid-todos
       name: check for TODOs
-      entry: grep -rin "TODO"
+      entry: bash -c '! grep -Eil "TODO|FIXME" "$@"' --
       language: system
-      # Scan python, templates, and static files
       types_or: [python, html, markdown, css, javascript, toml]
