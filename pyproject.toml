@@ -26,7 +26,7 @@ dependencies = [
   "pagefind[extended]",
   "Pygments",
   "watchdog",
-  "Werkzeug==3.1.6",
+  "Werkzeug",
 ]
 description = "Write Markdown and Jinja2 templates to create a website"
 maintainers = [
