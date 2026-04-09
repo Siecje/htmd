@@ -42,11 +42,11 @@
 
 {% block content %}
   <article>
-    {% if post.image %}
+    {% if post.image -%}
       <div class="post-image">
         <img src="{{ url_for('static', filename=post.image) }}" alt="{{ post.title }}">
       </div>
-    {% endif %}
+    {%- endif -%}
     <h1>
       {% if encrypted_title %}
         <span id="post-title"></span>

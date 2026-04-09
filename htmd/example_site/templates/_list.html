@@ -36,12 +36,12 @@
       class="post-preview-link"
     >
   {% endif %}
-    {% if post.image and not is_protected %}
+    {% if post.image and not is_protected -%}
       <div class="post-thumbnail">
         <img src="{{ url_for('static', filename=post.image) }}" alt="{{ post.title }}">
       </div>
-    {% endif %}
-    {% set is_protected = ('password' in post.meta and post.meta['password'] != false) %}
+    {%- endif %}
+    {%- set is_protected = ('password' in post.meta and post.meta['password'] != false) %}
     <h2 class="post-title">
       {% if is_protected %}
         Protected Post
