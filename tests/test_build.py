@@ -726,3 +726,22 @@ def test_build_index_is_always_included(run_start: CliRunner) -> None:
 
     build_index = Path('build') / 'index.html'
     assert build_index.is_file()
+
+
+def test_build_with_keep_files(run_start: CliRunner) -> None:
+    # Without keep_files CNAME file will be removed from build
+    Path('build').mkdir()
+    keep_file = Path('build') / 'CNAME'
+    keep_file.write_text('www.example.com')
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert not keep_file.is_file()
+
+    set_config_field('build', 'keep_files', ['CNAME'])
+    keep_file.write_text('www.example.com')
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    assert keep_file.is_file()
+    assert keep_file.read_text() == 'www.example.com'

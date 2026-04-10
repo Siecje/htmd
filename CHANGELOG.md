@@ -20,6 +20,7 @@
 - Redirects specified in `[redirects]`
 - Homepage will always be included in the build
 - Use post `image` metadata in `_list.html` and `post.html` templates
+- Preserve build files in `keep_files` under `[build]`
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

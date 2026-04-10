@@ -149,8 +149,9 @@ def create_app(  # noqa: PLR0915
         project_dir / app.config['BUILD_FOLDER']
     )
     app.config['FREEZER_REMOVE_EXTRA_FILES'] = True
+    custom_ignores = toml_config_get(htmd_config, 'build', 'keep_files', [])
     # Allow build to be version controlled
-    app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', '.hg*']
+    app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', '.hg*', *custom_ignores]
     app.config['FREEZER_STATIC_IGNORE'] = ['*.css', '*.js']
     app.config['FLATPAGES_EXTENSION'] = app.config['POSTS_EXTENSION']
 
