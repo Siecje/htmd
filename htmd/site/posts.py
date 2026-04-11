@@ -412,58 +412,80 @@ def day_view(year: str, month: str, day: str) -> ResponseReturnValue:
 
 
 def create_posts_blueprint(
-    posts_base_path: str = '/blog/',
+    url_prefix: str,
+    all_posts_path: str,
     *,
     random_post_enabled: bool = False,
 ) -> tuple[Blueprint, Posts]:
     """
     Create a fresh Blueprint and Posts instance for an app.
 
-    `posts_base_path` is the URL path where the "all posts" view will be
-    mounted (for example: '/blog/' or '/all/'). Returns (blueprint,
-    posts_instance). This allows each Flask app to have an independent
-    blueprint and FlatPages extension object so tests and multiple app
-    instances don't share mutable state.
+    `url_prefix` is the base string prepended to all routes
+
+    `all_posts_path` is the URL path for the "all posts" view
+
+    `random_post_enabled` determines if the JSON posts endpoint is registered.
+
+    Returns (blueprint, posts_instance).
     """
     bp = Blueprint('posts', __name__)
     posts = Posts()
 
-    # Register the on_load function so templates get the helper
+    # Define reusable route components
+    re_year = r'<regex("\d{4}"):year>'
+    re_month = r'<regex("\d{2}"):month>'
+    re_day = r'<regex("\d{2}"):day>'
+
     bp.record_once(on_load)
 
-    # Register routes on the blueprint (endpoints will be prefixed with
-    # the blueprint name when the blueprint is registered on the app).
-    bp.add_url_rule('/feed.atom', endpoint='feed', view_func=feed)
+    prefix = '/' + url_prefix.strip('/')
+    if prefix == '/':
+        prefix = ''
+
+    bp.add_url_rule(f'{prefix}/feed.atom', endpoint='feed', view_func=feed)
+
     if random_post_enabled:
-        bp.add_url_rule('/posts.json', endpoint='posts_json', view_func=posts_json)
+        bp.add_url_rule(
+            f'{prefix}/posts.json',
+            endpoint='posts_json',
+            view_func=posts_json,
+        )
+
+    # Individual Post View
     bp.add_url_rule(
-        r'/<regex("\d{4}"):year>/<regex("\d{2}"):month>/<regex("\d{2}"):day>/<path:path>/',
+        f'{prefix}/{re_year}/{re_month}/{re_day}/<path:path>/',
         endpoint='post',
         view_func=post,
     )
-    bp.add_url_rule('/draft/<post_uuid>/', endpoint='draft', view_func=draft)
-    bp.add_url_rule('/tags/', endpoint='all_tags', view_func=all_tags)
-    bp.add_url_rule('/tags/<string:tag>/', endpoint='tag', view_func=tag)
-    bp.add_url_rule('/author/<author>/', endpoint='author', view_func=author)
+
+    bp.add_url_rule(f'{prefix}/draft/<post_uuid>/', endpoint='draft', view_func=draft)
+    bp.add_url_rule(f'{prefix}/tags/', endpoint='all_tags', view_func=all_tags)
+    bp.add_url_rule(f'{prefix}/tags/<string:tag>/', endpoint='tag', view_func=tag)
+    bp.add_url_rule(f'{prefix}/author/<author>/', endpoint='author', view_func=author)
+
+    # Archive Views
     bp.add_url_rule(
-        r'/<regex("\d{4}"):year>/',
+        f'{prefix}/{re_year}/',
         endpoint='year_view',
         view_func=year_view,
     )
     bp.add_url_rule(
-        r'/<regex("\d{4}"):year>/<regex("\d{2}"):month>/',
+        f'{prefix}/{re_year}/{re_month}/',
         endpoint='month_view',
         view_func=month_view,
     )
     bp.add_url_rule(
-        r'/<regex("\d{4}"):year>/<regex("\d{2}"):month>/<regex("\d{2}"):day>/',
+        f'{prefix}/{re_year}/{re_month}/{re_day}/',
         endpoint='day_view',
         view_func=day_view,
     )
 
     # Register the all_posts view at the configurable base path.
+    if all_posts_path == '':
+        all_posts_path = prefix + '/'
+
     bp.add_url_rule(
-        posts_base_path,
+        all_posts_path,
         endpoint='all_posts',
         view_func=all_posts,
     )

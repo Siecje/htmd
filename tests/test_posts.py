@@ -64,9 +64,9 @@ def test_posts_base_path(run_start: CliRunner) -> None:
     assert '<h1>All Posts</h1>' in contents
     assert 'Example Post' in contents
 
-    # Set posts.base_path to /all/ in config.toml
-    set_config_field('posts', 'base_path', '/all/')
-    assert 'base_path = "/all/"' in Path('config.toml').read_text()
+    # Set posts.all_posts_path to /all/ in config.toml
+    set_config_field('posts', 'all_posts_path', '/all/')
+    assert 'all_posts_path = "/all/"' in Path('config.toml').read_text()
 
     result = run_start.invoke(build)
     assert result.exit_code == 0
@@ -188,3 +188,38 @@ def test_random_post(run_start: CliRunner) -> None:
     index_path = Path('build') / 'index.html'
     index_contents = index_path.read_text()
     assert expected not in index_contents
+
+
+def test_posts_url_prefix(run_start: CliRunner) -> None:
+    remove_from_config_field('all_posts_path')
+    set_config_field('posts', 'url_prefix', '/myprefix/')
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    prefixed_index = Path('build') / 'myprefix' / 'index.html'
+    assert prefixed_index.is_file()
+    contents = prefixed_index.read_text()
+    assert '<h1>All Posts</h1>' in contents
+    assert 'Example Post' in contents
+
+    post_path = Path('build') / 'myprefix' / '2014' / '10' / '30' / 'index.html'
+    assert post_path.is_file()
+    post_contents = post_path.read_text()
+    assert 'Example Post' in post_contents
+
+    set_config_field('posts', 'all_posts_path', '/blog/')
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    assert not prefixed_index.is_file()
+
+    all_posts_index = Path('build') / 'blog' / 'index.html'
+    assert all_posts_index.is_file()
+    contents = all_posts_index.read_text()
+    assert '<h1>All Posts</h1>' in contents
+    assert 'Example Post' in contents
+
+    assert post_path.is_file()
+    post_contents = post_path.read_text()
+    assert 'Example Post' in post_contents

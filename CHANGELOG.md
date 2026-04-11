@@ -10,7 +10,8 @@
 - `htmd preview` will populate password field for protected posts
 - Add `--minify-css/--no-minify-css` and `--minify-js/--no-minify-js` to `html preview` and `html build`.
 - Support markdown extensions to load in config.toml under `[markdown]` section with key `extensions`
-- Set URL for `posts.all_posts` in config.toml under `[posts]` section with key `base_url`.
+- Add config `[posts]` `all_posts_path` to set `posts.all_posts` URL
+- Add config `[posts]` `url_prefix` to set prefix for all `posts.*` URLS
 - Add `static/htmd.css` and `static/htmd.js` to add a fragment link next to headings
 - Add search with [Pagefind](https://pagefind.app/) to `htmd build`
 - Support pages in sub directories

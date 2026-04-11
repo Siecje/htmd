@@ -103,7 +103,6 @@ def create_app(  # noqa: PLR0915
         'MINIFY_HTML': ('html', 'minify', False),
 
         'POSTS_EXTENSION': ('posts', 'extension', '.md'),
-        'POSTS_BASE_PATH': ('posts', 'base_path', '/blog/'),
 
         'SHOW_AUTHOR': ('posts.author', 'show', True),
         'DEFAULT_AUTHOR': ('posts.author', 'default_name', ''),
@@ -241,10 +240,12 @@ def create_app(  # noqa: PLR0915
     app.register_blueprint(pages)
 
     # Create a fresh blueprint and Posts instance for this app
-    posts_base_path = app.config.get('POSTS_BASE_PATH', '/blog/')
+    posts_base_path = toml_config_get(htmd_config, 'posts', 'url_prefix', '')
+    all_posts_path = toml_config_get(htmd_config, 'posts', 'all_posts_path', '')
     random_post_enabled = app.config['RANDOM_POST_ENABLED']
     posts_bp, posts = create_posts_blueprint(
         posts_base_path,
+        all_posts_path,
         random_post_enabled=random_post_enabled,
     )
     app.register_blueprint(posts_bp)

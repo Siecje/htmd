@@ -27,7 +27,7 @@ pretty = false
 minify = false
 
 [posts]
-base_path = "/blog/"
+all_posts_path = "/blog/"
 extension = ".md"
 
 [posts.author]
