@@ -1,6 +1,5 @@
 from pathlib import Path
 import shutil
-import uuid
 
 from click.testing import CliRunner
 from htmd.cli.build import build
@@ -156,7 +155,7 @@ def test_post_comments(run_start: CliRunner) -> None:
     post_contents = post_path.read_text()
     assert '<div id="cusdis_thread"' not in post_contents
 
-    app_id = str(uuid.uuid4())
+    app_id = '57b75a5f-cd79-4368-9791-1c94fc52241c'
     set_config_field('posts.comments', 'enabled', True)  # noqa: FBT003
     set_config_field('posts.comments', 'cusdis_app_id', app_id)
     set_config_field('posts.comments', 'cusdis_host', 'https://cusdis.com')
