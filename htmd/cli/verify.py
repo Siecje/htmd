@@ -28,14 +28,14 @@ def verify(ctx: click.Context) -> Flask:
             break
     else:
         msg = 'All posts are correctly formatted.'
-        click.echo(click.style(msg, fg='green'))
+        click.secho(msg, fg='green')
 
     # Check if SITE_NAME exists
     site_name = app.config.get('SITE_NAME')
     if not site_name:
         # SITE_NAME is not required
         message = f'[site] name is not set in {CONFIG_FILE}.'
-        click.echo(click.style(message, fg='yellow'))
+        click.secho(message, fg='yellow', err=True)
 
     if not correct:
         sys.exit(1)

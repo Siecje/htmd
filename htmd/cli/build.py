@@ -70,10 +70,10 @@ def build(
         cmd.append('--keep-index-url')
 
     try:
-        click.echo(click.style('Running Pagefind indexing...', fg='cyan'))
+        click.secho('Running Pagefind indexing...', fg='cyan')
         subprocess.run(cmd, check=True, capture_output=True, text=True)  # noqa: S603
     except subprocess.CalledProcessError as e:  # pragma: no cover
-        click.echo(click.style(f'Pagefind failed: {e.stderr}', fg='red'), err=True)
+        click.secho(f'Pagefind failed: {e.stderr}', fg='red', err=True)
 
     msg = f'Static site was created in {build_dir}'
-    click.echo(click.style(msg, fg='green'))
+    click.secho(msg, fg='green')

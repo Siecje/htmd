@@ -499,7 +499,7 @@ def preview(
 
         while not stop_event.is_set():
             if not webserver_thread.is_alive():
-                click.echo('Webserver crashed! Restarting...')
+                click.secho('Webserver crashed! Restarting...', fg='red')
                 webserver = create_webserver(app, host, port)
                 webserver_thread = threading.Thread(
                     target=webserver.serve_forever,

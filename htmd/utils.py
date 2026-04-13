@@ -51,9 +51,9 @@ def create_directory(name: str) -> Path:
         directory.mkdir()
     except FileExistsError:
         msg = f'{name} already exists and was not created.'
-        click.echo(click.style(msg, fg='yellow'))
+        click.secho(msg, fg='yellow')
     else:
-        click.echo(click.style(f'{name} was created.', fg='green'))
+        click.secho(f'{name} was created.', fg='green')
     return directory
 
 
@@ -174,10 +174,10 @@ def minify_js_files(
 def copy_file(source: Path, destination: Path) -> None:
     if destination.exists() is False:
         shutil.copyfile(source, destination)
-        click.echo(click.style(f'{destination} was created.', fg='green'))
+        click.secho(f'{destination} was created.', fg='green')
     else:
         msg = f'{destination} already exists and was not created.'
-        click.echo(click.style(msg, fg='yellow'))
+        click.secho(msg, fg='yellow')
 
 
 def copy_missing_templates() -> None:
@@ -268,7 +268,7 @@ def valid_uuid(string: str) -> bool:
 
 
 def send_stderr(message: str) -> None:
-    click.echo(click.style(message, fg='red'), err=True)
+    click.secho(message, fg='red', err=True)
 
 
 def validate_post(  # noqa: C901
