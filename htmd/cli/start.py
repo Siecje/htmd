@@ -6,6 +6,15 @@ from ..constants import CONFIG_FILE
 from ..utils import copy_missing_templates, copy_site_file, create_directory
 
 
+FILES = {
+    'static/': ['_reset.css', 'style.css', 'favicon.svg'],
+    'pages/': ['about.html', 'search.html'],
+    'posts/': ['example.md'],
+    'posts/password-protect/': ['.keep'],
+    '.': [CONFIG_FILE],
+}
+
+
 @click.command('start', short_help='Create example files to get started.')
 @click.option(
     '--all-templates',
@@ -20,19 +29,14 @@ def start(*, all_templates: bool) -> None:
     else:
         copy_site_file(dir_templates, '_layout.html')
 
-    dir_static = create_directory('static/')
-    copy_site_file(dir_static, '_reset.css')
-    copy_site_file(dir_static, 'style.css')
-    copy_site_file(dir_static, 'favicon.svg')
+    for folder, filenames in FILES.items():
+        target_dir = Path() if folder == '.' else create_directory(folder)
 
-    dir_pages = create_directory('pages/')
-    copy_site_file(dir_pages, 'about.html')
-    copy_site_file(dir_pages, 'search.html')
+        # Process files for target_dir
+        for filename in filenames:
+            if filename == '.keep':
+                (target_dir / filename).touch()
+            else:
+                copy_site_file(target_dir, filename)
 
-    dir_posts = create_directory('posts/')
-    copy_site_file(dir_posts, 'example.md')
-    create_directory('posts/password-protect/')
-    Path('posts/password-protect/.keep').touch()
-
-    copy_site_file(Path(), CONFIG_FILE)
     click.echo(f'Add the site name and edit settings in {CONFIG_FILE}')
