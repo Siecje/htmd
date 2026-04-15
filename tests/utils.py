@@ -104,7 +104,7 @@ def set_example_subtitle(value: str) -> None:
     set_example_field('subtitle', value)
 
 
-def _format_value(v: str | bool | list[str]) -> str:  # noqa: FBT001
+def _format_value(v: str | bool | int | list[str]) -> str:  # noqa: FBT001
     """
     Format a Python value for insertion into TOML.
 
@@ -116,6 +116,10 @@ def _format_value(v: str | bool | list[str]) -> str:  # noqa: FBT001
     # Booleans must be lower-case literals in TOML
     if isinstance(v, bool):
         return str(v).lower()
+
+    # Integers must be literals without quotes
+    if isinstance(v, int):
+        return str(v)
 
     # Lists / tuples -> format each element recursively
     if isinstance(v, (list, tuple)):
@@ -176,7 +180,7 @@ def _insert_after_section(
 def set_config_field(
     section: str,
     field: str,
-    value: str | bool | list[str],  # noqa: FBT001
+    value: str | bool | int | list[str],  # noqa: FBT001
 ) -> None:
     """
     Set or add `field` inside `section` in `config.toml`.

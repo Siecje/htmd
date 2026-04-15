@@ -22,6 +22,9 @@
 - Homepage will always be included in the build
 - Use post `image` metadata in `_list.html` and `post.html` templates
 - Preserve build files in `keep_files` under `[build]`
+- Add config `[posts.feed]` to control Atom feed content
+    - `full_text` to set if the feed includes full post content
+    - `truncate_limit` to set the character limit when `full_text` is false
 ### Changed
 - Improve Atom feed
     - Use fully qualified URLs

@@ -102,6 +102,9 @@ def create_app(  # noqa: PLR0915
         'PRETTY_HTML': ('html', 'pretty', False),
         'MINIFY_HTML': ('html', 'minify', False),
 
+        'POSTS_FEED_FULL_TEXT': ('posts.feed', 'full_text', True),
+        'POSTS_FEED_TRUNCATE_LIMIT': ('posts.feed', 'truncate_limit', 255),
+
         'POSTS_EXTENSION': ('posts', 'extension', '.md'),
 
         'SHOW_AUTHOR': ('posts.author', 'show', True),

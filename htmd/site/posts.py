@@ -120,6 +120,10 @@ def feed() -> Response:
         title=name,
         url=url,
     )
+
+    include_full_text: bool = current_app.config['POSTS_FEED_FULL_TEXT']
+    truncate_limit: int = current_app.config['POSTS_FEED_TRUNCATE_LIMIT']
+
     posts = get_posts()
     for post in posts.published_posts:
         url = url_for(
@@ -138,9 +142,13 @@ def feed() -> Response:
             'author',
             current_app.config.get('DEFAULT_AUTHOR'),
         )
+        if include_full_text:
+            content = post.html
+        else:
+            content = truncate_post_html(post.html, limit=truncate_limit)
         atom.add(
             post.meta.get('title'),
-            post.html,
+            content,
             author=author,
             content_type='html',
             published=published,

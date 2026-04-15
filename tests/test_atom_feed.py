@@ -265,3 +265,26 @@ def test_with_site_description(run_start: CliRunner) -> None:
 
     assert subtitle is not None
     assert subtitle.text == description
+
+
+def test_feed_full_text_false(run_start: CliRunner) -> None:
+    set_config_field('posts.feed', 'full_text', False)  # noqa: FBT003
+    set_config_field('posts.feed', 'truncate_limit', 5)
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    feed_path = Path('build') / 'feed.atom'
+    feed_contents = feed_path.read_text()
+
+    root = ET.fromstring(feed_contents)  # noqa: S314
+    ns = {'atom': 'http://www.w3.org/2005/Atom'}
+
+    entry = root.find('atom:entry', ns)
+    assert entry is not None
+
+    content_el = entry.find('atom:content', ns)
+    assert content_el is not None
+
+    expected = '<p>This...</p>'
+    assert content_el.text == expected
