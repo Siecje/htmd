@@ -64,12 +64,6 @@ def set_stop_event_on_signal(
     signal.signal(signal.SIGINT, handle_signal)
 
 
-def get_file_hash(file_path: Path) -> str:
-    with file_path.open('rb') as f:
-        digest = hashlib.file_digest(f, 'sha256')
-    return digest.hexdigest()
-
-
 class EventUpdates(typing.TypedDict):
     src_path: str
     dest_path: str
@@ -129,6 +123,11 @@ class BaseHandler(FileSystemEventHandler):
     def handle_file(self, file_path: Path, event_type: str) -> None:
         """Handle a file event."""
 
+    def get_file_hash(self, file_path: Path) -> str:
+        with file_path.open('rb') as f:
+            digest = hashlib.file_digest(f, 'sha256')
+        return digest.hexdigest()
+
     def handle_event(self, file_path: Path, event_type: str) -> None:
         if file_path.name in self.skips or file_path.suffix in self.skips:
             return
@@ -144,8 +143,9 @@ class BaseHandler(FileSystemEventHandler):
             # Ignore empty files
             if file_path.stat().st_size == 0:
                 return
-            file_hash = get_file_hash(file_path)
+            file_hash = self.get_file_hash(file_path)
         except FileNotFoundError:  # pragma: no cover
+            self._remove_file_hash(file_path)
             return
 
         hash_key = str(file_path.resolve())
@@ -223,30 +223,36 @@ class PostHandler(BaseHandler):
     ) -> None:
         super().__init__(event, ('.md',))
         self.app = app
-        self._post_hashes: dict[str, str] = {}
 
     @typing.override
-    def handle_file(self, file_path: Path, event_type: str) -> None:
-        hash_key = str(file_path.resolve())
-        # if the post hash is the same exit early
+    def get_file_hash(self, file_path: Path) -> str:
         posts = site.posts.get_posts(self.app)
         posts.reload()
         sync_posts(self.app)
         post = posts.get(file_path.stem)
-        if not post:
-            self._post_hashes.pop(hash_key, None)
-            if event_type == 'deleted':  # pragma: no branch
-                self.event.set()
-                click.echo(f'Post {event_type} {file_path.name}.')
-            return
+        if not post:  # pragma: no cover
+            msg = f'Post {file_path.stem} does not exist'
+            raise FileNotFoundError(msg)
         with self.app.app_context():
             post_hash = get_post_hash(post)
-        if self._post_hashes.get(hash_key) == post_hash:
-            return
-        for p in posts:
-            validate_post(p, [])
+        return post_hash
 
-        self._post_hashes[hash_key] = post_hash
+    @typing.override
+    def handle_file(self, file_path: Path, event_type: str) -> None:
+        if event_type == 'deleted':
+            posts = site.posts.get_posts(self.app)
+            posts.reload()
+            sync_posts(self.app)
+            self.event.set()
+            click.echo(f'Post {event_type} {file_path.name}.')
+            return
+
+        posts = site.posts.get_posts(self.app)
+        post = posts.get(file_path.stem)
+        if not post:  # pragma: no cover
+            return
+
+        validate_post(post, [])
         self.event.set()
         click.echo(f'Post {event_type} {file_path.name}.')
 

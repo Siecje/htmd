@@ -1146,3 +1146,25 @@ def test_preview_move_post(run_start: CliRunner) -> None:
         assert response.status_code == 200, old_url  # noqa: PLR2004
         response = http_get(base_url + new_url, session=session)
         assert response.status_code == 404, new_url  # noqa: PLR2004
+
+        shutil.move(old_path, new_path)
+        time.sleep(0.2)
+
+        response = http_get(base_url + new_url, session=session)
+        assert response.status_code == 200, new_url  # noqa: PLR2004
+        response = http_get(base_url + old_url, session=session)
+        assert response.status_code == 404, old_url  # noqa: PLR2004
+
+
+def test_preview_delete_post(run_start: CliRunner) -> None:
+    post_path = Path('posts') / 'example.md'
+    post_url = '/2014/10/30/example/'
+    with (
+        run_preview(run_start) as base_url,
+        niquests.Session() as session,
+    ):
+        post_path.unlink()
+        time.sleep(0.2)
+
+        response = http_get(base_url + post_url, session=session)
+        assert response.status_code == 404  # noqa: PLR2004
