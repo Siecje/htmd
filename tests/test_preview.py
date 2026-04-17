@@ -1168,3 +1168,55 @@ def test_preview_delete_post(run_start: CliRunner) -> None:
 
         response = http_get(base_url + post_url, session=session)
         assert response.status_code == 404  # noqa: PLR2004
+
+
+def test_preview_date_changes(run_start: CliRunner) -> None:
+    post_path = Path('posts') / 'example.md'
+
+    old_url = '/2014/10/30/example/'
+    new_url = '/2026/04/17/example/'
+
+    with (
+        run_preview(run_start) as base_url,
+        niquests.Session() as session,
+    ):
+        # verify the old URL works initially
+        response = http_get(base_url + old_url, session=session)
+        assert response.status_code == 200  # noqa: PLR2004
+        assert response.text is not None
+        assert 'Example Post' in response.text
+
+        # new_url is 404
+        response = http_get(base_url + new_url, session=session)
+        assert response.status_code == 404  # noqa: PLR2004
+
+        # change date
+        new_contents = post_path.read_text().replace(
+            'published: 2014-10-30',
+            'published: 2026-04-17',
+        )
+        atomic_write(post_path, new_contents)
+
+        max_attempts = 20
+        success = False
+        for _ in range(max_attempts):  # pragma: no branch
+            try:
+                old_resp = http_get(base_url + old_url, session=session)
+                new_resp = http_get(base_url + new_url, session=session)
+
+                if (
+                    old_resp.status_code == 404  # noqa: PLR2004
+                    and new_resp.status_code == 200  # noqa: PLR2004
+                ):
+                    assert new_resp.text is not None
+                    assert 'Example Post' in new_resp.text
+                    success = True
+                    break
+            except (
+                niquests.exceptions.ConnectionError,
+                niquests.exceptions.ReadTimeout,
+            ):  # pragma: no cover
+                break
+            time.sleep(0.1)  # pragma: no cover
+
+        assert success, f'URL did not update from {old_url} to {new_url}.'
