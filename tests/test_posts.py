@@ -222,3 +222,30 @@ def test_posts_url_prefix(run_start: CliRunner) -> None:
     assert post_path.is_file()
     post_contents = post_path.read_text()
     assert 'Example Post' in post_contents
+
+
+def test_posts_in_sub_directory(run_start: CliRunner) -> None:
+    nested_dir = Path('posts') / 'tech' / 'python'
+    nested_dir.mkdir(parents=True, exist_ok=True)
+
+    post_content = (
+        '---\n'
+        'title: Nested Post\n'
+        'published: 2026-04-18\n'
+        'tags: [nested]\n'
+        'author: Author\n'
+        '...\n'
+        'Content of the nested post.\n'
+    )
+    post_file = nested_dir / 'deep-dive.md'
+    post_file.write_text(post_content)
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+
+    build_path = (
+        Path('build') / '2026' / '04' / '18'
+        / 'tech' / 'python' / 'deep-dive' / 'index.html'
+    )
+    assert build_path.is_file()
+    assert 'Content of the nested post' in build_path.read_text()

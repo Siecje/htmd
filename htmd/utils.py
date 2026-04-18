@@ -214,7 +214,7 @@ def set_post_metadata(
     post: Page,
     updates: dict[str, str],
 ) -> None:
-    post_folder = Path(app.config['FLATPAGES_ROOT']) / post.folder
+    post_folder = Path(app.config['FLATPAGES_ROOT'])
     file_extension = app.config['FLATPAGES_EXTENSION']
     file_path = post_folder / (post.path + file_extension)
     lines = file_path.read_text().splitlines(keepends=True)
@@ -416,7 +416,7 @@ def sync_posts(
     with app.app_context():
         for post in posts:
             file_updates: dict[str, str] = {}
-            if 'password' in post.meta and post.meta['password'] is None:
+            if 'password' in post.meta and (post.meta['password'] in ('', None, True)):
                 _, password = generate_private_key()
                 post.meta['password'] = file_updates['password'] = password
 

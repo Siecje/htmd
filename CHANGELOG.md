@@ -14,7 +14,7 @@
 - Add config `[posts]` `url_prefix` to set prefix for all `posts.*` URLS
 - Add `static/htmd.css` and `static/htmd.js` to add a fragment link next to headings
 - Add search with [Pagefind](https://pagefind.app/) to `htmd build`
-- Support pages in sub directories
+- Support posts and pages in sub directories
 - Support [cusdis](https://cusdis.com/) comments
 - Visit a random unvisited post
 - Include all non CSS and non JS static files automatically

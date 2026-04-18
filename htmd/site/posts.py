@@ -1,6 +1,7 @@
 import calendar
 from collections.abc import Iterator
 import datetime
+from pathlib import Path
 
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString, PageElement
@@ -220,7 +221,10 @@ def render_password_protected_post(post: Page) -> ResponseReturnValue:
 def post(year: str, month: str, day: str, path: str) -> ResponseReturnValue:
     date_str = f'{year}-{month}-{day}'
     posts = get_posts()
-    post = posts.get_or_404(path)
+    post = posts.get(path)
+    if not post:
+        path = str(Path('password-protect') / path)
+        post = posts.get_or_404(path)
     if draft_and_not_shown(post):
         abort(404)
     published = post.meta.get(

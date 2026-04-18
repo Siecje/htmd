@@ -1,4 +1,8 @@
 <div class="post-preview">
+  {# Define protection status and clean the path before generating the link #}
+  {%- set is_protected = ('password' in post.meta and post.meta['password'] != false) -%}
+  {%- set clean_path = post.path.replace('password-protect/', '') if is_protected else post.path -%}
+
   {% if post.published %}
     <a
       href="{{
@@ -7,7 +11,7 @@
           year=post.meta['published'].year,
           month=post.meta['published'].strftime('%m'),
           day=post.meta['published'].strftime('%d'),
-          path=post.path,
+          path=clean_path,
         )
       }}"
       class="post-preview-link"
@@ -30,7 +34,7 @@
           year=today.year,
           month=today.strftime('%m'),
           day=today.strftime('%d'),
-          path=post.path,
+          path=clean_path,
         )
       }}"
       class="post-preview-link"
@@ -41,7 +45,7 @@
         <img src="{{ url_for('static', filename=post.image) }}" alt="{{ post.title }}">
       </div>
     {%- endif %}
-    {%- set is_protected = ('password' in post.meta and post.meta['password'] != false) %}
+    
     <h2 class="post-title">
       {% if is_protected %}
         Protected Post
