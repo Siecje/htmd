@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from flask import (
     Blueprint,
     current_app,
+    make_response,
     render_template,
     Response,
     send_from_directory,
@@ -53,7 +54,12 @@ def changes() -> Response:
 # Will end up in the static directory
 @main_bp.route('/static/pygments.css')
 def pygments_css() -> ResponseReturnValue:
-    return pygments_style_defs('tango'), 200, {'Content-Type': 'text/css'}
+    response = make_response(pygments_style_defs('tango'))
+    response.headers['Content-Type'] = 'text/css'
+    # Tells browser to cache for 1 year
+    response.cache_control.max_age = 31536000
+    response.cache_control.public = True
+    return response
 
 
 @main_bp.route('/static/password-protect.js')
