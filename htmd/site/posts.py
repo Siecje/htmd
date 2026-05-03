@@ -161,17 +161,17 @@ def feed() -> Response:
 
 
 def posts_json() -> ResponseReturnValue:
-    posts = get_posts()
-    with current_app.app_context():
-        urls = [
-            '/{year}/{month}/{day}/{path}/'.format(
-                year=post.meta['published'].strftime('%Y'),
-                month=post.meta['published'].strftime('%m'),
-                day=post.meta['published'].strftime('%d'),
-                path=post.path,
-            )
-            for post in posts.published_posts
-        ]
+    posts = get_posts(current_app)
+    urls = [
+        url_for(
+            'posts.post',
+            year=post.meta['published'].strftime('%Y'),
+            month=post.meta['published'].strftime('%m'),
+            day=post.meta['published'].strftime('%d'),
+            path=post.path,
+        )
+        for post in posts.published_posts
+    ]
     return jsonify(urls)
 
 
