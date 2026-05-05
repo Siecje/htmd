@@ -2,8 +2,9 @@ import datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+from flask import Flask
 from htmd.cli.build import build
-from htmd.utils import atomic_write
+from htmd.utils import atomic_write, sync_posts
 
 from utils import (
     get_example_field,
@@ -312,6 +313,36 @@ def test_build_published_time_is_added(run_start: CliRunner) -> None:
         datetime.time.min,
         tzinfo=datetime.UTC,
     )
+
+
+def test_set_posts_datetime_handles_invalid_published_string(flask_app: Flask) -> None:
+    """Ensure sync_posts handles invalid published string values like 'foo'."""
+    set_example_field('published', 'foo')
+
+    # Run the sync logic directly (avoids verify CLI step)
+    sync_posts(flask_app)
+
+    after_published = get_example_field('published')
+    assert isinstance(after_published, str)
+
+    assert after_published != 'foo'
+    assert 'T' in after_published
+    datetime.datetime.fromisoformat(after_published)
+
+
+def test_set_posts_datetime_handles_invalid_published_integer(flask_app: Flask) -> None:
+    """Ensure sync_posts handles invalid published integer values like '12'."""
+    set_example_field('published', '12')
+
+    # Run the sync logic directly (avoids verify CLI step)
+    sync_posts(flask_app)
+
+    after_published = get_example_field('published')
+    assert isinstance(after_published, str)
+
+    assert after_published != '12'
+    assert 'T' in after_published
+    datetime.datetime.fromisoformat(after_published)
 
 
 def test_build_updated_is_added(run_start: CliRunner) -> None:
