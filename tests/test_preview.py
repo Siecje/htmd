@@ -207,6 +207,7 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
         # Ensure directory exists
         Path(static_dir).mkdir(exist_ok=True)
 
+    set_config_field('static', 'minify_css', True)  # noqa: FBT003
     url = '/static/style.min.css'
     new_style = 'p {color: red;}'
     expected = new_style.replace(' ', '').replace(';', '')
@@ -237,8 +238,6 @@ def test_preview_css_changes(run_start: CliRunner, static_dir: str) -> None:
         while before == after and attempts < max_attempts:
             try:
                 response = http_get(base_url + url, session=session)
-                if response.status_code != 200:  # noqa: PLR2004
-                    continue
             except (
                 niquests.exceptions.ChunkedEncodingError,
                 niquests.exceptions.ConnectionError,
@@ -282,6 +281,7 @@ def test_preview_js_changes(run_start: CliRunner, static_dir: str) -> None:
         # Create file to test modified files update
         js_path.write_text('document.getElementByTagName("div")')
 
+    set_config_field('static', 'minify_js', True)  # noqa: FBT003
     url = '/static/script.min.js'
     expected = 'document.getElementByTagName("body")'
 

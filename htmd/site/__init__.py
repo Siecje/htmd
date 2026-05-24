@@ -60,8 +60,8 @@ def toml_config_get(
 def create_app(  # noqa: PLR0915
     *,
     show_drafts: bool = False,
-    minify_css: bool = True,
-    minify_js: bool = True,
+    minify_css: bool | None = None,
+    minify_js: bool | None = None,
 ) -> Flask:
     this_dir = Path(__file__).parent
     app = Flask(
@@ -101,6 +101,9 @@ def create_app(  # noqa: PLR0915
 
         'PRETTY_HTML': ('html', 'pretty', False),
         'MINIFY_HTML': ('html', 'minify', False),
+
+        'MINIFY_CSS': ('static', 'minify_css', None),
+        'MINIFY_JS': ('static', 'minify_js', None),
 
         'POSTS_FEED_FULL_TEXT': ('posts.feed', 'full_text', True),
         'POSTS_FEED_TRUNCATE_LIMIT': ('posts.feed', 'truncate_limit', 255),
@@ -168,6 +171,10 @@ def create_app(  # noqa: PLR0915
 
     static_src_root = Path(app.static_folder)
     css_paths = get_static_files(static_src_root, '.css')
+    if minify_css is None:
+        minify_css = app.config['MINIFY_CSS']
+    if minify_js is None:
+        minify_js = app.config['MINIFY_JS']
     if minify_css:
         static_source_dir = project_dir / app.config['BUILD_FOLDER'] / 'static'
         static_source_dir.mkdir(parents=True, exist_ok=True)

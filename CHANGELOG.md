@@ -60,7 +60,9 @@
     - `year_view` -> `posts.year_view`
 - Remove `INCLUDE_CSS`
 - Remove `INCLUDE_JS`
-- Remove combined.min.css and combined.min.js from static directory
+- Remove `combined.min.css` and `combined.min.js` from static directory
+- Add `[static.minify_css]` to minify CSS files
+- Add `[static.minify_js]` to minify JavaScript files
 - Use `[posts.author]` config section instead of `[author]`
 - `_list.html` needs `loop_state`
 
