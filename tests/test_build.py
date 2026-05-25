@@ -77,8 +77,8 @@ def test_build_css_minify(run_start: CliRunner) -> None:
     ]
     assert sorted(css_build_files) == [
         '_reset.min.css',
-        'htmd.css',
-        'pygments.css',
+        'htmd.min.css',
+        'pygments.min.css',
         'style.min.css',
     ]
 
@@ -525,6 +525,7 @@ def test_post_without_published_and_without_author(
 
 
 def test_build_static_keeps_subdirs_js(run_start: CliRunner) -> None:
+    # Create JS file in statis subdir
     subdir_name = 'js'
     src_dir = Path('static') / subdir_name
     src_dir.mkdir()
@@ -534,8 +535,9 @@ def test_build_static_keeps_subdirs_js(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0, result.output
 
-    dst_dir = Path('build') / 'static' / subdir_name / 'app.min.js'
-    assert dst_dir.exists()
+    # Verify JS file in build is in subdir
+    build_path = Path('build') / 'static' / subdir_name / 'app.js'
+    assert build_path.exists()
 
 
 def test_build_static_keeps_subdirs_css(run_start: CliRunner) -> None:
@@ -548,37 +550,53 @@ def test_build_static_keeps_subdirs_css(run_start: CliRunner) -> None:
     result = run_start.invoke(build)
     assert result.exit_code == 0, result.output
 
-    dst_dir = Path('build') / 'static' / subdir_name / 'app.min.css'
+    dst_dir = Path('build') / 'static' / subdir_name / 'app.css'
     assert dst_dir.exists()
 
 
 def test_build_when_minified_js_exists(run_start: CliRunner) -> None:
-    # If minified file exists in source use it without minifiying anything
+    # If minified file exists in source use it without minifiying it
     minified_path = Path('static') / 'new.min.js'
     min_js = 'document.getElementByTagName("body");'
     atomic_write(minified_path, min_js)
 
+    # If non minified version exists the minified file will be used
     new_path = Path('static') / 'new.js'
     new_js = 'console.log("new");'
     atomic_write(new_path, new_js)
+
+    # with or without minified the file is copied as is
 
     run_start.invoke(build)
     build_path = Path('build') / 'static' / 'new.min.js'
     build_text = build_path.read_text()
     assert build_text == min_js
 
+    run_start.invoke(build, '--minify-js')
+    build_path = Path('build') / 'static' / 'new.min.js'
+    build_text = build_path.read_text()
+    assert build_text == min_js
+
 
 def test_build_when_minified_css_exists(run_start: CliRunner) -> None:
-    # If minified file exists in source use it without minifiying anything
+    # If minified file exists in source use it without minifiying it
     minified_path = Path('static') / 'new.min.css'
     min_css = 'body{background:#fff;}'
     atomic_write(minified_path, min_css)
 
+    # If non minified version exists the minified file will be used
     new_path = Path('static') / 'new.css'
     new_css = 'body{background:#00ff;}'
     atomic_write(new_path, new_css)
 
+    # with or without minified the file is copied as is
+
     run_start.invoke(build)
+    build_path = Path('build') / 'static' / 'new.min.css'
+    build_text = build_path.read_text()
+    assert build_text == min_css
+
+    run_start.invoke(build, '--minify-css')
     build_path = Path('build') / 'static' / 'new.min.css'
     build_text = build_path.read_text()
     assert build_text == min_css
@@ -599,7 +617,7 @@ def test_minified_name_as_folder(run_start: CliRunner) -> None:
     new_js = 'console.log("new");'
     atomic_write(new_path, new_js)
 
-    run_start.invoke(build)
+    run_start.invoke(build, '--minify-css --minify-js')
     build_path = Path('build') / 'static' / 'new.min.css'
     build_text = build_path.read_text()
     expected_css = new_css.replace(';', '')
@@ -691,17 +709,36 @@ def test_build_includes_images_and_fonts(run_start: CliRunner) -> None:
     assert (Path('build') / 'static' / 'img' / 'bar.webp').is_file()
 
 
-def test_build_without_css_js_without_reference(run_start: CliRunner) -> None:
+def test_build_css_js_without_references(run_start: CliRunner) -> None:
     css_path = Path('static') / 'foo.css'
     css_path.touch()
     js_path = Path('static') / 'bar.js'
     js_path.touch()
 
+    # The default _layout.html template will include
+    # all CSS and JS files in static directory
+    # Remove those lines from _layout.html template
+
+    layout_path = Path('templates') / '_layout.html'
+    contents = layout_path.read_text()
+
+    css_pattern = r'\s*\{%\s*for css_file in FILES_CSS\s*%\}.*?\{%\s*endfor\s*%\}\s*'
+    js_pattern = r'\s*\{%\s*for js_file in FILES_JS\s*%\}.*?\{%\s*endfor\s*%\}\s*'
+
+    combined_pattern = f'{css_pattern}|{js_pattern}'
+
+    # re.sub will find and strip out both blocks across the file
+    cleaned_content = re.sub(combined_pattern, '', contents, flags=re.DOTALL)
+
+    layout_path.write_text(cleaned_content)
+
     result = run_start.invoke(build)
     assert result.exit_code == 0
 
     assert not (Path('build') / 'static' / 'foo.css').is_file()
+    assert not (Path('build') / 'static' / 'foo.min.css').is_file()
     assert not (Path('build') / 'static' / 'bar.js').is_file()
+    assert not (Path('build') / 'static' / 'bar.min.js').is_file()
 
 
 def test_redirect(run_start: CliRunner) -> None:

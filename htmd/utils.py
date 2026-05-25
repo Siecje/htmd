@@ -5,12 +5,13 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import typing
 import uuid
 
 import click
 from csscompressor import compress
 from flask import Flask
-from flask_flatpages import Page
+from flask_flatpages import Page, pygments_style_defs
 from jsmin import jsmin
 
 from .password_protect import generate_private_key
@@ -137,7 +138,7 @@ def minify_js_file(src_root: Path, file_path: Path, dst_root: Path) -> Path:
 
 def minify_css_files(
     source_root_folder: Path,
-    source_files: list[Path],
+    source_files: typing.Iterable[Path],
     destination_root_folder: Path,
 ) -> list[str]:
     minified_files = []
@@ -155,7 +156,7 @@ def minify_css_files(
 
 def minify_js_files(
     source_root_folder: Path,
-    source_files: list[Path],
+    source_files: typing.Iterable[Path],
     destination_root_folder: Path,
 ) -> list[str]:
     minified_files = []
@@ -480,3 +481,11 @@ def sync_posts(
                     post,
                     file_updates,
                 )
+
+
+def get_pygments_css()-> str:
+    return pygments_style_defs('tango')
+
+
+def get_minified_pygments_css() -> str:
+    return compress(get_pygments_css())

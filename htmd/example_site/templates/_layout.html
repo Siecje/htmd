@@ -28,12 +28,10 @@
   {% endblock meta_tags %}
   {% block styles %}
     <link href="{{ url_for('static', filename='htmd.css') }}" rel="stylesheet">
-    {% if MINIFY_CSS %}
-      {% for css_file in FILES_CSS %}
-        <link href="{{ url_for('static', filename=css_file) }}" rel="stylesheet">
-      {% endfor %}
-    {% endif %}
-    <link href="{{ url_for('main.pygments_css') }}" rel="stylesheet">
+    {% for css_file in FILES_CSS %}
+      <link href="{{ url_for('static', filename=css_file) }}" rel="stylesheet">
+    {% endfor %}
+    <link href="{{ url_for('static', filename='pygments.css') }}" rel="stylesheet">
   {% endblock styles %}
   <link href="{{ url_for('posts.feed') }}" rel="alternate" title="{{ SITE_NAME }}" type="application/atom+xml">
 </head>
@@ -71,11 +69,10 @@
   </div>
   {% block scripts %}
     <script src="{{ url_for('static', filename='htmd.js') }}"></script>
-    {% if MINIFY_JS %}
-      {% for js_file in FILES_JS %}
-        <script src="{{ url_for('static', filename=js_file) }}"></script>
-      {% endfor %}
-    {% endif %}
+    {% for js_file in FILES_JS %}
+      <script src="{{ url_for('static', filename=js_file) }}"></script>
+    {% endfor %}
+
     {% if PREVIEW %}
       <script>
         document.addEventListener('DOMContentLoaded', () => {

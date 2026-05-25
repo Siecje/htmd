@@ -39,6 +39,8 @@
 - Instead of one combined file with every CSS file each .css file will be added to the template
 - Instead of one combined file with every JavaScript file each .js file will be added to the template
 - Add limit argument to `truncate_post_html` template function with default 255
+- Use static filename in templates (don't need `.min` unless it is in the filename in static directory)
+    - If minify is enabled file will be minified and `.min` will be added to build files
 ### Fixed
 - Protected post subtitles are encrypted
 - Hide protected post data on list pages

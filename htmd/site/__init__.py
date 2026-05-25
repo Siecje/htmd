@@ -9,7 +9,12 @@ from flask.typing import ResponseReturnValue
 from jinja2 import ChoiceLoader, FileSystemLoader
 
 from ..constants import CONFIG_FILE
-from ..utils import get_static_files, minify_css_files, minify_js_files
+from ..utils import (
+    get_minified_pygments_css,
+    get_static_files,
+    minify_css_files,
+    minify_js_files,
+)
 from .freezer import freeze_bp, freezer
 from .main import create_redirect_view, main_bp
 from .pages import pages
@@ -42,6 +47,57 @@ def custom_static(filename: str) -> ResponseReturnValue:
     return send_from_directory(directory, filename)
 
 
+class UrlForProtocol(typing.Protocol):
+    def __call__(
+        self,
+        endpoint: str,
+        *,
+        _anchor: str | None = None,
+        _method: str | None = None,
+        _scheme: str | None = None,
+        _external: bool | None = None,
+        **values: typing.Any,  # noqa: ANN401
+    ) -> str: ...
+
+
+def get_override_url_for(
+    flask_url_for: UrlForProtocol,
+) -> UrlForProtocol:
+    def override_url_for(
+        endpoint: str,
+        *,
+        _anchor: str | None = None,
+        _method: str | None = None,
+        _scheme: str | None = None,
+        _external: bool | None = None,
+        **values: typing.Any,  # noqa: ANN401
+    ) -> str:
+        if endpoint == 'static':
+            filename = values.get('filename', '')
+            if (
+                current_app.config.get('MINIFY_CSS', False)
+                and filename.endswith('.css')
+                and not filename.endswith('.min.css')
+            ):
+                values['filename'] = filename.replace('.css', '.min.css')
+            if (
+                current_app.config.get('MINIFY_JS', False)
+                and filename.endswith('.js')
+                and not filename.endswith('.min.js')
+            ):
+                values['filename'] = filename.replace('.js', '.min.js')
+
+        return flask_url_for(
+            endpoint,
+            _anchor=_anchor,
+            _method=_method,
+            _scheme=_scheme,
+            _external=_external,
+            **values,
+        )
+    return override_url_for
+
+
 def toml_config_get(
     cfg: dict[str, typing.Any],
     section: str,
@@ -71,6 +127,8 @@ def create_app(  # noqa: PLR0915
         # default templates
         template_folder=this_dir / '..' / 'example_site' / 'templates',
     )
+    original_url_for: UrlForProtocol = app.url_for
+    app.url_for = get_override_url_for(original_url_for)  # type: ignore[method-assign]
 
     project_dir = get_project_dir()
 
@@ -184,8 +242,19 @@ def create_app(  # noqa: PLR0915
             css_paths,
             static_source_dir,
         )
+        # minify CSS files in htmd
+        example_static_dir = Path(__file__).parent / '..' / 'example_site' / 'static'
+        minify_css_files(
+            example_static_dir,
+            (example_static_dir / 'htmd.css',),
+            static_source_dir,
+        )
+        # minify pygments.css
+        with (Path(static_source_dir) / 'pygments.min.css').open('w') as pygments_file:
+            pygments_file.write(get_minified_pygments_css())
+
     else:
-        files_css = [str(path) for path in css_paths]
+        files_css = [str(path.relative_to(static_src_root)) for path in css_paths]
 
     js_paths = get_static_files(static_src_root, '.js')
     if minify_js:
@@ -197,8 +266,19 @@ def create_app(  # noqa: PLR0915
             js_paths,
             static_source_dir,
         )
+        # minify JS files in htmd
+        example_static_dir = Path(__file__).parent / '..' / 'example_site' / 'static'
+        htmd_js_files = (
+            example_static_dir / 'htmd.js',
+            example_static_dir / 'password-protect.js',
+        )
+        minify_js_files(
+            example_static_dir,
+            htmd_js_files,
+            static_source_dir,
+        )
     else:
-        files_js = [str(path) for path in js_paths]
+        files_js = [str(path.relative_to(static_src_root)) for path in js_paths]
 
     favicon_path = static_src_root / 'favicon.svg'
 

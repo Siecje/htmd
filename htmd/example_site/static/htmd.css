@@ -1,6 +1,11 @@
-h2,h3,h4,h5,h6{
+/* h2,h3,h4,h5,h6{
   display:inline-flex;
   align-items:center;
+} */
+h2, h3, h4, h5, h6 {
+  display: flex;         /* Use block-level flex instead of inline-flex */
+  align-items: center;
+  width: 100%;           /* Force the heading to take up the full row width */
 }
 .heading-link-icon{
   text-decoration:none;

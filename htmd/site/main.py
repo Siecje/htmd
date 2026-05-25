@@ -12,9 +12,9 @@ from flask import (
     send_from_directory,
 )
 from flask.typing import ResponseReturnValue
-from flask_flatpages import pygments_style_defs
 from htmlmin import minify
 
+from ..utils import get_pygments_css
 from .posts import get_posts
 
 
@@ -54,7 +54,7 @@ def changes() -> Response:
 # Will end up in the static directory
 @main_bp.route('/static/pygments.css')
 def pygments_css() -> ResponseReturnValue:
-    response = make_response(pygments_style_defs('tango'))
+    response = make_response(get_pygments_css())
     response.headers['Content-Type'] = 'text/css'
     # Tells browser to cache for 1 year
     response.cache_control.max_age = 31536000

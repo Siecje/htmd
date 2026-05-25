@@ -20,7 +20,7 @@ warnings.filterwarnings('ignore', '.*Nothing frozen for endpoints.*')
 @click.option(
     '--minify-css', '--css-minify',
     '/--no-minify-css', '--no-css-minify',
-    default=True,
+    default=None,
     help='If CSS should be minified',
     is_flag=True,
     show_default=True,
@@ -28,7 +28,7 @@ warnings.filterwarnings('ignore', '.*Nothing frozen for endpoints.*')
 @click.option(
     '--minify-js', '--js-minify',
     '/--no-minify-js', '--no-js-minify',
-    default=True,
+    default=None,
     help='If JavaScript should be minified',
     is_flag=True,
     show_default=True,
