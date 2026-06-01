@@ -272,7 +272,7 @@ def send_stderr(message: str) -> None:
     click.secho(message, fg='red', err=True)
 
 
-def validate_post(  # noqa: C901
+def validate_post(  # noqa: C901,PLR0912
     post: Page,
     required_fields: list[str],
 ) -> bool:
@@ -320,6 +320,12 @@ def validate_post(  # noqa: C901
                 ' is not valid. It must be True, False,'
                 ' "build", or "build|<UUID4>".'
             )
+            send_stderr(msg)
+    if 'tags' in post.meta:
+        tags = post.meta['tags']
+        if not isinstance(tags, list):
+            correct = False
+            msg = f'{post.path} tags is not a list'
             send_stderr(msg)
 
     return correct

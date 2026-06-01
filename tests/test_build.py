@@ -11,6 +11,7 @@ import yaml
 from utils import (
     remove_fields_from_post,
     set_config_field,
+    set_example_field,
     set_example_password_value,
     set_example_subtitle,
     set_example_to_draft,
@@ -782,3 +783,27 @@ def test_build_with_keep_files(run_start: CliRunner) -> None:
     assert result.exit_code == 0
     assert keep_file.is_file()
     assert keep_file.read_text() == 'www.example.com'
+
+
+def test_build_tags(run_start: CliRunner) -> None:
+    set_example_field('tags', 'one,two,three')
+
+    result = run_start.invoke(build)
+    assert result.exit_code == 1
+    assert 'tags is not a list' in result.output
+
+    set_example_field('tags', '[one,two,three]')
+    result = run_start.invoke(build)
+    assert result.exit_code == 0
+    post_path = Path('build') / '2014' / '10' / '30' / 'example' / 'index.html'
+    contents = post_path.read_text()
+    expected = (
+        '<hr class="small">',
+        '<h2 id="tags"><strong>Tags</strong></h2>',
+        '<a class="tag" href="/tags/one/">one</a>',
+        '<a class="tag" href="/tags/two/">two</a>',
+        '<a class="tag" href="/tags/three/">three</a>',
+    )
+    for expect in expected:
+        assert expect in contents
+    assert '<a class="tag" href="/tags/,/">,</a>' not in contents

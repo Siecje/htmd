@@ -1,0 +1,15 @@
+# Ignore build output
+build/
+
+# Ignore password protect files
+posts/password-protect/
+
+# Virtual environment and Python artifacts
+venv/
+__pycache__/
+*.pyc
+
+# Editor temp files
+.DS_Store
+*.swp
+
