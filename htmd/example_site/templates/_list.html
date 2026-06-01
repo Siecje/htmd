@@ -44,8 +44,8 @@
       <div class="post-thumbnail">
         <img src="{{ url_for('static', filename=post.image) }}" alt="{{ post.title }}">
       </div>
-    {%- endif %}
-    
+    {%- endif -%}
+
     <h2 class="post-title">
       {% if is_protected %}
         Protected Post
